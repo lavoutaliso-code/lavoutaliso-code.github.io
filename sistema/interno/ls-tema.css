@@ -198,3 +198,28 @@ html.embutido #lt-tabbar{display:none!important}
   font-size:12.5px;color:var(--ls-fraca)}
 .lsExtS b{font:700 16px -apple-system,BlinkMacSystemFont,sans-serif;color:var(--ls-tinta);
   letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+
+/* ══ A BARRA DE ROLAGEM NÃO PODE TAPAR NÚMERO ═════════════════════════
+   Ela, 12/11: *«quando você vai rolar a tela, esse rolar tampa os
+   números. Você tem que colocar os números respeitando essa margem»*.
+
+   ⚠️ No macOS a barra é SOBREPOSTA (overlay): ela não ocupa espaço no
+   layout, aparece por cima enquanto rola e some depois. Por isso o
+   problema não existe parado e aparece só no movimento — e por isso
+   `overflow:auto` sozinho não resolve.
+   A cura é reservar a pista: `scrollbar-gutter:stable` guarda o espaço
+   mesmo quando a barra está escondida, e a margem extra garante que o
+   número alinhado à direita nunca encoste nela. */
+.gaveta, .gvLista, .lsExt, .lsAgLista, .fila, .saRolo,
+.gaveta *[style*="overflow"], .cdLista{
+  scrollbar-gutter:stable;
+}
+.gaveta{padding-right:4px}
+.lsExt{padding-right:6px}
+/* a barra, quando aparece, fica discreta e FORA do texto */
+.gaveta::-webkit-scrollbar, .gvLista::-webkit-scrollbar,
+.lsExt::-webkit-scrollbar, .lsAgLista::-webkit-scrollbar{width:8px}
+.gaveta::-webkit-scrollbar-thumb, .gvLista::-webkit-scrollbar-thumb,
+.lsExt::-webkit-scrollbar-thumb, .lsAgLista::-webkit-scrollbar-thumb{
+  background:#D8D8DE;border-radius:99px;border:2px solid transparent;background-clip:content-box}
+.gaveta::-webkit-scrollbar-track{background:transparent}
