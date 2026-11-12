@@ -202,10 +202,15 @@ function encaixarAgenda(){
    lockup com a fonte do sistema (peso 700 + versalete espaçado) em vez
    de usar o arquivo — o mesmo erro de «refazer em vez de copiar».
    A logo agora é o PNG, e ela aparece em TODA tela do sistema. */
+/* ⭐ Ela, 12/11: *«deixa só o lailasalon do topo, e coloca financeiro ali
+   perto dele, e exclui esses dois lailasalon financeiro»*. A marca e o
+   setor passaram a viver na BARRA DA CASCA, que toda tela tem. Repetir
+   aqui dentro era a mesma informação duas vezes na mesma tela — e o
+   cabeçalho interno era o item mais alto da faixa de cima, então tirá-lo
+   é também o que libera espaço para o resto crescer. */
 function lockup(raiz){
-  const a = raiz.querySelector('.tit .a');
-  if (a && !a.querySelector('.lsLogo'))
-    a.innerHTML = '<img class="lsLogo" src="marca-clara.png" alt="laila salon">';
+  const t = raiz.querySelector('.tit');
+  if (t) t.style.display = 'none';
 }
 
 /* ══ 5 · O GANCHO ════════════════════════════════════════════════════
@@ -249,18 +254,55 @@ function limparTexto(raiz){
    reservado à toa encolhe o painel inteiro. Aqui a reserva vira a altura
    REAL da barra (0 quando ela não está na tela) e a margem cai de 16
    para 10. Medido em 1280×720: k 0,790 → 0,886, +12% em tudo. */
+/* ══ APROVEITAR O ESPAÇO: a altura é o gargalo, não a largura ═══════════
+   Ela, 12/11: *«expande mais os itens da tela pra aproveitar melhor o
+   espaço»*. Medido antes de mexer: k = 0,8237, e ele vinha da ALTURA
+   ((674−20)/794 = 0,8237) — a largura daria 0,913. Esticar pela largura
+   não daria um pixel.
+
+   Então o que rende é encolher a altura LÓGICA da prancheta. E ela só
+   encolhe de verdade se o conteúdo subir junto: o número 794 era fixo no
+   código, enquanto o conteúdo real acabava bem antes. Agora os dois são
+   medidos — sobe-se o bloco inteiro de uma vez (nada desalinha, porque
+   todos se movem o mesmo tanto) e a altura lógica passa a ser a que o
+   conteúdo de fato usa.
+   ⚠️ `.tit` já saiu (a marca agora é a do topo da casca), e ele era o
+   mais alto do cabeçalho — por isso a compressão rende mais do que
+   renderia antes. */
+const ALTURA_BASE = 794, RESPIRO = 10;
+let alturaUtil = ALTURA_BASE;
+
+function medirAltura(){
+  const painel = document.querySelector('.painel'); if (!painel) return;
+  const filhos = [...painel.children].filter(e =>
+    e.offsetHeight > 0 && getComputedStyle(e).display !== 'none');
+  if (!filhos.length) return;
+  const topo  = Math.min(...filhos.map(e => e.offsetTop));
+  const fundo = Math.max(...filhos.map(e => e.offsetTop + e.offsetHeight));
+  const sobe = Math.max(0, topo - RESPIRO);
+  painel.style.transform = sobe ? `translateY(${-sobe}px)` : '';
+  alturaUtil = Math.max(400, fundo - sobe + RESPIRO);
+  /* ⚠️ Encolher só a CONTA não encolhe a caixa: a `.prancheta` continuava
+     com os 794px do CSS e o scale desenhava 676px numa janela de 674 —
+     transbordava 2px. A altura da caixa tem que ser a mesma da conta. */
+  const pr = document.querySelector('.prancheta');
+  if (pr) pr.style.height = alturaUtil + 'px';
+  const painelH = painel.style;
+  painelH.height = alturaUtil + sobe + 'px';
+}
+
 function esticar(){
   const barra = document.getElementById('lt-tabbar');
   const visivel = barra && getComputedStyle(barra).display !== 'none';
   const reserva = visivel ? Math.round(barra.getBoundingClientRect().height + 16) : 0;
-  const M = 10;
-  const k = Math.min((innerWidth - 2*M)/1380, (innerHeight - reserva - 2*M)/794);
+  const M = 6;
+  const k = Math.min((innerWidth - 2*M)/1380, (innerHeight - reserva - 2*M)/alturaUtil);
   if (k > 0) {
     document.documentElement.style.setProperty('--barra', reserva + 'px');
     document.documentElement.style.setProperty('--k', k);
   }
 }
-addEventListener('resize', esticar);
+addEventListener('resize', () => { medirAltura(); esticar(); });
 
 /* ══ 6 · O EXTRATO DE CADA CATEGORIA, na demo ════════════════════════
    Ela, 12/11: *«quando clico em cada despesa, não mostra o extrato de
@@ -304,7 +346,7 @@ function extratoDemo(){
 
 function aplicar(){
   const raiz = document.querySelector('.painel') || document.body;
-  lockup(raiz); limparTexto(raiz);
+  lockup(raiz); limparTexto(raiz); medirAltura();
   repintar(document.body);     /* o body, não o painel: a barra de abas e os
                                   dois botões flutuantes moram fora dele */
   encaixarAgenda(); esticar(); extratoDemo();

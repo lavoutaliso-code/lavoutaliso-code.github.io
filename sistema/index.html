@@ -113,7 +113,17 @@ body.lsRecolhe.lsAberta #lado{position:fixed;left:0;top:0;z-index:60;width:276px
   display:none;align-items:center;justify-content:center;gap:4px;padding:0}
 body.lsRecolhe #lsPontos{display:flex}
 body.lsRecolhe.lsAberta #lsPontos{left:290px}
-#lsPontos i{width:4px;height:4px;border-radius:50%;background:#0D0D10;display:block}
+/* ⭐ Ela, 12/11: *«troque esses três pontos da tela por uma barra de 3
+   premium nativa»*. Três pontos é o menu «mais opções» do iOS; três
+   barras é o menu de navegação — que é o que este botão faz. As barras
+   têm o traço do sistema (1,8px, ponta arredondada) e a de baixo é mais
+   curta: é o detalhe que separa o ícone nativo do ícone genérico. */
+/* ⚠️ A primeira versão saiu TORTA e o print mostrou: eu pus
+   `align-self:flex-start` na barra de baixo dentro de um flex que estava
+   centralizado — ela escapou da caixa pela esquerda. Três barras iguais,
+   alinhadas por um container de largura fixa. Sem gracinha. */
+#lsPontos{flex-direction:column;align-items:center;justify-content:center;gap:4px!important}
+#lsPontos i{width:16px;height:1.7px;border-radius:2px;background:#0D0D10;display:block}
 #lsVeu{position:fixed;inset:0;z-index:55;background:rgba(13,13,16,.18);display:none}
 
 /* ══ A MARCA FIXA, EM TODA TELA ═════════════════════════════════════════
@@ -130,7 +140,18 @@ body.lsRecolhe.lsAberta #lsPontos{left:290px}
   border-bottom:1px solid #ECECF1;display:none;align-items:center;gap:14px;padding:0 16px}
 body.lsRecolhe #lsTopo{display:flex}
 #lsTopo .lsLogoTopo{height:19px;width:auto;display:block}
-#lsTopo .lsTela{margin-left:auto;font-size:12.5px;color:#8A8A94;letter-spacing:-.01em}
+/* o setor fica colado na marca, separado por um fio — é a mesma
+   hierarquia que a tela tinha por dentro, agora só no topo */
+#lsSetor{display:flex;align-items:center;gap:11px;font-size:13.5px;font-weight:600;
+  color:#1D1D22;letter-spacing:-.015em}
+#lsSetor::before{content:'';width:1px;height:17px;background:#E2E2E8;display:block}
+/* ⭐ OPÇÃO A, aprovada: o botão mora na casca, então aparece em toda tela */
+#lsCadastrar{margin-left:auto;height:34px;padding:0 16px;border:0;border-radius:11px;
+  background:#FF2D87;color:#fff;cursor:pointer;font-family:inherit;
+  font:600 13.5px -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:-.01em}
+#lsCadastrar:hover{background:#F01A77}
+#lsTopo .lsTela{margin-left:-3px;font-size:13.5px;color:#8A8A94;letter-spacing:-.015em}
+#lsTopo .lsTela::before{content:'· ';color:#C9C9D2}
 /* ⚠️ `padding-top` no #palco NÃO empurra as telas: os iframes são
    `position:absolute; inset:0`, e um absoluto se ancora no PADDING BOX
    do pai — ou seja, ele começa debaixo do padding, não depois dele.
@@ -173,7 +194,9 @@ body.lsRecolhe.lsAberta #lsVeu{display:block}
 <div id="lsTopo">
   <button id="lsPontos" title="abrir o menu"><i></i><i></i><i></i></button>
     <img class="lsLogoTopo" src="marca-clara.png" alt="laila salon">
+  <span id="lsSetor"></span>
   <span class="lsTela" id="lsTela"></span>
+  <button id="lsCadastrar" onclick="cadastrarProcedimento()">+ Cadastrar procedimento</button>
 </div>
 
 <main id="palco"><div id="carregando">abrindo…</div></main>
@@ -278,6 +301,24 @@ function ir(k){
   if(location.hash.slice(1) !== k) history.replaceState(null, '', '#' + k);
   document.title = it.r + ' · Laila Salon';
   const nome = document.getElementById('lsTela'); if(nome) nome.textContent = it.r;
+  /* o setor sai da própria lista de SETORES: nunca escrevo o nome à mão */
+  const setor = SETORES.find(s => s.itens.some(x => x.k === k));
+  const alvo = document.getElementById('lsSetor');
+  if (alvo) alvo.textContent = setor ? setor.r : '';
+}
+
+/* ⭐ O botão da barra abre Serviços e, de lá, o cadastro — assim existe
+   UM caminho só para a calculadora, e não dois que podem divergir. */
+function cadastrarProcedimento(){
+  const jaEm = ativo === 'servicos';
+  ir('servicos');
+  const tenta = (n) => {
+    const f = quadros['servicos'];
+    const w = f && f.contentWindow;
+    if (w && typeof w.abrirCadastro === 'function') { w.abrirCadastro(); return; }
+    if (n < 40) setTimeout(() => tenta(n+1), 120);   /* a tela ainda está carregando */
+  };
+  setTimeout(() => tenta(0), jaEm ? 0 : 160);
 }
 
 document.getElementById('pe-salao').textContent =
