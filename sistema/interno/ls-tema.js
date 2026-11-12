@@ -269,14 +269,63 @@ function limparTexto(raiz){
    ⚠️ `.tit` já saiu (a marca agora é a do topo da casca), e ele era o
    mais alto do cabeçalho — por isso a compressão rende mais do que
    renderia antes. */
-const ALTURA_BASE = 794, RESPIRO = 10;
-let alturaUtil = ALTURA_BASE;
+const ALTURA_BASE = 794, LARGURA_BASE = 1380, RESPIRO = 6, VAO = 14;
+let alturaUtil = ALTURA_BASE, larguraUtil = LARGURA_BASE;
 
+/* ══ ESPREMER A ALTURA PARA O DESENHO CRESCER ═══════════════════════════
+   Ela, 12/11: *«tá tudo muito pequeno, aproveite melhor os espaços»*.
+
+   Medido antes de mexer, e é isto que explica o problema: o desenho tem
+   1308×758 (razão 1,73) e a janela 1280×674 (razão 1,90). A janela é
+   proporcionalmente MAIS LARGA — então a altura estoura primeiro e sobram
+   167px de largura sem uso. Com escala uniforme, quem manda é o lado
+   apertado: cada pixel de altura que eu devolver vira aumento em TUDO.
+
+   Então a conta é: fechar o ar vertical e encostar o fundo das duas
+   colunas no mesmo lugar.
+     · a coluna da esquerda tinha 34px de vão morto (22 + 12);
+     · a agenda, à direita, é o elemento mais alto (26→768) — encolher só
+       a esquerda não daria nada, porque a altura é a do MAIS alto.
+   ⚠️ Tudo é `position:absolute` com coordenada fixa, então mover um bloco
+   não empurra o de baixo: cada um é deslocado pela medida do vão que
+   ficou acima dele. */
 function medirAltura(){
   const painel = document.querySelector('.painel'); if (!painel) return;
-  const filhos = [...painel.children].filter(e =>
+  const vivos = () => [...painel.children].filter(e =>
     e.offsetHeight > 0 && getComputedStyle(e).display !== 'none');
-  if (!filhos.length) return;
+  let filhos = vivos(); if (!filhos.length) return;
+
+  if (!painel.dataset.lsEspremido) {
+    const base = new Map(filhos.map(e => [e, { t:e.offsetTop, h:e.offsetHeight }]));
+    const esq = filhos.filter(e => e.offsetLeft + e.offsetWidth <= 950)
+                      .sort((a,b) => base.get(a).t - base.get(b).t);
+    /* fecha os vãos da esquerda, de cima para baixo */
+    let deslocado = 0, fim = esq.length ? base.get(esq[0]).t : 0;
+    for (const e of esq) {
+      const t = base.get(e).t;
+      if (t > fim) { const vao = t - fim; if (vao > VAO) deslocado += vao - VAO; }
+      if (deslocado) e.style.top = (t - deslocado) + 'px';
+      fim = Math.max(fim, t + base.get(e).h);
+    }
+    /* a agenda acompanha: o fundo das duas colunas encosta no mesmo lugar */
+    filhos = vivos();
+    const fundoEsq = Math.max(...filhos
+      .filter(e => e.offsetLeft + e.offsetWidth <= 950)
+      .map(e => e.offsetTop + e.offsetHeight));
+    const dir = painel.querySelector('.dir');
+    if (dir && dir.offsetTop + dir.offsetHeight > fundoEsq)
+      dir.style.height = Math.max(200, fundoEsq - dir.offsetTop) + 'px';
+    /* ⚠️ TENTEI alargar os blocos para ocupar os 130px que sobravam à
+       direita — e MEDI o resultado: o k caiu de 0,8793 para 0,8164.
+       Preencher a largura faz a largura virar o gargalo, e aí TUDO
+       encolhe 7%. Ela pediu o contrário («tá tudo muito pequeno»), então
+       a margem lateral fica: ela é o preço de o conteúdo ser maior.
+       O registro vale mais que o código: medido, 99,7% de largura custa
+       7% de tamanho em tudo. */
+    painel.dataset.lsEspremido = '1';
+  }
+
+  filhos = vivos();
   const topo  = Math.min(...filhos.map(e => e.offsetTop));
   const fundo = Math.max(...filhos.map(e => e.offsetTop + e.offsetHeight));
   const sobe = Math.max(0, topo - RESPIRO);
@@ -285,18 +334,25 @@ function medirAltura(){
   /* ⚠️ Encolher só a CONTA não encolhe a caixa: a `.prancheta` continuava
      com os 794px do CSS e o scale desenhava 676px numa janela de 674 —
      transbordava 2px. A altura da caixa tem que ser a mesma da conta. */
+  /* ⚠️ O MESMO erro aconteceu nos dois eixos, e o segundo eu só peguei
+     porque a prova mediu: depois de esticar os blocos, a agenda ficou
+     FORA da `.prancheta` — a caixa continuava com os 1380px do CSS.
+     Caixa e conteúdo andam juntos, na altura e na largura. */
+  const esq   = Math.min(...filhos.map(e => e.offsetLeft));
+  const dirx  = Math.max(...filhos.map(e => e.offsetLeft + e.offsetWidth));
+  larguraUtil = Math.max(600, dirx + esq);
   const pr = document.querySelector('.prancheta');
-  if (pr) pr.style.height = alturaUtil + 'px';
-  const painelH = painel.style;
-  painelH.height = alturaUtil + sobe + 'px';
+  if (pr) { pr.style.height = alturaUtil + 'px'; pr.style.width = larguraUtil + 'px'; }
+  painel.style.height = alturaUtil + sobe + 'px';
+  painel.style.width  = larguraUtil + 'px';
 }
 
 function esticar(){
   const barra = document.getElementById('lt-tabbar');
   const visivel = barra && getComputedStyle(barra).display !== 'none';
   const reserva = visivel ? Math.round(barra.getBoundingClientRect().height + 16) : 0;
-  const M = 6;
-  const k = Math.min((innerWidth - 2*M)/1380, (innerHeight - reserva - 2*M)/alturaUtil);
+  const M = 2;
+  const k = Math.min((innerWidth - 2*M)/larguraUtil, (innerHeight - reserva - 2*M)/alturaUtil);
   if (k > 0) {
     document.documentElement.style.setProperty('--barra', reserva + 'px');
     document.documentElement.style.setProperty('--k', k);

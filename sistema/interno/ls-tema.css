@@ -105,6 +105,17 @@ body{color:var(--ls-tinta)!important;
    o círculo de fundo rosa junto e todo anel aparece 100% cheio, sempre —
    foi o defeito de uma cópia em 18/09. O trilho é o PRIMEIRO circle. */
 
+/* ══ DENTRO DO BLOCO ROSA, O ARCO É BRANCO ══════════════════════════════
+   Ela, 12/11: *«coloque os anéis do card rosa, branco»* — e medindo dá
+   para ver por quê: o arco estava em #FF2D87 sobre um bloco #FF2D87.
+   Rosa sobre rosa é 1,00:1 — o anel existia e ninguém via. Em branco
+   contra o mesmo bloco são 3,91:1, e o trilho continua sendo o branco a
+   16% que já estava lá, então o cheio e o vazio se distinguem.
+   ⚠️ A regra é escopada no `.over`: o anel da meta e o da agenda vivem
+   fora dele e continuam rosa — foram esses que ela aprovou assim. */
+.over svg circle:nth-of-type(2){stroke:#FFFFFF!important}
+.over svg circle:nth-of-type(1){stroke:rgba(255,255,255,.22)!important}
+
 /* ══ A AGENDA DO DIA ══════════════════════════════════════════════════
    A coluna inteira em #F4F4F6 (opção F1 cheia) e o cartão branco como
    figura. ⚠️ Medido: cartão branco sobre painel branco é 1,00:1 — não
