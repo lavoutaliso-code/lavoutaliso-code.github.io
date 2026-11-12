@@ -192,6 +192,25 @@ function encaixarAgenda(){
   });
 }
 
+/* ══ 3b · O ANEL MAIS FINO ═══════════════════════════════════════════
+   Ela, 12/11: *«deixa o anel mais fino também»*. ⚠️ Um valor fixo em CSS
+   não serve: o anel grande do investimento e os seis pequenos vivem em
+   viewBox de escalas diferentes (22 contra 10), então «stroke-width:6»
+   deixaria um elegante e o outro sumido. O que vale para os dois é um
+   FATOR — e o original fica guardado no próprio elemento, senão cada
+   passada do observador afinaria de novo até o anel desaparecer. */
+const FINO = 0.56;
+function afinarAneis(raiz){
+  raiz.querySelectorAll('.over svg circle').forEach(c => {
+    if (!c.dataset.lsW) {
+      const w = parseFloat(getComputedStyle(c).strokeWidth);
+      if (!w) return;
+      c.dataset.lsW = w;
+      c.style.strokeWidth = (w * FINO).toFixed(2) + 'px';
+    }
+  });
+}
+
 /* ══ 4 · A LOGO no lugar da palavra «Painel» ══════════════════════════
    ⚠️ Ela, 12/11: *«a logo não é essa. Esse laila de um jeito e SALON de
    outro. É aquela logo que é tudo a mesma fonte, que muda só a cor — o
@@ -402,7 +421,7 @@ function extratoDemo(){
 
 function aplicar(){
   const raiz = document.querySelector('.painel') || document.body;
-  lockup(raiz); limparTexto(raiz); medirAltura();
+  lockup(raiz); limparTexto(raiz); afinarAneis(raiz); medirAltura();
   repintar(document.body);     /* o body, não o painel: a barra de abas e os
                                   dois botões flutuantes moram fora dele */
   encaixarAgenda(); esticar(); extratoDemo();

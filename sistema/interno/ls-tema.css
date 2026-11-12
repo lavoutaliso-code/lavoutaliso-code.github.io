@@ -106,15 +106,18 @@ body{color:var(--ls-tinta)!important;
    foi o defeito de uma cópia em 18/09. O trilho é o PRIMEIRO circle. */
 
 /* ══ DENTRO DO BLOCO ROSA, O ARCO É BRANCO ══════════════════════════════
-   Ela, 12/11: *«coloque os anéis do card rosa, branco»* — e medindo dá
-   para ver por quê: o arco estava em #FF2D87 sobre um bloco #FF2D87.
-   Rosa sobre rosa é 1,00:1 — o anel existia e ninguém via. Em branco
-   contra o mesmo bloco são 3,91:1, e o trilho continua sendo o branco a
-   16% que já estava lá, então o cheio e o vazio se distinguem.
+   Ela, 12/11: *«coloque os anéis do card rosa, branco»*. Na 1ª tentativa
+   eu pintei só o ARCO de branco e deixei o trilho translúcido — e ela
+   respondeu *«os anéis continuam rosa»*. Estava certa: branco a 22% sobre
+   #FF2D87 resulta em rgb(255,139,189), que é rosa claro. Translúcido
+   sobre rosa dá rosa, sempre; não existe branco translúcido ali.
+   Então o ANEL é branco opaco e quem marca o quanto já foi é o arco, no
+   vinho da marca. Medido: o anel contra o bloco dá 3,51:1 (era 1,00:1,
+   invisível) e o arco contra o anel dá 5,26:1.
    ⚠️ A regra é escopada no `.over`: o anel da meta e o da agenda vivem
    fora dele e continuam rosa — foram esses que ela aprovou assim. */
-.over svg circle:nth-of-type(2){stroke:#FFFFFF!important}
-.over svg circle:nth-of-type(1){stroke:rgba(255,255,255,.22)!important}
+.over svg circle:nth-of-type(1){stroke:#FFFFFF!important}
+.over svg circle:nth-of-type(2){stroke:#C2005E!important}
 
 /* ══ A AGENDA DO DIA ══════════════════════════════════════════════════
    A coluna inteira em #F4F4F6 (opção F1 cheia) e o cartão branco como
