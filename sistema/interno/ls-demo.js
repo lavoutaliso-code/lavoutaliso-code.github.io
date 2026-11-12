@@ -52,6 +52,47 @@ const D = {
 D.hoje.marg = D.hoje.lucro / D.hoje.fat * 100;
 window.LS_DEMO = D;
 
+/* ══ OS LANÇAMENTOS FICTÍCIOS DE CADA POTE ═══════════════════════════
+   ⚠️ A ÚLTIMA LINHA FECHA A CONTA. Cada lista é montada com valores
+   plausíveis e a ÚLTIMA entrada é o resto — assim a soma bate no
+   centavo com o número grande da gaveta. O próprio sistema acusa quando
+   não bate («A lista soma X e o anel mostra Y»): demo que dispara o
+   alarme do sistema é pior do que demo vazia. */
+const LANC = {
+  'Equipe':      [['12/11','Mão de obra · 4 atendimentos', 448.00],
+                  ['11/11','Mão de obra · 6 atendimentos', 672.00],
+                  ['11/11','Bônus Cliente Feliz · 6',       53.76],
+                  ['10/11','Pagamento semanal da equipe', -980.00]],
+  'Estoque':     [['12/11','Sinal · parte do estoque (4×43)', 172.00],
+                  ['11/11','Sinal · parte do estoque (6×43)', 258.00],
+                  ['09/11','Compra de insumos · fornecedor', -640.00]],
+  'Marketing':   [['12/11','Sinal · parte de marketing (4×17)', 68.00],
+                  ['11/11','Sinal · parte de marketing (6×17)',102.00],
+                  ['08/11','Impulsionamento de reel',          -180.00]],
+  'Operacional': [['01/11','Custo fixo rateado · 22 dias úteis', 6160.00],
+                  ['07/11','Conta de luz',                      -412.80],
+                  ['05/11','Produtos de limpeza',               -168.40]],
+  'Imposto':     [['12/11','6% sobre o faturamento do dia', 170.86],
+                  ['11/11','6% sobre o faturamento do dia', 256.29]],
+  'Lucro':       [['12/11','Sobra do dia',  612.40],
+                  ['11/11','Sobra do dia',  438.90],
+                  ['09/11','Retirada da dona', -1200.00]],
+  'Investimento':[['12/11','Sinal · 2ª unidade (4×39,04)', 156.16],
+                  ['11/11','Sinal · 2ª unidade (6×39,04)', 234.24],
+                  ['01/11','Aporte do mês',                900.00]],
+};
+/* devolve as linhas com a ÚLTIMA ajustada pra somar exatamente `total` */
+window.LS_LANC = function(nome, total){
+  const chave = Object.keys(LANC).find(k => nome.toLowerCase().startsWith(k.toLowerCase().slice(0,5)));
+  if (!chave) return null;
+  const base = LANC[chave].map(l => l.slice());
+  const soma = base.reduce((a,l) => a + l[2], 0);
+  const resto = +(total - soma).toFixed(2);
+  if (Math.abs(resto) >= 0.01)
+    base.push([base[base.length-1][0], 'Acumulado dos dias anteriores', resto]);
+  return base;
+};
+
 /* ⚠️ A DEMO SÓ ENTRA EM TELA ZERADA. É esta função que impede a demo de
    cobrir dinheiro de verdade: se o saldo não é 0,00, não mexo em nada. */
 function telaZerada(){

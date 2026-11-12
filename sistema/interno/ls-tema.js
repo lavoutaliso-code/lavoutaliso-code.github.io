@@ -212,12 +212,70 @@ function rotuloVerba(raiz){
       e.textContent = 'Verba disponível por categoria';
   });
 }
+/* ⚠️ RECALCULAR O `--k` DEPOIS DO `ajusta()`. Ele reserva 61px de barra
+   mesmo quando a barra está escondida dentro da casca — e cada pixel
+   reservado à toa encolhe o painel inteiro. Aqui a reserva vira a altura
+   REAL da barra (0 quando ela não está na tela) e a margem cai de 16
+   para 10. Medido em 1280×720: k 0,790 → 0,886, +12% em tudo. */
+function esticar(){
+  const barra = document.getElementById('lt-tabbar');
+  const visivel = barra && getComputedStyle(barra).display !== 'none';
+  const reserva = visivel ? Math.round(barra.getBoundingClientRect().height + 16) : 0;
+  const M = 10;
+  const k = Math.min((innerWidth - 2*M)/1380, (innerHeight - reserva - 2*M)/794);
+  if (k > 0) {
+    document.documentElement.style.setProperty('--barra', reserva + 'px');
+    document.documentElement.style.setProperty('--k', k);
+  }
+}
+addEventListener('resize', esticar);
+
+/* ══ 6 · O EXTRATO DE CADA CATEGORIA, na demo ════════════════════════
+   Ela, 12/11: *«quando clico em cada despesa, não mostra o extrato de
+   cada categoria no card»*. Medido: a gaveta ABRE — o que ela vê é
+   «R$ 0,00 · Nada entrou nem saiu deste pote», porque não há lançamento
+   nenhum no banco de demonstração. Então a demo preenche a gaveta também.
+   ⚠️ Cada lista FECHA com o número grande em cima dela: a soma dos
+   lançamentos é exatamente o que o anel mostra. O próprio sistema já
+   acusa quando não fecha («A lista soma X e o anel mostra Y») — demo que
+   dispara o próprio alarme do sistema é pior do que demo vazia. */
+function extratoDemo(){
+  const g = document.getElementById('gaveta');
+  if (!g || !g.querySelector('.cdCab')) return;
+  const jaFeito = g.dataset.lsDemo || '';
+  if (!/Nada entrou nem saiu|R\$\s*0,00/.test(g.innerText)) return;   /* tem dado real: não toco */
+  const nome = (g.querySelector('.cdCab b')||{}).textContent || '';
+  if (jaFeito === nome) return;
+  const D = window.LS_DEMO; if (!D) return;
+  const pote = D.potes.find(p => p[0].toLowerCase().startsWith(nome.toLowerCase().slice(0,6)))
+            || (/investimento/i.test(nome) ? ['Investimento', D.grande.v] : null);
+  if (!pote) return;
+  const total = pote[1];
+  const linhas = window.LS_LANC && window.LS_LANC(nome, total);
+  if (!linhas) return;
+  const brlS = v => v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  g.querySelectorAll('.cdNum').forEach(e => e.innerHTML = '<span>R$</span>'+brlS(total));
+  const ent = linhas.filter(l=>l[2]>0).reduce((a,l)=>a+l[2],0);
+  const sai = linhas.filter(l=>l[2]<0).reduce((a,l)=>a-l[2],0);
+  const pe = g.querySelectorAll('.cdPill b');
+  if (pe[0]) pe[0].textContent = '+ '+brlS(ent);
+  if (pe[1]) pe[1].textContent = '− '+brlS(sai);
+  const vazio = [...g.querySelectorAll('*')].find(e => !e.children.length &&
+    /Nada entrou nem saiu/i.test(e.textContent));
+  const lista = `<div class="lsExt">${linhas.map(([d,t,v]) => `
+    <div class="lsExtL"><span class="lsExtD">${d}</span><span class="lsExtT">${t}</span>
+      <b class="${v<0?'neg':'pos'}">${v<0?'−':'+'} ${brlS(Math.abs(v))}</b></div>`).join('')}
+    <div class="lsExtS"><span>soma dos lançamentos</span><b>R$ ${brlS(total)}</b></div></div>`;
+  if (vazio) vazio.outerHTML = lista; else g.insertAdjacentHTML('beforeend', lista);
+  g.dataset.lsDemo = nome;
+}
+
 function aplicar(){
   const raiz = document.querySelector('.painel') || document.body;
   lockup(raiz); rotuloVerba(raiz);
   repintar(document.body);     /* o body, não o painel: a barra de abas e os
                                   dois botões flutuantes moram fora dele */
-  encaixarAgenda();
+  encaixarAgenda(); esticar(); extratoDemo();
 }
 /* ⚠️⚠️ EMBRULHAR O `pinta` NÃO FUNCIONA, e o print mostrou: o lockup
    aparecia e sumia. O `function pinta(){}` mora num <script> que roda
