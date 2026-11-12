@@ -2,7 +2,6 @@
 <html lang="pt-BR">
 <head>
 <meta name="robots" content="noindex,nofollow">
-<meta name="googlebot" content="noindex,nofollow">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Laila Salon</title>
@@ -106,6 +105,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Ari
    só «quase». */
 #lado{transition:width .18s ease}
 body.lsRecolhe #lado{width:0;overflow:hidden;border:0}
+body.lsRecolhe #palco{padding-left:58px}
 body.lsRecolhe.lsAberta #lado{position:fixed;left:0;top:0;z-index:60;width:276px;
   overflow:visible;box-shadow:0 0 0 1px #E9E9EE, 0 24px 60px -24px rgba(9,55,84,.34)}
 #lsPontos{position:fixed;left:14px;top:14px;z-index:70;width:40px;height:40px;
@@ -241,7 +241,7 @@ document.getElementById('pe-salao').textContent =
   window.LS_SALAO === 'demo' ? 'Salão demonstração' : 'Salão ' + window.LS_SALAO;
 
 pintar('');
-ir(TODOS.find(x => x.k === location.hash.slice(1) && x.u) ? location.hash.slice(1) : 'pdv');
+ir(TODOS.find(x => x.k === location.hash.slice(1) && x.u) ? location.hash.slice(1) : 'caixa');
 addEventListener('hashchange', () => {
   const k = location.hash.slice(1);
   if(TODOS.find(x => x.k === k && x.u)) ir(k);
