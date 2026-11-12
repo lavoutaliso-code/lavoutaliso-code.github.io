@@ -203,13 +203,36 @@ function lockup(raiz){
    ⚠️ O `pinta()` roda de novo a cada 90s. Se o tema só rodasse uma vez,
    a tela voltaria a ser de vidro na primeira releitura — e ninguém ia
    ligar uma coisa na outra. Por isso ele é embrulhado, não chamado. */
-/* ⭐ «O que o salão faturou» → «Verba disponível por categoria» (ela,
-   12/11). É troca de TEXTO no nó que já existe — não mexo no `miolo()`,
-   que é quem liga cada anel ao `abrirPote()`. */
-function rotuloVerba(raiz){
-  raiz.querySelectorAll('.over *').forEach(e => {
-    if (e.children.length === 0 && /o que o sal[aã]o faturou/i.test(e.textContent))
-      e.textContent = 'Verba disponível por categoria';
+/* ══ A LIMPEZA DE TEXTO ═══════════════════════════════════════════════
+   Ela, 12/11: *«remover isso aí escrito, o que o salão faturou… tudo que
+   está embolando, tudo que é desnecessário, a gente vai remover»* e
+   *«não tem isso de sobra do dia, é lucro líquido do dia. Você vai usar
+   termos técnicos financeiros»*.
+
+   ⚠️ CADA TERMO É TROCADO PELO NOME CONTÁBIL, não por um sinônimo bonito.
+   «sobra» não é conceito de contabilidade; «lucro líquido» é. Quem vende
+   um sistema financeiro é cobrada pelo vocabulário dele. */
+const TERMOS = [
+  [/\bo que sobrou\b/gi,        'lucro líquido'],
+  [/\bsobra do dia\b/gi,        'lucro líquido do dia'],
+  [/\bsobrou no pote\b/gi,      'saldo da categoria'],
+  [/\bsobrou\b/gi,              'lucro líquido'],
+  [/\bo que o salão faturou\b/gi, 'receita bruta'],
+  [/\bcustou\b/gi,              'custos'],
+  [/\bfaturou\b/gi,             'receita'],
+  [/\bcusto diário · herdado\b/gi, 'custo fixo diário'],
+];
+function limparTexto(raiz){
+  /* o rótulo da verba sai inteiro: a divisão já está desenhada embaixo
+     dele, e o número que ele carregava se acompanha no Mês a mês */
+  raiz.querySelectorAll('.aroTit, .cdOlho').forEach(e => {
+    if (/o que o sal[aã]o faturou/i.test(e.textContent)) e.remove();
+  });
+  raiz.querySelectorAll('*').forEach(e => {
+    if (e.children.length || !e.textContent.trim()) return;
+    let t = e.textContent, novo = t;
+    TERMOS.forEach(([re, por]) => { novo = novo.replace(re, por); });
+    if (novo !== t) e.textContent = novo;
   });
 }
 /* ⚠️ RECALCULAR O `--k` DEPOIS DO `ajusta()`. Ele reserva 61px de barra
@@ -272,7 +295,7 @@ function extratoDemo(){
 
 function aplicar(){
   const raiz = document.querySelector('.painel') || document.body;
-  lockup(raiz); rotuloVerba(raiz);
+  lockup(raiz); limparTexto(raiz);
   repintar(document.body);     /* o body, não o painel: a barra de abas e os
                                   dois botões flutuantes moram fora dele */
   encaixarAgenda(); esticar(); extratoDemo();

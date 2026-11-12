@@ -223,17 +223,25 @@ function encher(){
      desconfiar da tela. */
   const mz = [...doc.querySelectorAll('.cb')].find(c => /Mês a mês/i.test(c.textContent));
   if (mz && !mz.querySelector('.lsMz')){
+    /* ⚠️ MAIS CLEAN = MENOS COLUNA, NÃO LETRA MENOR. Ela, 12/11: *«não
+       gosto de muito subtítulo, muita coisinha pequenininha, polui a
+       imagem»*. Saíram o subtítulo, o cabeçalho em versalete e DUAS
+       colunas: «clientes» e «custos».
+       ⭐ Elas não se perderam — custos é receita menos lucro líquido, e a
+       contagem de clientes vive no card de agendamentos. Coluna que o
+       olho consegue calcular sozinho é coluna que só ocupa espaço.
+       O que sobra são as três perguntas de verdade: quanto entrou, quanto
+       ficou, e quanto isso representa. */
     mz.innerHTML = `<div class="lsMz">
-      <div class="lsMzCab"><b>Mês a mês</b><em>faturamento · custo · o que sobrou</em></div>
-      <table>
-        <thead><tr><th></th><th>clientes</th><th>faturou</th><th>custou</th>
-          <th>sobrou</th><th>margem</th></tr></thead>
-        <tbody>${D.meses.map(([m,cli,fat,cus]) => {
-          const sob = fat - cus;
-          return `<tr><td>${m}</td><td>${cli}</td><td>${brlS(fat)}</td>
-            <td class="cus">−${brlS(cus)}</td><td class="sob">${brlS(sob)}</td>
-            <td>${p1(sob/fat*100)}</td></tr>`;
-        }).join('')}</tbody></table></div>`;
+      <div class="lsMzCab"><b>Mês a mês</b></div>
+      <div class="lsMzL lsMzH"><span></span><span>receita</span>
+        <span>lucro líquido</span><span>margem</span></div>
+      ${D.meses.map(([m,cli,fat,cus]) => {
+        const sob = fat - cus;
+        return `<div class="lsMzL"><span class="mes">${m}</span>
+          <span>${brlS(fat)}</span><b>${brlS(sob)}</b>
+          <span class="mg">${p1(sob/fat*100)}</span></div>`;
+      }).join('')}</div>`;
   }
 }
 
