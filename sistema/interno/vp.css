@@ -1,0 +1,2191 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   RÉPLICA — Smart Dashboard Vision Pro
+   Toda medida saiu dos PIXELS da referência (735×475) com Pillow, e está
+   escrita aqui na escala 2× (1470×950) pra render nítido; o diff é feito
+   reduzindo a 735.
+
+   GEOMETRIA MEDIDA (em px da referência):
+     painel        x 22–712   y  36–433
+     trilho lateral x 29–92
+     card OVERVIEW x 106–366  y  97–305
+     coluna meio   x 379–499
+     coluna direita x 518–711
+     faixa de baixo         y 320–419
+
+   PALETA AMOSTRADA (38.057 px de azul medidos):
+     p5 #02448C · p25 #174DB3 · p50 #3057C9 · p75 #5170E5 · p95 #99B0FE
+     trilho da barra de progresso #D9D1C7
+   ⚠️ O VIDRO NÃO TEM COR PRÓPRIA. As superfícies amostram #948E72/#B6A584/
+      #C6AE91 — é a FOTO atravessando. Por isso aqui é branco com alfa baixo
+      + backdrop-filter, nunca um cinza chapado. Foi esse o erro que fez as
+      rodadas anteriores parecerem opacas.
+   ⚠️ O FUNDO É FOTOGRAFIA, recortada da própria referência (fundo.jpg).
+      Gradiente inventado no lugar dela muda a tela inteira.
+   ══════════════════════════════════════════════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --az5:#02448C; --az25:#174DB3; --az:#3057C9; --az75:#5170E5; --az95:#99B0FE;
+  --trilho:#D9D1C7;
+  --lima:#C7F636; --coral:#FF6B5A;
+  --sf:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif;
+}
+/* ══ CABER SEM ROLAR ═══════════════════════════════════════════════════════
+   A tela é desenhada numa PRANCHETA fixa de 1470×950 — é nela que valem todas
+   as coordenadas medidas da referência. Pra caber em qualquer janela eu
+   ENCOLHO a prancheta inteira com transform:scale, em vez de reflowar o
+   layout. Reflow mudaria as posições e jogaria fora a medição.
+   ⚠️ `zoom` faria o mesmo e é mais simples, mas arredonda subpixel e desalinha
+      as bordas de 1px — justamente o rim que eu passei a rodada consertando.
+      `scale` interpola e mantém o rim.
+   ══════════════════════════════════════════════════════════════════════════ */
+html,body{height:100%;width:100%}
+/* ⭐⭐ O PALCO CRESCEU EM 18/09/2026. Ela: *"aumente a tela caixa do sistema,
+   deixe ela maior, aproveitando melhor o espaço dela."*
+   Medido antes: em 1512×950 o painel ocupava 1352×778 e sobravam **86px acima e
+   86px abaixo** — mas a barra de abas só usa **53px** do rodapé. O painel era
+   centralizado na JANELA INTEIRA, então metade da reserva virava margem morta
+   no topo, onde não há nada pra proteger.
+   Agora o body reserva embaixo exatamente o que a barra ocupa (`--barra`,
+   MEDIDO no DOM pelo `ajusta()`), e o centramento do flex passa a centrar o
+   painel no espaço que sobra — que é o espaço de verdade.
+   ⚠️ `box-sizing:border-box` é obrigatório aqui: sem ele o padding soma aos
+   100% de altura e o body passa a rolar. */
+body{font-family:var(--sf);color:#fff;overflow:hidden;letter-spacing:-.01em;
+  box-sizing:border-box;padding-bottom:var(--barra,61px);
+  display:flex;align-items:center;justify-content:center;background:#151109}
+
+/* a foto cobre a JANELA inteira, não a prancheta — senão sobra tarja preta
+   dos lados quando a proporção da janela é diferente da do desenho */
+.foto{position:fixed;inset:0;background:url(fundo.jpg) center/cover no-repeat;z-index:0}
+
+/* ⚠️ A PRANCHETA ERA A TELA INTEIRA (1470×950) e o painel ocupava 1380×794
+   dela — sobravam 90px de largura e 156px de altura de margem morta, e a
+   escala caía por causa de espaço que ninguém vê. Agora a prancheta É o
+   painel: em 1440×772 o fator sobe de 0,813 para 0,912 (+12%) sem mexer em
+   uma coordenada sequer do desenho medido. */
+.prancheta{position:relative;width:1380px;height:794px;flex:none;z-index:1;
+  transform:scale(var(--k,1));transform-origin:center center}
+
+/* ── o painel: x 22–712 → 44–1424 em 2× · y 36–433 → 72–866 ── */
+/* ⚠️ Esta regra foi ESTRAGADA por um regex meu: sumiram inset, border-radius,
+   overflow e z-index, e o painel ficou sem vidro nenhum — o conteúdo flutuava
+   direto sobre a foto. Reescrita à mão. */
+.painel{position:absolute;inset:0;border-radius:56px;overflow:hidden;z-index:1;
+  background:linear-gradient(150deg,rgba(255,255,255,.16),rgba(255,255,255,.07) 55%,rgba(255,255,255,.11));
+  backdrop-filter:blur(34px) saturate(1.35);-webkit-backdrop-filter:blur(34px) saturate(1.35);
+  border:1px solid rgba(255,255,255,.28);
+  box-shadow:0 50px 120px -40px rgba(20,14,6,.55), inset 0 1px 0 rgba(255,255,255,.34)}
+
+/* superfície de vidro reaproveitada por todo card */
+/* ⚠️ AS BORDAS ESTAVAM FRACAS DEMAIS, e foi a régua que pegou: nas 26
+   arestas medidas da referência, a minha tinha força 3.0 onde a dela tem
+   10.7 — posição certa, contraste em 30%. É o rim que faz o vidro da
+   Vision Pro ler como PLACA e não como mancha. Subi o rim e pus a luz
+   interna de topo, que é o que a referência tem em cada card. */
+.vid{background:rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.42);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55), 0 8px 22px -14px rgba(20,14,6,.5);
+  backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2)}
+.vid2{background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.34);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
+
+/* ⚠️ A BARRA LATERAL FOI REMOVIDA — os 7 ícones não faziam nada. Ela ocupava
+   x 24–150 (126px) e o conteúdo começava em 168. Agora tudo começa em 36 e
+   as colunas ficaram 112px mais largas: o espaço virou card, não margem. */
+
+/* ── cabeçalho ── */
+.tit{position:absolute;left:52px;top:26px}
+.tit .a{font-size:21px;font-weight:400;color:rgba(255,255,255,.82);letter-spacing:-.01em}
+.tit .b{font-size:35px;font-weight:700;letter-spacing:-.03em;line-height:1.02;margin-top:-2px}
+
+/* ── card OVERVIEW: x 106–366 → 212–732 · y 97–305 → 194–610
+       menos o offset do painel (44,72) → left 168, top 122 ── */
+/* ⚠️ AQUI EU SAIO DE PROPÓSITO DA GEOMETRIA DA REFERÊNCIA, e é uma troca
+   consciente: o card aprovado foi desenhado a 1040px e cabia num vão de
+   520 — metade. Isso é o que deixava o texto pequeno. Levando o vão a 700,
+   a escala interna vai de .50 para .673 (+35%). Somado ao +12% da prancheta,
+   o texto fica ~51% maior. O preço é a coluna do meio andar pra direita. */
+.over{position:absolute;left:36px;top:122px;width:700px;height:470px;border-radius:34px;
+  padding:22px 24px 20px;display:flex;flex-direction:column}
+.olho{font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.72)}
+.selper{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:14px;
+  color:rgba(255,255,255,.86);background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:7px 14px}
+.overtop{display:flex;align-items:center}
+
+/* a área onde o gráfico virou ANÉIS */
+.palco{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
+  margin:14px 0 0}
+
+/* as pílulas de mês, iguais às Jan…Dec da referência */
+.meses{display:flex;justify-content:space-between;align-items:center;
+  border-top:1px solid rgba(255,255,255,.34);padding-top:13px;margin-top:8px}
+.meses b{font-size:14px;font-weight:500;color:rgba(255,255,255,.78);padding:6px 13px;
+  border-radius:99px;cursor:pointer}
+.meses b.on{background:#fff;color:#1A1A1A;font-weight:600}
+
+/* as três métricas de baixo */
+.tres{display:flex;margin-top:14px;border-top:1px solid rgba(255,255,255,.34);padding-top:14px}
+.tres > div{flex:1;text-align:center;position:relative}
+.tres > div + div:before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:1px;
+  background:rgba(255,255,255,.18)}
+.tres .r{font-size:12.5px;color:rgba(255,255,255,.65)}
+.tres .v{font-size:27px;font-weight:600;letter-spacing:-.03em;margin-top:5px;
+  font-variant-numeric:tabular-nums}
+.tres .s{font-size:12px;color:rgba(255,255,255,.55);margin-top:3px}
+
+/* ── coluna do meio: x 379–499 → 758–998 → left 714 ── */
+.mtopo{position:absolute;left:760px;top:122px;width:180px;height:104px;border-radius:26px;
+  display:flex;align-items:center;gap:14px;padding:0 16px}
+.mtopo .cx{width:54px;height:54px;border-radius:17px;background:rgba(255,255,255,.20);
+  border:1px solid rgba(255,255,255,.28);display:flex;align-items:center;justify-content:center}
+.mtopo .t{font-size:17px;font-weight:600;letter-spacing:-.02em;line-height:1.15}
+
+/* o card azul virou CONTAS A PAGAR, e de vidro como os outros */
+/* ⚠️ MESMO TAMANHO DO "FECHAR CAIXA DE HOJE" (180×104). O card inteiro
+   abre no clique, numa gaveta — era ele em 346px que espremia a letra. */
+.mazul{position:absolute;left:760px;top:246px;width:180px;height:104px;border-radius:26px;
+  padding:0 12px;display:flex;align-items:center;gap:10px;cursor:pointer;
+  transition:background .14s}
+.mazul:hover{background:rgba(255,255,255,.20)}
+
+/* ── coluna direita: x 518–711 → 1036–1422 → left 992 ── */
+/* ⚠️ A coluna media 992+388=1380 e o painel tem 1380: zero folga, e
+   "R$ 26.798" saía cortado na borda. A referência tem a coluna encostada
+   MESMO (x 518–711 de um painel que acaba em 712) — o que não cabia era o
+   meu conteúdo, não a caixa. Recuei 16px e a linha virou duas alturas. */
+/* ⚠️ 264 não comportava o card: com rótulo E hora sob três marcos, cada
+   marco fica com 88px e "em atendimento" não cabe legível. Alarguei pra 380
+   tirando 72 do saldo e 44 do meio — os dois continuam cabendo o conteúdo. */
+.dir{position:absolute;left:964px;top:26px;width:380px;height:742px;
+  border-radius:34px;padding:20px 16px 16px;display:flex;flex-direction:column}
+.dircab{display:flex;align-items:center;gap:11px}
+.dircab .t{font-size:21px;font-weight:600;letter-spacing:-.02em}
+.verall{margin-left:auto;background:#fff;color:#1A1A1A;font-size:11.5px;font-weight:600;
+  border-radius:99px;padding:5px 12px}
+.tog{display:flex;gap:8px;margin-top:16px}
+.tog b{flex:1;text-align:center;font-size:17px;font-weight:600;padding:13px 0;border-radius:22px;
+  border:1px solid rgba(255,255,255,.24);color:rgba(255,255,255,.9);cursor:pointer}
+.tog b.on{background:var(--az);border-color:var(--az);
+  box-shadow:0 10px 24px -10px rgba(48,87,201,.9)}
+
+.li{display:flex;align-items:center;gap:12px;padding:11px 0}
+.li .bo{width:46px;height:46px;border-radius:50%;flex:none;display:flex;
+  align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff}
+.li .m{flex:1;min-width:0}
+.li .n{font-size:16px;font-weight:600;letter-spacing:-.02em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .s{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+.li .v{font-size:15.5px;font-weight:600;font-variant-numeric:tabular-nums;
+  flex:none;width:96px;text-align:right;display:block}
+.li .p{font-size:12px;color:rgba(255,255,255,.6);text-align:right;margin-top:2px}
+
+.mapa{position:absolute;left:0;right:0;bottom:0;height:236px}
+.mapacab{display:flex;align-items:center;gap:9px;font-size:15px;
+  color:rgba(255,255,255,.9);padding-top:14px;border-top:1px solid rgba(255,255,255,.34)}
+.mapacab .ver{margin-left:auto;font-size:12.5px;color:rgba(255,255,255,.7)}
+.quadro{margin-top:12px;height:170px;border-radius:24px;overflow:hidden;position:relative;
+  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.38);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+
+/* ══ FAIXA DE BAIXO ═══════════════════════════════════════════════════════
+   ⚠️ NENHUM CARD ENCOSTA EM OUTRO — e isto era um defeito de verdade antes:
+      os cards de baixo tinham o ícone em `top:-40`, que entrava POR DENTRO do
+      card de cima. Agora o ícone mora dentro do card e a faixa começa 12px
+      abaixo de onde os cards de cima terminam (592 → 604).
+   ⚠️ O card fundido foi aprovado a 592×356. Ele entra numa prancheta própria
+      com scale(.5) → 296×178, que é o tamanho de UM card, como pedido.
+   ══════════════════════════════════════════════════════════════════════════ */
+/* ⚠️ A ALTURA DA FAIXA É REFÉM DO CARD DE SALDO, e isso é um limite duro:
+   o saldo termina em 592 e o painel em 794 → sobram 178px, exatamente o que
+   o card fundido ocupa a scale(.5). Pra ele crescer, o saldo teria que
+   encolher — e foi ele que ela acabou de aprovar nesse tamanho.
+   O que dá pra fazer sem tocar em nada aprovado: alargar a CAIXA dos dois
+   cards pra ocupar os 920px da faixa e centralizar o conteúdo dentro. O
+   desenho não distorce, o vão à direita some, e o texto continua a .5. */
+.baixo{position:absolute;left:36px;top:604px;width:904px;height:178px;display:flex;gap:24px}
+/* ⚠️ O CARD DE AGENDAMENTOS FOI À METADE, e isso cobra caro na letra.
+   Ele tinha 498px (metade dos 1020 da faixa, menos o vão). Agora tem 249.
+   O conteúdo foi desenhado a 592×356 — pra caber em 249 de largura a escala
+   cai de .50 para .42, e o texto encolhe 16%. Está medido no fim do arquivo
+   da sonda; se ficar ilegível, o caminho é redesenhar o card para caixa
+   estreita, não espremer mais o desenho aprovado. */
+.cb{height:178px;border-radius:30px;overflow:hidden;position:relative}
+.cb.meia{flex:0 0 249px}
+
+.cb.vazio{flex:1}
+/* ⚠️ `margin:-89px -148px` era um centro CALCULADO PRA UMA LARGURA SÓ. Quando
+   o card mudou de largura o conteúdo saiu do meio. Centralizar de verdade:
+   canto em 50/50 e o translate desfaz metade da própria caixa, antes da
+   escala — assim vale pra qualquer largura de card. */
+.cbEsc{width:592px;height:356px;position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%) scale(.5);
+  padding:24px 20px 22px;display:flex;flex-direction:column}
+.cbTit{text-align:center;font-size:34px;font-weight:700;letter-spacing:-.025em;line-height:1.1}
+.cbDois{display:flex;flex:1;min-height:0;margin-top:16px}
+.cbLado{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:9px;padding:0 8px}
+.cbLado.cbDir{border-left:2px solid rgba(255,255,255,.18)}
+.cbIc{width:48px;height:48px;border-radius:15px;background:#fff;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 24px -12px rgba(20,14,6,.6)}
+/* ⚠️ line-height 1.1 e não 1: com 1 a caixa fica 58px e a métrica da fonte
+   pede 63 — o número vazava 5px pra fora do próprio elemento. */
+.cbN{font-size:58px;line-height:1.1;font-weight:250;letter-spacing:-.035em;
+  font-variant-numeric:tabular-nums}
+.cbNome{font-size:17px;font-weight:700;text-align:center;line-height:1.25;max-width:180px}
+.cbPc{font-size:14px;color:rgba(255,255,255,.55);white-space:nowrap}
+.cbPe{text-align:center;font-size:14px;color:rgba(255,255,255,.45);margin-top:10px}
+/* o card reservado: vidro e mais nada */
+.cb.vazio{background:rgba(255,255,255,.07);border-style:dashed;
+  border-color:rgba(255,255,255,.24);box-shadow:none}
+
+.num{font-variant-numeric:tabular-nums}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   O CARD "SALDO DISPONÍVEL" APROVADO, dentro do painel.
+   ⚠️ NÃO redesenhei em tamanho menor. O card foi aprovado a 1040×832, que é
+      exatamente 2× o espaço dele aqui (520×416, medido da referência). Então
+      ele entra numa PRANCHETA própria de 1040×832 com scale(.5): o que está
+      no ar é byte a byte o que ela aprovou, sem eu re-afinar fonte por fonte
+      e reintroduzir os transbordos que já foram medidos e consertados.
+   ══════════════════════════════════════════════════════════════════════════ */
+.over{padding:0;overflow:hidden}
+.cardEsc{width:1040px;height:698px;transform:scale(.673);transform-origin:top left;
+  padding:44px 48px 40px;display:flex;flex-direction:column;flex:none}
+.cardEsc .top{display:flex;align-items:flex-start}
+.cardEsc .olho{font-size:26px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.72)}
+.cardEsc .per{margin-left:auto;display:flex;align-items:center;gap:16px;font-size:28px;
+  color:rgba(255,255,255,.88);background:rgba(255,255,255,.14);
+  border:2px solid rgba(255,255,255,.2);border-radius:99px;padding:14px 28px}
+.cardEsc .saldo{margin-top:8px}
+
+.saldo .v{font-size:62px;font-weight:250;letter-spacing:-.04em;line-height:1;
+  font-variant-numeric:tabular-nums}
+.saldo .v .cif{font-size:30px;font-weight:600;color:rgba(255,255,255,.5);margin-right:10px}
+.saldo .s{font-size:20px;color:rgba(255,255,255,.6);margin-top:8px;font-weight:450;line-height:1.35}
+.saldo .s b{color:var(--lima);font-weight:700}
+.fina{font-weight:250;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.palcoA{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;margin-top:24px}
+/* ══ o card SALDO DISPONÍVEL — anéis clicáveis ═══════════════════════════ */
+.aroBt{display:flex;align-items:center;gap:14px;background:none;border:0;padding:10px;
+  border-radius:24px;cursor:pointer;font:inherit;color:inherit;text-align:left;min-width:0;
+  transition:background .14s, transform .12s;position:relative}
+.aroBt:hover{background:rgba(255,255,255,.09)}
+.aroBt:active{transform:scale(.97)}
+.aroBt.grande{flex-direction:column;gap:14px;flex:none;padding:14px}
+/* o + só aparece no toque/hover: a tela não pode virar um mural de botões */
+.mais{position:absolute;right:-2px;bottom:-2px;width:34px;height:34px;border-radius:99px;
+  background:var(--c);color:#141208;font-size:24px;font-weight:700;line-height:32px;
+  text-align:center;opacity:0;transform:scale(.7);transition:opacity .14s, transform .14s;
+  box-shadow:0 6px 16px -6px var(--c)}
+.mais.grandeMais{width:58px;height:58px;font-size:38px;line-height:54px;right:14px;bottom:14px}
+.aroBt:hover .mais{opacity:1;transform:scale(1)}
+.dica{font-size:17px;color:rgba(255,255,255,.5);opacity:0;transition:opacity .14s}
+.aroBt:hover .dica{opacity:1}
+
+/* a gaveta de lançar saída */
+.veu{position:fixed;inset:0;background:rgba(12,10,7,.6);backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);z-index:50;display:none;
+  align-items:center;justify-content:center;padding:34px}
+.veu.on{display:flex}
+.gaveta{width:640px;max-width:94vw;border-radius:44px;padding:30px 30px 24px;
+  /* ⚠️ TRAVA DE ALTURA EM PX, NÃO EM %. Com max-height:100% o navegador não
+     clampava (a gaveta do teclado ia a 851px e vazava 39px pra fora do painel).
+     O véu é maior que o painel — inset:0 pega o palco inteiro, 836 contra 794 —
+     então 100% dele já estoura o painel. 720 é medido: cabe centralizado com
+     folga dos dois lados, e gaveta mais comprida rola por dentro. */
+  max-height:720px;overflow-y:auto;
+  background:rgba(30,27,22,.92);border:2px solid rgba(255,255,255,.2);
+  box-shadow:0 40px 90px -30px rgba(6,5,4,.9), inset 0 2px 0 rgba(255,255,255,.16)}
+.gcab{display:flex;align-items:flex-start;gap:16px;font-size:22px;
+  color:rgba(255,255,255,.62);line-height:1.4}
+.gcab i{width:16px;height:16px;border-radius:5px;flex:none;margin-top:8px}
+.gcab b{color:#fff;font-size:28px;font-weight:700;display:block;margin-top:2px}
+.gx{margin-left:auto;width:52px;height:52px;border-radius:99px;flex:none;border:0;
+  background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);font-size:22px;cursor:pointer}
+.gcampo{display:flex;align-items:baseline;gap:14px;margin-top:16px;padding-bottom:11px;
+  border-bottom:2px solid rgba(255,255,255,.22)}
+.gcampo span{font-size:30px;color:rgba(255,255,255,.5);font-weight:600}
+.gcampo input{flex:1;background:none;border:0;color:#fff;font:inherit;font-size:58px;
+  font-weight:250;letter-spacing:-.04em;font-variant-numeric:tabular-nums;outline:none}
+.gaveta .gContas{margin-top:14px}
+/* ⚠️ O TECLADO ENCOLHEU. Com o seletor de conta obrigatório, a gaveta passou
+   a ser mais alta que a folha e o botão "Lançar saída" caía abaixo da dobra —
+   ela digitava o valor e não via como confirmar. */
+.gtecla{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:13px}
+.gtecla button{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14);
+  color:#fff;font:inherit;font-size:27px;font-weight:500;border-radius:16px;padding:11px 0;
+  cursor:pointer}
+.gtecla button:active{background:rgba(255,255,255,.2)}
+.gok{width:100%;margin-top:14px;border:0;border-radius:20px;padding:17px;font:inherit;
+  font-size:28px;font-weight:700;cursor:pointer}
+
+
+/* ── as três bolinhas de "onde cada real está" ── */
+/* ⚠️ EMPILHAR AS CONTAS ABAIXO DO SALDO FOI TENTADO E MEDIDO: a faixa passou de
+   116px pra 223px na tela e o `.palcoA` caiu de 230 pra 123 — os anéis
+   Operacional e Imposto saíram 88px pra fora da borda de baixo. A altura aqui é
+   o recurso escasso, não a largura.
+   O que cabe: continuar lado a lado, mas com a coluna das contas ficando com a
+   maior parte da linha (600 dos 944) e os cards deitados em 2×2. Cada card sai
+   de 112px pra ~295px de desenho — na tela, de 74px pra ~195px. */
+.cabSaldo{display:flex;align-items:flex-start;gap:18px}
+/* ⚠️ O SALDO CEDEU LARGURA, NÃO A ALTURA. Ele ocupava metade da linha e sobrava
+   450px pros quatro cards; agora fica em 260 e as contas ficam com 664. A
+   altura da faixa não muda — e é ela, não a largura, que o `.palcoA` disputa. */
+.cabSaldo .saldo{flex:none;width:260px;min-width:0}
+/* ══ OS CARDS DAS CONTAS — "AUMENTE O TAMANHO, ESTÁ ILEGÍVEL" (ela, 16/09) ══
+   ⚠️ A CAUSA NÃO ERA O CSS PARECER PEQUENO: este card é desenhado em 1040px e
+   entregue por `transform:scale(.673)`. Tudo aqui dentro chega à tela com 2/3
+   do tamanho escrito. O `.onP` tinha 9px no desenho — **6px na tela**. Medido.
+   Então os tamanhos abaixo são os do DESENHO; divida por 1,5 pra saber o que
+   ela enxerga.
+
+   ⚠️ E EM FILA DE 4 NÃO CABE. Eram 112px de largura pra um valor de 6 dígitos:
+   as linhas de detalhe estouravam e colavam umas nas outras — "processando" e
+   "custo operacional" apareciam grudados. Virou 2×2, com a bolinha do lado do
+   texto: o card fica MAIS LARGO sem ficar mais alto, que é o que o espaço
+   vertical daqui permite. */
+/* ⚠️ 2×2 FOI TENTADO E REPROVADO NA MEDIÇÃO: a grade dobrou de altura, comeu o
+   `.palcoA` e os anéis Operacional e Imposto saíram cortados pela borda de
+   baixo do card — e ainda por cima a grade passou por cima do número do saldo.
+   A forma que cabe é uma FILA DE 4 abaixo do saldo, com o card deitado: ela
+   custa ~40px de altura em vez de ~130, e mesmo assim dobra a largura de cada
+   card (74px → 155px na tela). */
+.ondes{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex:1;min-width:0;
+  padding-top:2px}
+/* ⚠️ A BOLINHA VOLTOU PRA CIMA DO TEXTO. Deitada, ela comia 56 dos 143px úteis
+   e "R$ 2.474,90" não cabia em nenhum tamanho legível. Empilhada, a largura
+   inteira do card é do número. */
+.onde{border:0;font:inherit;color:inherit;cursor:pointer;text-align:center;min-width:0;
+  display:flex;flex-direction:column;align-items:center;gap:3px;width:100%;
+  padding:9px 8px 10px;background:rgba(255,255,255,.09);border-radius:18px;
+  transition:transform .12s, background .12s}
+.onde:hover{background:rgba(255,255,255,.14)}
+.onde:active{transform:scale(.97)}
+/* o texto vira uma coluna que pode encolher sem empurrar a bolinha */
+.onde .onTx{min-width:0;width:100%;display:flex;flex-direction:column;gap:1px;align-items:center}
+/* ⚠️ as bolinhas eram só CONTORNO colorido sobre vidro; agora são PREENCHIDAS
+   na cor da marca. O texto de dentro passou a branco puro — sobre roxo do
+   Nubank e verde do Sicredi, branco é o único que mantém contraste. */
+.bola{width:40px;height:40px;flex:none;border-radius:99px;display:flex;align-items:center;
+  justify-content:center;background:var(--c);
+  border:2px solid rgba(255,255,255,.34);
+  box-shadow:0 8px 22px -8px var(--c), inset 0 2px 0 rgba(255,255,255,.3)}
+.bola b.ini{font-size:20px;font-weight:700;color:#fff}
+.bola b.tra{color:rgba(255,255,255,.85)}
+.bola b{white-space:nowrap}
+.bola b em{font-style:normal;font-size:17px;opacity:.7}
+.bola b.tra{font-size:30px;color:rgba(255,255,255,.4);font-weight:300}
+/* na tela: 13px · 17px · 11px — depois do scale(.673) deste card */
+.onde .onN{font-size:19px;font-weight:700;color:#fff;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.onde .onV{font-size:24px;color:#fff;white-space:nowrap;line-height:1.2}
+/* ⚠️ AS LINHAS DE DETALHE PODEM QUEBRAR. Com `nowrap` elas estouravam o card e
+   iam por cima da vizinha — foi assim que "processando" colou em "custo
+   operacional". Quebrar é feio uma vez; colar é ilegível sempre. */
+.onde .onP{font-size:14px;color:rgba(255,255,255,.45);letter-spacing:.03em;
+  line-height:1.3;white-space:normal}
+
+
+/* ══ AGENDAMENTOS DO DIA — desenhado NATIVO em 249×178 ═══════════════════
+   ⚠️ Antes o conteúdo era um desenho de 592×356 espremido por scale(.42), e
+      o nome do canal saía a 6,6px na tela — ilegível. Agora cada tamanho é
+      escolhido pra caber de pé: o orçamento vertical são 154px (178 menos o
+      recuo), e ele fecha em 152.
+   ⚠️ "A Lailla, no WhatsApp" virou "WhatsApp": nesta largura o nome por
+      extenso obriga a fonte a cair abaixo do legível. O ícone carrega o
+      resto do sentido, e o card inteiro já diz "agendamentos do dia". */
+.cb.meia{flex:0 0 249px;padding:12px 12px 10px;display:flex;flex-direction:column}
+.agTit{font-size:16px;font-weight:700;letter-spacing:-.02em;text-align:center;line-height:1.15}
+.agDois{display:flex;flex:1;min-height:0;margin-top:8px}
+.agLado{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.agLado.agDir{border-left:1px solid rgba(255,255,255,.20)}
+.agIc{width:24px;height:24px;border-radius:8px;background:#fff;flex:none;
+  display:flex;align-items:center;justify-content:center}
+.agIc svg{width:14px;height:14px}
+.agN{font-size:42px;line-height:1.05;font-weight:250;letter-spacing:-.035em;
+  font-variant-numeric:tabular-nums}
+.agNome{font-size:15px;font-weight:700;line-height:1.2}
+.agPc{font-size:12px;color:rgba(255,255,255,.6);font-variant-numeric:tabular-nums}
+.agPe{text-align:center;font-size:10.5px;color:rgba(255,255,255,.48);margin-top:6px}
+
+
+/* ══ SEU SALÃO AGORA — nativo em 380×742 ═══════════════════════════════════ */
+.saTit{font-size:23px;font-weight:700;letter-spacing:-.03em;line-height:1.05}
+.saSub{font-size:12.5px;color:rgba(255,255,255,.6);margin-top:5px}
+.saSub b{color:#fff;font-weight:700}
+.saRolo{flex:1;min-height:0;overflow-y:auto;margin-top:14px;padding-right:6px;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.3) transparent}
+.saRolo::-webkit-scrollbar{width:6px}
+.saRolo::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:99px}
+.saLst{display:flex;flex-direction:column;gap:8px}
+.saCli{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);
+  border-left:4px solid var(--c);border-radius:14px;padding:10px 12px 12px}
+.saCli.falt{opacity:.82;cursor:pointer;transition:background .14s, opacity .14s}
+.saCli.falt:hover{background:rgba(255,90,60,.16);opacity:1}
+.saCli.viva{background:rgba(255,165,31,.12);border-color:rgba(255,165,31,.34)}
+.saCab{display:flex;align-items:flex-start;gap:8px}
+.saH{font-size:13px;font-weight:700;color:rgba(255,255,255,.75);flex:none;line-height:1.25}
+/* ⚠️ O NOME PODE QUEBRAR EM DUAS LINHAS. Estava com reticências e a sonda
+   pegou "Laurianna Vasco de Oliveir…" — faltavam 14px. Encolher a fonte
+   resolveria hoje e voltaria a falhar no primeiro nome mais comprido; este
+   card existe pra ela bater o olho e saber QUEM falta, então nome cortado é
+   justamente o que ele não pode fazer. A linha a mais some na rolagem. */
+.saN{font-size:13px;font-weight:600;flex:1;min-width:0;line-height:1.25;
+  overflow-wrap:anywhere}
+.saTag{font-size:9.5px;font-weight:700;color:#141208;background:#FF5A3C;
+  border-radius:99px;padding:3px 8px;flex:none}
+.saZap{width:20px;height:20px;border-radius:99px;background:#22C55E;flex:none;
+  display:flex;align-items:center;justify-content:center}
+.saZap svg{width:12px;height:12px}
+.saTr{display:flex;align-items:flex-start;margin-top:10px}
+.saMk{display:flex;flex-direction:column;align-items:center;gap:4px;flex:none;width:96px}
+.saPt{width:19px;height:19px;border-radius:99px;border:2px solid rgba(255,255,255,.3);
+  display:flex;align-items:center;justify-content:center;color:#141208;
+  font-size:11px;font-weight:800;background:rgba(255,255,255,.06)}
+.saPt.on{background:var(--c);border-color:var(--c)}
+.saPt.on svg{width:10px;height:10px}
+.saPt.x{background:var(--c);border-color:var(--c);color:#fff}
+.saFio{flex:1;height:3px;background:rgba(255,255,255,.18);border-radius:99px;margin-top:8px}
+.saFio.on{background:var(--c)}
+.saR{font-style:normal;font-size:9.5px;color:rgba(255,255,255,.55);white-space:nowrap}
+.saT{font-style:normal;font-size:11.5px;font-weight:700;color:#fff;margin-top:-2px}
+.saPe{flex:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);
+  font-size:12.5px;color:rgba(255,255,255,.6);display:flex;justify-content:space-between;
+  align-items:baseline}
+.saPe b{color:#22E07A;font-size:16px;font-weight:600}
+
+/* ══ o card do resto: como entrou + a conferência ══ */
+.cb.resto{flex:1;padding:14px 16px;display:flex;flex-direction:column}
+.reCab{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.reTit{font-size:15px;font-weight:700}
+.reAviso{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:#FFB86B;
+  background:rgba(255,184,107,.12);border:1px solid rgba(255,184,107,.3);
+  border-radius:99px;padding:5px 11px}
+.reAviso svg{width:14px;height:14px}
+.reLin{display:flex;gap:8px;margin-top:12px;flex:1}
+.reF{flex:1;background:rgba(255,255,255,.07);border-radius:12px;padding:9px 10px;
+  display:flex;flex-direction:column;gap:2px;min-width:0;position:relative}
+.reF i{width:22px;height:3px;border-radius:99px;display:block;margin-bottom:4px}
+.reF b{font-size:15px;font-weight:600;white-space:nowrap}
+.reF span{font-size:11px;color:rgba(255,255,255,.6);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.reF em{font-style:normal;font-size:10.5px;color:rgba(255,255,255,.42)}
+
+
+/* ══ MÊS A MÊS — nativo em 631×178 ═══════════════════════════════════════ */
+.cb.resto{flex:1;padding:12px 14px 10px;display:flex;flex-direction:column}
+.mzLer{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex:none}
+.mzMes{font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1.05}
+.mzMes.vazio{color:rgba(255,255,255,.72)}
+.mzMg.vazio{color:rgba(255,255,255,.45)}
+.mzMg{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
+.mzMg b{color:#fff;font-weight:700;font-size:13px}
+.mzMg span{color:#fff;font-weight:700;margin-left:5px}
+.mzNs{display:flex;gap:16px}
+.mzN{text-align:right;display:flex;flex-direction:column;gap:0}
+.mzN em{font-style:normal;font-size:9.5px;color:rgba(255,255,255,.55);
+  display:flex;align-items:center;justify-content:flex-end;gap:5px;white-space:nowrap}
+.mzN em i{width:11px;height:3px;border-radius:99px;flex:none}
+.mzN b{font-size:15px;font-weight:600;color:#fff;white-space:nowrap;line-height:1.25}
+.mzN span{font-size:9.5px;font-weight:700;color:#fff}
+.mzG{position:relative;flex:1;min-height:0;padding:0 0 15px 26px;margin-top:6px}
+.mzGrade{position:absolute;left:26px;right:0;height:1px;background:rgba(255,255,255,.11)}
+.mzIn{display:flex;height:100%;gap:8px}
+.mzM{flex:1;position:relative;display:flex;align-items:flex-end;padding-bottom:15px}
+.mzZ{position:absolute;inset:0;border-radius:8px;cursor:pointer;transition:background .12s}
+.mzZ.on{background:rgba(255,255,255,.09)}
+.mzB{display:flex;align-items:flex-end;justify-content:center;gap:5px;width:100%;height:100%;
+  position:relative;z-index:1;pointer-events:none}
+.mzB i{width:22px;border-radius:4px 4px 2px 2px;display:block;min-height:3px}
+.mzX{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:9.5px;
+  letter-spacing:.1em;font-weight:700;color:rgba(255,255,255,.55)}
+.mzY{position:absolute;left:0;top:-4px;bottom:15px;width:22px;display:flex;flex-direction:column;
+  justify-content:space-between;font-size:8px;color:rgba(255,255,255,.36);text-align:right}
+
+
+/* ══ TOPO: faturamento e lucro do dia ══════════════════════════════════════
+   Ocupa o vão onde moravam o Buscar (520–770) e o LT (790–850). Como os dois
+   saíram, dá pra usar 520px de largura — e é isso que permite o texto nativo
+   em vez de um desenho de 2× espremido. */
+/* ⚠️ CRESCEU, e o quanto foi ditado pelos vizinhos, não pelo gosto:
+   à direita a coluna "Seu salão agora" começa em 964 → paro em 950 (14 de vão)
+   embaixo o card de saldo começa em 122 → paro em 100 (22 de vão)
+   à esquerda o título acaba por volta de 280 → começo em 380.
+   Dá 570×76, contra os 520×64 de antes. */
+.hoje{position:absolute;left:380px;top:24px;width:570px;height:76px;border-radius:99px;
+  display:flex;align-items:center;gap:18px;padding:0 14px 0 30px}
+.hjL{flex:1;display:flex;flex-direction:column;gap:0;min-width:0}
+.hjL em{font-style:normal;font-size:12.5px;color:rgba(255,255,255,.62);white-space:nowrap}
+.hjL b{font-size:26px;line-height:1.15;white-space:nowrap;color:#fff;
+  font-weight:250;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.hjC{font-size:.5em;font-weight:600;color:rgba(255,255,255,.5);margin-right:.16em;letter-spacing:0}
+.hjFio{width:1px;align-self:stretch;margin:15px 0;background:rgba(255,255,255,.24);flex:none}
+.hjRot{font-size:11px;line-height:1.25;color:rgba(255,255,255,.55);text-align:right;
+  flex:none;white-space:nowrap}
+.hjAro{position:relative;width:64px;height:64px;flex:none}
+.hjAro svg{width:100%;height:100%}
+.hjAro span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:11.5px;font-weight:600}
+
+/* ══ A CAIXA DE PERÍODO DA PÍLULA (ela, 23/10/2026) ══════════════════════
+   ⚠️ A LARGURA SAIU DE MEDIÇÃO, não de gosto: o texto do título acaba em 211
+   no palco e a pílula começa em 380 — 169px de vão. Começo em 228 e paro em
+   370, deixando 17px de um lado e 10 do outro. Mais larga encosta na pílula;
+   mais estreita corta "Últimos 7 dias".
+   ⚠️ A ALTURA É 36 E O TOPO É 44: assim o centro dela (62) é o mesmo centro
+   da pílula (24 + 76/2 = 62). Alinhar pelo topo deixava as duas tortas. */
+.hjPer{position:absolute;left:224px;top:44px;width:148px;height:36px;
+  border-radius:99px;display:flex;align-items:center;gap:6px;padding:0 10px}
+.hjPerIco{flex:none;color:rgba(255,255,255,.5)}
+/* ⚠️ `appearance:none` + seta própria: o <select> nativo vem branco opaco e
+   sobre o vidro escuro lia como campo quebrado. */
+.hjPerSel{flex:1;min-width:0;appearance:none;-webkit-appearance:none;
+  font-family:inherit;font-size:12px;font-weight:600;color:#fff;cursor:pointer;
+  background:transparent;border:0;outline:none;padding:4px 15px 4px 0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'><path d='m6 9 6 6 6-6'/></svg>");
+  background-repeat:no-repeat;background-position:right center}
+.hjPerSel option{color:#111;background:#fff}
+/* as duas datas descem POR CIMA do que vier embaixo: o vão entre a pílula
+   (acaba em 100) e o card de saldo (começa em 122) tem 22px — não cabe no
+   fluxo, e empurrar o card seria mexer num layout que ela não pediu. */
+.hjPerDatas{position:absolute;top:calc(100% + 7px);left:0;z-index:40;
+  display:flex;align-items:center;gap:6px;padding:9px 11px;border-radius:14px;
+  background:rgba(22,26,32,.94);border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.hjPerData{font-family:inherit;font-size:11.5px;color:#fff;cursor:pointer;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
+  border-radius:8px;padding:5px 7px;color-scheme:dark}
+.hjPerAte{font-size:10.5px;color:rgba(255,255,255,.5)}
+
+
+/* ══ CONTAS A PAGAR — nativo em 180×346 ══════════════════════════════════ */
+.ctTop{display:flex;align-items:center;gap:7px;flex:none}
+.ctEl{flex:none;margin:-4px -2px -4px -3px;line-height:0}
+.ctTit{flex:1;min-width:0;font-size:14px;font-weight:700;letter-spacing:-.02em;line-height:1.12}
+.ctAdd{width:26px;height:26px;border-radius:99px;flex:none;border:0;cursor:pointer;
+  background:#C7F636;color:#1B2408;font:inherit;font-size:17px;font-weight:700;line-height:23px;
+  box-shadow:0 5px 12px -5px rgba(199,246,54,.9)}
+.ctAro{position:relative;width:92px;height:92px;margin:8px auto 0;flex:none}
+.ctAro svg{width:100%;height:100%}
+.ctAro span{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:1px}
+.ctAro em{font-style:normal;font-size:7.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:rgba(255,255,255,.55)}
+.ctAro b{font-size:20px}
+.ctAro b small{font-size:10px;font-weight:600;color:rgba(255,255,255,.5);margin-right:3px}
+.ctSub{text-align:center;font-size:9.5px;color:rgba(255,255,255,.6);margin-top:6px;
+  line-height:1.35;flex:none}
+.ctSub b{color:#fff;font-weight:700}
+.ctPg{text-align:center;font-size:9.5px;color:rgba(255,255,255,.55);margin-top:2px;flex:none}
+.ctPg b{color:#C7F636;font-weight:700}
+.ctRolo{flex:1;min-height:0;overflow-y:auto;margin-top:8px;padding-right:4px;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.28) transparent}
+.ctRolo::-webkit-scrollbar{width:4px}
+.ctRolo::-webkit-scrollbar-thumb{background:rgba(255,255,255,.28);border-radius:99px}
+.ctL{display:flex;align-items:center;gap:6px;font-size:10.5px;padding:5px 0;cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,.11)}
+.ctL:hover{opacity:.75}
+.ctCk{width:13px;height:13px;border-radius:99px;flex:none;border:1.5px solid rgba(255,255,255,.28);
+  display:flex;align-items:center;justify-content:center;color:#1B2408}
+.ctCk svg{width:8px;height:8px}
+.ctL.pago .ctCk{background:#C7F636;border-color:#C7F636}
+.ctL.pago .ctN,.ctL.pago .ctV{color:rgba(255,255,255,.4);text-decoration:line-through}
+.ctD{width:15px;flex:none;color:rgba(255,255,255,.5);font-size:9.5px}
+.ctN{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctV{flex:none;font-weight:600}
+.ctVazio{text-align:center;font-size:10.5px;color:rgba(255,255,255,.45);line-height:1.6;
+  padding:16px 0}
+.ctVazio b{color:#C7F636}
+.ctNova{flex:none;margin-top:8px;width:100%;border:1px dashed rgba(255,255,255,.3);
+  background:none;color:rgba(255,255,255,.7);font:inherit;font-size:10.5px;font-weight:600;
+  border-radius:11px;padding:7px;cursor:pointer}
+.ctNova:hover{background:rgba(255,255,255,.08)}
+
+
+/* ── contas a pagar, compacto ── */
+.ctEl{flex:none;line-height:0}
+.ctMid{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ctTit{font-size:14px;font-weight:700;letter-spacing:-.02em;line-height:1.12}
+/* ⚠️ DUAS VOLTAS AQUI. Primeiro "R$ 419 CUSTO DIÁRIO" saía tudo numa linha
+   e ficava apertado. Pus em coluna — e aí o `<small>R$</small>` virou uma
+   TERCEIRA linha, porque flex-column quebra todo filho. Agora o valor é um
+   <b> (uma linha só, com o R$ dentro) e o rótulo é o irmão de baixo. */
+.ctVal{display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+.ctVal b{font-size:19px;line-height:1.05;white-space:nowrap;font-weight:250;
+  letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.ctVal small{font-size:10px;font-weight:600;color:rgba(255,255,255,.5);margin-right:2px}
+.ctVal em{font-style:normal;font-size:8px;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(255,255,255,.5)}
+.ctBadge{position:absolute;top:10px;right:10px;min-width:19px;height:19px;border-radius:99px;
+  background:#FF5A3C;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;
+  justify-content:center;padding:0 5px}
+
+/* ── a gaveta com o card inteiro ── */
+.ctVeu{position:fixed;inset:0;background:rgba(12,10,7,.62);z-index:60;display:none;
+  align-items:center;justify-content:center;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ctVeu.on{display:flex}
+.ctCheio{width:360px;height:660px;border-radius:44px;padding:22px 20px 18px;
+  display:flex;flex-direction:column;
+  background:rgba(38,36,33,.92);border:2px solid rgba(255,255,255,.28);
+  box-shadow:0 40px 90px -30px rgba(6,5,4,.9), inset 0 2px 0 rgba(255,255,255,.2)}
+.ctCheio .ctTop{margin-bottom:2px}
+.ctCheio .ctTit{font-size:20px}
+.ctCheio .ctAdd{width:36px;height:36px;font-size:23px;line-height:32px}
+.ctCheio .ctAro{width:140px;height:140px;margin-top:14px}
+.ctCheio .ctAro em{font-size:10px}
+.ctCheio .ctAro b{font-size:30px}
+.ctCheio .ctAro b small{font-size:15px}
+.ctCheio .ctSub{font-size:13px;margin-top:10px}
+.ctCheio .ctPg{font-size:12.5px;margin-top:4px}
+.ctCheio .ctL{font-size:14px;padding:8px 0;gap:9px}
+.ctCheio .ctCk{width:18px;height:18px}
+.ctCheio .ctCk svg{width:10px;height:10px}
+.ctCheio .ctD{width:21px;font-size:12.5px}
+.ctCheio .ctNova{font-size:13.5px;padding:11px;border-radius:15px}
+.ctCheio .ctVazio{font-size:14px;padding:26px 0}
+
+/* ── COMO ENTROU, de volta ── */
+.entrou{position:absolute;left:760px;top:374px;width:180px;height:218px;border-radius:26px;
+  padding:11px 12px;display:flex;flex-direction:column}
+.enTit{font-size:13px;font-weight:700;display:flex;align-items:baseline;justify-content:space-between}
+.enMes{font-size:9.5px;font-weight:500;color:rgba(255,255,255,.5)}
+.enL{flex:1;min-height:0;margin-top:7px;display:flex;flex-direction:column;justify-content:space-evenly}
+.enF{display:flex;align-items:center;gap:6px;font-size:10px}
+.enF i{width:9px;height:3px;border-radius:99px;flex:none}
+.enF span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  color:rgba(255,255,255,.72)}
+.enF b{font-weight:600;flex:none}
+.enF em{font-style:normal;color:rgba(255,255,255,.42);width:30px;text-align:right;flex:none}
+.enAv{display:flex;align-items:flex-start;gap:6px;font-size:9px;color:#FFB86B;
+  background:rgba(255,184,107,.10);border:1px solid rgba(255,184,107,.26);
+  border-radius:10px;padding:6px 8px;margin-top:7px;line-height:1.35}
+.enAv svg{width:12px;height:12px;flex:none;margin-top:1px}
+.enAv b{font-weight:700}
+
+
+/* ══ META DO MÊS — compacto (180×218) ═════════════════════════════════════
+   ⚠️ SÓ TRÊS INFORMAÇÕES, a pedido dela: a meta, quanto isso é sobre o mês
+      anterior, e quantos dias faltam. O resto — se estamos no caminho — mora
+      na gaveta que abre no clique. */
+.entrou.meta{cursor:pointer;transition:background .14s;align-items:center;
+  justify-content:space-between}
+.entrou.meta:hover{background:rgba(255,255,255,.20)}
+.mtTop{display:flex;align-items:center;justify-content:space-between;width:100%;flex:none}
+.mtTit{font-size:13px;font-weight:700;letter-spacing:-.02em}
+.mtSeta{font-size:17px;color:rgba(255,255,255,.45);line-height:1}
+.mtAro{position:relative;width:104px;height:104px;margin:4px auto 0;flex:none}
+.mtAro svg{width:100%;height:100%}
+.mtAro span{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:1px}
+.mtAro em{font-style:normal;font-size:8px;letter-spacing:.11em;text-transform:uppercase;
+  color:rgba(255,255,255,.55)}
+.mtAro b{font-size:26px;white-space:nowrap}
+.mtAro b small{font-size:10px;font-weight:600;color:rgba(255,255,255,.5);margin-right:3px}
+/* ⚠️ o VALOR DA META desceu pra cá — dentro do anel ficou só quanto já foi
+   atingido, que é o que muda todo dia. */
+.mtValor{width:100%;text-align:center;font-size:17px;font-weight:600;margin-top:4px;
+  white-space:nowrap;flex:none}
+.mtValor small{font-size:10px;font-weight:600;color:rgba(255,255,255,.5);margin-right:3px}
+.mtValor em{font-style:normal;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.5);display:block;margin-bottom:1px}
+.mtPe{display:flex;align-items:center;justify-content:space-between;width:100%;flex:none;
+  gap:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.18)}
+.mtPc{font-size:14px;font-weight:700;color:#C7F636;white-space:nowrap}
+.mtPc em{font-style:normal;font-size:9.5px;font-weight:500;color:rgba(255,255,255,.55)}
+.mtDias{font-size:9.5px;color:rgba(255,255,255,.55);white-space:nowrap;text-align:right}
+.mtDias b{font-size:15px;font-weight:700;color:#fff}
+
+/* ── a gaveta: estamos no caminho? ── */
+.mtVeu{position:fixed;inset:0;background:rgba(12,10,7,.62);z-index:60;display:none;
+  align-items:center;justify-content:center;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.mtVeu.on{display:flex}
+.mtCheio{width:400px;border-radius:40px;padding:24px;
+  background:rgba(38,36,33,.94);border:2px solid rgba(255,255,255,.28);
+  box-shadow:0 40px 90px -30px rgba(6,5,4,.9), inset 0 2px 0 rgba(255,255,255,.2)}
+.mcTop{display:flex;align-items:center;justify-content:space-between}
+.mcTit{font-size:20px;font-weight:700;letter-spacing:-.02em}
+.mcX{width:32px;height:32px;border-radius:99px;border:0;cursor:pointer;
+  background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);font:inherit;font-size:15px}
+.mcAlvo{margin-top:14px}
+.mcAlvo em{font-style:normal;font-size:12.5px;color:rgba(255,255,255,.55);display:block}
+.mcAlvo b{font-size:38px;line-height:1.1;display:block;margin-top:3px}
+.mcAlvo b small{font-size:18px;font-weight:600;color:rgba(255,255,255,.5);margin-right:5px}
+.mcVer{border-radius:18px;padding:13px 15px;margin-top:16px;font-size:13px;line-height:1.5}
+.mcVer b{font-weight:700}
+.mcVer span{display:block;margin-top:4px}
+.mcVer.bom{background:rgba(34,224,122,.13);border:1px solid rgba(34,224,122,.32);color:#9FF3C4}
+.mcVer.bom b{color:#22E07A}
+.mcVer.ruim{background:rgba(255,90,60,.13);border:1px solid rgba(255,90,60,.32);color:#FFB5A3}
+.mcVer.ruim b{color:#fff}
+.mcVer.ruim > b{color:#FF7A5C;font-size:15px}
+.mcL{display:flex;align-items:baseline;gap:10px;padding:11px 0;
+  border-bottom:1px solid rgba(255,255,255,.14);font-size:13px}
+.mcL em{font-style:normal;flex:1;color:rgba(255,255,255,.6)}
+.mcL b{font-size:17px;font-weight:600}
+.mcL span{font-size:12px;color:rgba(255,255,255,.45);width:88px;text-align:right}
+.mcR{display:flex;gap:10px;margin-top:14px}
+.mcRi{flex:1;background:rgba(255,255,255,.08);border-radius:14px;padding:10px 11px}
+.mcRi em{font-style:normal;font-size:11px;color:rgba(255,255,255,.55);display:block;
+  white-space:nowrap}
+.mcRi b{font-size:17px;font-weight:600;display:block;margin-top:2px}
+.mcRi b.ruimT{color:#FF7A5C}
+.mcAv{font-size:12.5px;color:rgba(255,255,255,.6);line-height:1.5;margin-top:14px;
+  padding-top:12px;border-top:1px solid rgba(255,255,255,.16)}
+.mcAv b{color:#fff;font-weight:700}
+
+
+/* ══ o extrato de cada conta ══════════════════════════════════════════════ */
+/* ⚠️ AQUI EU TINHA ESCRITO `.lt-mod, .gaveta{max-height:none}`. Era o remendo
+   de quando o véu vivia dentro do card: sem a trava, o extrato comprido pelo
+   menos aparecia. Só que ele derrubava a trava de TODAS as gavetas — e a do
+   teclado ia a 850px e vazava 39px pra fora do painel, sem eu ver.
+   O véu agora é irmão do painel e a trava voltou pro .gaveta (720px, rolando
+   por dentro). Este seletor não pode ressuscitar. */
+.lt-mod{max-height:none}
+.exBloco{margin-top:22px}
+.exCab{display:flex;align-items:baseline;gap:12px;font-size:20px;font-weight:700;
+  padding-bottom:9px;border-bottom:1.5px solid rgba(255,255,255,.22)}
+.exCab b{margin-left:auto;font-size:22px}
+.exCab b.ent{color:#22E07A} .exCab b.sai{color:#FF7A5C}
+.exCab b.nada{color:rgba(255,255,255,.4);font-size:17px;font-weight:500;font-style:italic}
+.exCab em{font-style:normal;font-size:14px;color:rgba(255,255,255,.45);
+  background:rgba(255,255,255,.1);border-radius:99px;padding:2px 9px}
+.exLista{max-height:300px;overflow-y:auto;margin-top:4px;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.28) transparent}
+.exLista::-webkit-scrollbar{width:6px}
+.exLista::-webkit-scrollbar-thumb{background:rgba(255,255,255,.28);border-radius:99px}
+.exL{display:flex;align-items:baseline;gap:12px;padding:9px 0;font-size:16px;
+  border-bottom:1px solid rgba(255,255,255,.09)}
+.exD{flex:none;width:92px;color:rgba(255,255,255,.6);font-variant-numeric:tabular-nums}
+.exD em{font-style:normal;font-size:13px;color:rgba(255,255,255,.4)}
+.exN{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exF{flex:none;font-size:13px;color:rgba(255,255,255,.45)}
+.exV{flex:none;width:110px;text-align:right;font-weight:700;
+  font-variant-numeric:tabular-nums}
+.exV.ent{color:#22E07A} .exV.sai{color:#FF7A5C}
+.exNada{font-size:15px;color:rgba(255,255,255,.45);padding:16px 0;line-height:1.5}
+.exTot{display:flex;align-items:baseline;justify-content:space-between;margin-top:22px;
+  padding-top:16px;border-top:2px solid rgba(255,255,255,.26);font-size:18px;
+  color:rgba(255,255,255,.65)}
+.exTot b{font-size:30px;font-weight:600;color:#fff}
+.exVazio{margin-top:24px;display:flex;flex-direction:column;gap:14px}
+.exVazio > b{font-size:44px;font-weight:250;letter-spacing:-.03em}
+.exVazio span{font-size:17px;color:rgba(255,255,255,.65);line-height:1.55}
+.exVazio span b{color:#fff}
+.exAlerta{color:#FFB86B!important;background:rgba(255,184,107,.10);
+  border:1px solid rgba(255,184,107,.28);border-radius:14px;padding:12px 14px}
+
+
+/* ── conta sem saldo informado ── */
+.onde.semSaldo .bola{opacity:.55;background:repeating-linear-gradient(135deg,
+  var(--c) 0 7px, rgba(255,255,255,.14) 7px 14px)}
+.onde.semSaldo .onV{color:#FFB86B;font-size:15px;font-style:italic}
+.onde.semSaldo .onP{color:rgba(255,184,107,.7)}
+.exSaldo{margin-top:22px;padding-bottom:18px;border-bottom:1.5px solid rgba(255,255,255,.2)}
+.exSaldo em{font-style:normal;font-size:13px;letter-spacing:.11em;text-transform:uppercase;
+  color:rgba(255,255,255,.55);display:block}
+.exSaldo b{font-size:44px;display:block;margin-top:4px}
+.exSaldo > span{font-size:15px;color:rgba(255,255,255,.5);display:block;margin-top:4px}
+.exInf{margin-top:14px;width:100%;border:0;border-radius:16px;padding:14px;cursor:pointer;
+  background:#FFB86B;color:#3A2508;font:inherit;font-size:16px;font-weight:700}
+/* ── o seletor de conta ao dar saída ── */
+.gContas{margin-top:22px}
+.gContas em{font-style:normal;font-size:15px;color:rgba(255,255,255,.6);display:block;
+  margin-bottom:10px}
+.gCl{display:flex;gap:9px}
+.gConta{flex:1;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.14);
+  border-radius:16px;padding:11px 8px;cursor:pointer;font:inherit;color:#fff;
+  display:flex;flex-direction:column;align-items:center;gap:4px;font-size:14px;font-weight:600}
+.gConta i{width:14px;height:14px;border-radius:99px;background:var(--c);display:block}
+.gConta b{font-size:13px;font-weight:600;color:rgba(255,255,255,.6)}
+.gConta.on{border-color:var(--c);background:rgba(255,255,255,.16)}
+.gConta.on b{color:#fff}
+
+
+/* ══ a gaveta do estoque ══════════════════════════════════════════════════ */
+/* ⚠️ o <br> depois de um <b> display:block abria um buraco de linha inteira */
+.gcab .gsub{display:block;width:auto;height:auto;border-radius:0;margin-top:3px;
+  font-style:normal;font-size:16px;color:rgba(255,255,255,.5)}
+.esTopo{margin-top:22px;padding-bottom:18px;border-bottom:1.5px solid rgba(255,255,255,.2)}
+.esTopo em{font-style:normal;font-size:13px;letter-spacing:.11em;text-transform:uppercase;
+  color:rgba(255,255,255,.55);display:block}
+.esTopo b{font-size:44px;display:block;margin-top:4px}
+.esTopo span{font-size:15px;color:rgba(255,255,255,.55);display:block;margin-top:4px}
+.esTopo span b{display:inline;font-size:15px;color:#fff;font-weight:700}
+.esLista{margin-top:6px}
+.esL{display:flex;align-items:center;gap:13px;padding:13px 0;
+  border-bottom:1px solid rgba(255,255,255,.10)}
+.esL:last-child{border-bottom:none}
+.esPt{width:11px;height:11px;border-radius:4px;flex:none}
+.esN{flex:1;min-width:0;font-size:17px;font-weight:600}
+.esN em{display:block;font-style:normal;font-size:12.5px;font-weight:400;
+  color:rgba(255,255,255,.5);margin-top:1px}
+.esM{flex:none;text-align:right}
+.esM b{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+.esM em{display:block;font-style:normal;font-size:11.5px;color:rgba(255,255,255,.42);
+  font-variant-numeric:tabular-nums;margin-top:1px}
+.esBt{flex:none;border:1px solid rgba(255,255,255,.24);background:rgba(255,255,255,.08);
+  color:rgba(255,255,255,.82);font:inherit;font-size:12.5px;font-weight:600;
+  border-radius:11px;padding:7px 11px;cursor:pointer}
+.esBt:hover{background:rgba(255,255,255,.16)}
+.esPe{margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.18);
+  font-size:13px;color:rgba(255,255,255,.6);line-height:1.5}
+.esPe b{color:#fff;font-weight:700}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   A FOLHA BRANCA — os cards que ABREM (gaveta de saída, extrato, estoque,
+   contas a pagar inteiro, meta inteira). Ordem dela, 03/09: menores e de
+   fundo branco.
+
+   ⚠️ NÃO É SÓ TROCAR O FUNDO. Toda a tinta aqui dentro era branca sobre vidro
+      escuro; em branco ela vira invisível. Cada cor abaixo foi recalculada em
+      OKLCH até passar o contraste contra #fff — 3:1 pra marca, 4,5:1 pra
+      texto (medição em _cor.mjs). O neon #C7F636, que é a assinatura do
+      painel, dá 1,26:1 contra branco: aqui dentro ele é #668007.
+   ⚠️ A TINTA SECUNDÁRIA NÃO PODE SER CLARINHA. Eu comecei com .64/.44 de
+      opacidade — o que no vidro escuro era hierarquia, no branco dava 2,87:1
+      e reprovou em 101 pedaços de texto. O piso resolvido: .60 = 4,6:1 e
+      .75 = 6,4:1 (alpha calculado, não escolhido). A hierarquia fica mais
+      sutil do que no escuro; é o preço do fundo branco.
+   ⚠️ VERDE E VERMELHO FORAM RECALCULADOS EM 5,5:1, NÃO 4,5. Eles não caem em
+      branco puro: sentam sobre a tarja tingida do aviso, e ali o 4,5 medido
+      contra #fff virava 3,99 de verdade.
+   ⚠️ O TAMANHO SAI DE `zoom`, não de 60 tamanhos de fonte reescritos à mão.
+      Encolhe a folha inteira na mesma proporção e não mexe em nenhuma medida
+      que eu já tinha batido. A trava de altura continua valendo.
+   ══════════════════════════════════════════════════════════════════════════ */
+.gaveta, .mtCheio, .ctCheio{
+  zoom:.8;
+  background:#fff;
+  border:1px solid rgba(20,22,26,.14);
+  color:#14161A;
+  box-shadow:0 30px 70px -26px rgba(6,5,4,.55), 0 2px 6px rgba(6,5,4,.10);
+}
+.gaveta{--fb-ink2:rgba(20,22,26,.75); --fb-ink3:rgba(20,22,26,.60);
+  --fb-linha:rgba(20,22,26,.12); --fb-linha2:rgba(20,22,26,.20);
+  --fb-ent:#05793E; --fb-sai:#BC3D20; --fb-alerta:#A96808; --fb-lima:#668007}
+.mtCheio, .ctCheio{--fb-ink2:rgba(20,22,26,.75); --fb-ink3:rgba(20,22,26,.60);
+  --fb-linha:rgba(20,22,26,.12); --fb-linha2:rgba(20,22,26,.20);
+  --fb-ent:#05793E; --fb-sai:#BC3D20; --fb-alerta:#A96808; --fb-lima:#668007}
+
+/* os anéis desenhados em SVG: o traço vem por atributo de apresentação, e
+   qualquer regra CSS ganha dele — então não preciso mexer no JS */
+.ctCheio circle[stroke="#C7F636"], .mtCheio circle[stroke="#C7F636"]{stroke:#668007}
+.ctCheio circle[stroke^="rgba(255"], .mtCheio circle[stroke^="rgba(255"]{stroke:rgba(20,22,26,.13)}
+
+/* ── cabeçalho e teclado ── */
+.gaveta .gcab{color:var(--fb-ink2)}
+.gaveta .gcab b{color:#14161A}
+.gaveta .gcab .gsub{color:var(--fb-ink3)}
+.gaveta .gx{background:rgba(20,22,26,.07);color:var(--fb-ink2)}
+.gaveta .gx:hover{background:rgba(20,22,26,.13)}
+.gaveta .gcampo{border-bottom-color:var(--fb-linha2)}
+.gaveta .gcampo span{color:var(--fb-ink3)}
+.gaveta .gcampo input{color:#14161A}
+.gaveta .gtecla button{background:rgba(20,22,26,.05);border-color:var(--fb-linha);color:#14161A}
+.gaveta .gtecla button:active{background:rgba(20,22,26,.13)}
+
+/* ── extrato ── */
+.gaveta .exSaldo{border-bottom-color:var(--fb-linha2)}
+.gaveta .exSaldo em, .gaveta .exSaldo > span{color:var(--fb-ink3)}
+.gaveta .exCab{border-bottom-color:var(--fb-linha2)}
+.gaveta .exCab b.ent{color:var(--fb-ent)}
+.gaveta .exCab b.sai{color:var(--fb-sai)}
+.gaveta .exCab b.nada, .gaveta .exCab em{color:var(--fb-ink3)}
+.gaveta .exLista::-webkit-scrollbar-thumb, .ctCheio .ctRolo::-webkit-scrollbar-thumb{
+  background:rgba(20,22,26,.26)}
+.gaveta .exL{border-bottom-color:var(--fb-linha)}
+.gaveta .exD{color:var(--fb-ink2)}
+.gaveta .exD em, .gaveta .exF, .gaveta .exNada{color:var(--fb-ink3)}
+.gaveta .exV.ent{color:var(--fb-ent)}
+.gaveta .exV.sai{color:var(--fb-sai)}
+.gaveta .exTot{border-top-color:var(--fb-linha2);color:var(--fb-ink2)}
+.gaveta .exTot b{color:#14161A}
+.gaveta .exVazio span{color:var(--fb-ink2)}
+.gaveta .exVazio span b{color:#14161A}
+.gaveta .exAlerta{color:var(--fb-alerta)!important;background:rgba(169,104,8,.09)}
+.gaveta .exInf{background:var(--fb-alerta);color:#fff}
+.gaveta .gContas em{color:var(--fb-ink2)}
+.gaveta .gConta{background:rgba(20,22,26,.04);border-color:var(--fb-linha);color:#14161A}
+.gaveta .gConta b{color:var(--fb-ink3)}
+.gaveta .gConta.on{background:rgba(20,22,26,.07)}
+.gaveta .gConta.on b{color:#14161A}
+
+/* ── estoque ── */
+.gaveta .esTopo{border-bottom-color:var(--fb-linha2)}
+.gaveta .esTopo em{color:var(--fb-ink3)}
+.gaveta .esTopo span{color:var(--fb-ink2)}
+.gaveta .esTopo span b{color:#14161A}
+.gaveta .esL{border-bottom-color:var(--fb-linha)}
+.gaveta .esN em, .gaveta .esM em{color:var(--fb-ink3)}
+.gaveta .esBt{border-color:var(--fb-linha2);background:#fff;color:#14161A}
+.gaveta .esBt:hover{background:rgba(20,22,26,.06)}
+.gaveta .esPe{border-top-color:var(--fb-linha);color:var(--fb-ink2)}
+.gaveta .esPe b{color:#14161A}
+
+/* ── meta inteira ── */
+.mtCheio .mcX{background:rgba(20,22,26,.07);color:var(--fb-ink2)}
+.mtCheio .mcAlvo em, .mtCheio .mcAlvo b small{color:var(--fb-ink3)}
+.mtCheio .mcVer.bom{background:rgba(18,136,72,.09);border-color:rgba(18,136,72,.30);color:#0E6B39}
+.mtCheio .mcVer.bom b{color:var(--fb-ent)}
+.mtCheio .mcVer.ruim{background:rgba(205,76,48,.09);border-color:rgba(205,76,48,.30);color:#9B3A24}
+.mtCheio .mcVer.ruim b{color:#14161A}
+.mtCheio .mcVer.ruim > b{color:var(--fb-sai)}
+.mtCheio .mcL{border-bottom-color:var(--fb-linha)}
+.mtCheio .mcL em{color:var(--fb-ink2)}
+.mtCheio .mcL span{color:var(--fb-ink3)}
+.mtCheio .mcRi{background:rgba(20,22,26,.05)}
+.mtCheio .mcRi em{color:var(--fb-ink3)}
+.mtCheio .mcRi b.ruimT{color:var(--fb-sai)}
+.mtCheio .mcAv{color:var(--fb-ink2);border-top-color:var(--fb-linha)}
+.mtCheio .mcAv b{color:#14161A}
+
+/* ── contas a pagar inteiro ── */
+.ctCheio .ctAdd{background:var(--fb-lima);color:#fff;box-shadow:0 4px 10px -4px rgba(102,128,7,.7)}
+.ctCheio .ctAro em, .ctCheio .ctAro b small{color:var(--fb-ink3)}
+.ctCheio .ctSub{color:var(--fb-ink2)}
+.ctCheio .ctSub b{color:#14161A}
+.ctCheio .ctPg{color:var(--fb-ink2)}
+.ctCheio .ctPg b{color:var(--fb-lima)}
+.ctCheio .ctL{border-bottom-color:var(--fb-linha)}
+.ctCheio .ctCk{border-color:rgba(20,22,26,.30);color:#fff}
+.ctCheio .ctL.pago .ctCk{background:var(--fb-lima);border-color:var(--fb-lima)}
+.ctCheio .ctL.pago .ctN, .ctCheio .ctL.pago .ctV{color:var(--fb-ink3)}
+.ctCheio .ctD{color:var(--fb-ink3)}
+.ctCheio .ctVazio{color:var(--fb-ink3)}
+.ctCheio .ctVazio b{color:var(--fb-lima)}
+.ctCheio .ctNova{border-color:rgba(20,22,26,.28);color:var(--fb-ink2)}
+.ctCheio .ctNova:hover{background:rgba(20,22,26,.05)}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   A TELA DE CARGA — o painel agora lê do banco e isso leva tempo.
+   ⚠️ Sem ela a tela ficava preta por ~2s e parecia quebrada.
+   ══════════════════════════════════════════════════════════════════════════ */
+.carregando{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:14px;color:#fff;text-align:center;z-index:5}
+.carregando b{font-size:22px;font-weight:600;letter-spacing:-.02em}
+.carregando em{font-style:normal;font-size:14px;color:rgba(255,255,255,.6)}
+.cgAro{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.22);
+  border-top-color:#C7F636;animation:cgGira .8s linear infinite}
+@keyframes cgGira{to{transform:rotate(360deg)}}
+.cgBt{margin-top:10px;border:0;border-radius:14px;padding:12px 22px;cursor:pointer;
+  background:#C7F636;color:#1B2408;font:inherit;font-size:15px;font-weight:700}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   O COMPROVANTE DO CAIXA — portado do #cupom-palco do Lei dos Potes.
+   As decisões que vieram junto estão comentadas no caixa.js.
+   ══════════════════════════════════════════════════════════════════════════ */
+#cxPalco{position:fixed;inset:0;z-index:130;display:none;overflow:hidden;background:#F2F2F7;
+  --papelC:#fff; --tinta:#1C1C1E; --tinta-2:#6B7280; --tinta-3:#A3AAB4;
+  --trilho:#E4E4E6; --verde:#12885C; --vermelho:#BC3D20}
+#cxPalco.on{display:block}
+#cxPalco .cxCentro{display:flex;flex-direction:column;align-items:center;
+  padding:var(--topo,26px) 20px 0}
+#cxPalco .impressora{width:380px;max-width:100%;position:relative;z-index:5;
+  transform:scale(var(--k,1));transform-origin:top center}
+#cxPalco .carcaca{position:relative;z-index:2;
+  background:linear-gradient(180deg,#2C2C2E 0%,#1C1C1E 100%);
+  border-radius:14px;padding:14px 22px;display:flex;align-items:center;gap:10px;
+  box-shadow:0 4px 16px rgba(0,0,0,.2),0 1px 3px rgba(0,0,0,.12)}
+#cxPalco .logo-box{width:28px;height:28px;border-radius:8px;background:#C8FF00;
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#1C1C1E}
+#cxPalco .nome{font-size:14px;font-weight:700;color:#C8FF00;letter-spacing:.06em;text-transform:uppercase}
+#cxPalco .fenda{position:relative;z-index:3;width:calc(100% - 28px);margin:-3px auto 0;height:7px;
+  background:linear-gradient(180deg,#050505 0%,#1a1a1a 100%);border-radius:0 0 4px 4px;
+  box-shadow:0 3px 10px -2px rgba(0,0,0,.35),inset 0 2px 4px rgba(0,0,0,.6);
+  transition:height .5s .3s cubic-bezier(.4,0,.2,1)}
+#cxPalco .impressora.imprimindo .fenda{height:14px}
+#cxPalco .dobrinha{position:relative;z-index:1;width:calc(100% - 44px);margin:0 auto;height:0;
+  background:linear-gradient(180deg,#e8e8e8 0%,#f5f5f5 40%,#fff 100%);border-radius:0 0 12px 12px;
+  box-shadow:0 4px 10px rgba(0,0,0,.08);
+  transform:perspective(200px) rotateX(-12deg);transform-origin:top center;
+  transition:height .8s .5s cubic-bezier(.4,0,.2,1)}
+#cxPalco .impressora.imprimindo .dobrinha{height:28px}
+/* ⚠️ O PAR DE scaleY(-1): um aqui, outro no papel. Um só faz cortina. */
+#cxPalco .impSaida{position:relative;z-index:1;margin-top:-2px;overflow:hidden;max-height:0;
+  transition:max-height var(--dur,6s) cubic-bezier(.25,.1,.25,1);transform:scaleY(-1)}
+#cxPalco .impSaida.aberta{max-height:var(--alvo,1800px)}
+#cxPalco.transborda .impSaida{transform:none;transition:none;overflow-y:auto;
+  -webkit-overflow-scrolling:touch}
+#cxPalco.transborda .impPapel{transform:none}
+#cxPalco .impPapel{background:#fff;margin:0 16px;padding:18px 18px 20px;
+  border-left:2px dashed var(--trilho);border-right:2px dashed var(--trilho);
+  box-shadow:0 2px 12px rgba(0,0,0,.06);position:relative;transform:scaleY(-1);
+  color:var(--tinta);text-align:left}
+#cxPalco .impPapel::after{content:'';position:absolute;bottom:-6px;left:0;right:0;height:12px;
+  background:radial-gradient(circle 6px at 6px 0,transparent 5.5px,#fff 6px) 0 0 / 12px 12px repeat-x;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.06))}
+#cxPalco .cxTit{text-align:center;margin-bottom:10px}
+#cxPalco .cxTit h4{font-size:14px;font-weight:700;letter-spacing:.04em}
+#cxPalco .cxTit p{font-size:11px;color:var(--tinta-3);font-weight:500;margin-top:2px;
+  letter-spacing:.02em;text-transform:uppercase}
+#cxPalco .cxSec{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  margin:12px 0 6px;padding-top:8px;border-top:1.5px dashed var(--trilho)}
+#cxPalco .cxLn{display:flex;justify-content:space-between;align-items:center;padding:3px 0;
+  font-size:13px;gap:10px}
+#cxPalco .cxLn .lab{font-weight:400}
+#cxPalco .cxLn .val{font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}
+#cxPalco .cxLn.hero{justify-content:center;flex-direction:column;align-items:center;padding:5px 0}
+#cxPalco .cxLn.hero .lab{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tinta-3);margin-bottom:4px}
+#cxPalco .cxLn.hero .val{font-size:29px}
+#cxPalco .cxLn.total{font-size:14px;padding:10px 0 0;margin-top:6px;border-top:1.5px solid var(--tinta)}
+#cxPalco .cxLn.total .val{color:var(--verde)}
+#cxPalco .cxLn.total.neg .val{color:var(--vermelho)}
+#cxPalco .cxSub{font-size:11px;color:var(--tinta-3);padding:1px 0 0;line-height:1.5}
+#cxPalco .cxSub.center{text-align:center}
+#cxPalco .cxTraco{text-align:center;color:var(--trilho);letter-spacing:4px;font-size:11px;margin:7px 0 3px}
+#cxPalco .cxFinal{text-align:center;margin:14px 0 0;padding-top:11px;border-top:1.5px dashed var(--trilho)}
+#cxPalco .cxFinal .check{width:60px;height:60px;border-radius:50%;background:var(--verde);
+  display:inline-flex;align-items:center;justify-content:center;margin-bottom:9px}
+#cxPalco .cxFinal .check svg{width:32px;height:32px}
+#cxPalco .cxFinal .frase{font-size:18px;font-weight:700;line-height:1.35}
+#cxPalco .cxBar{text-align:center;margin-top:12px;padding-top:9px;border-top:1.5px dashed var(--trilho)}
+#cxPalco .cxBar svg{display:block;margin:0 auto 4px}
+#cxPalco .cxBar span{font-size:9px;color:var(--tinta-3);letter-spacing:.15em;font-weight:500}
+/* ⚠️ nasce sozinho 1,2s depois — tela cheia sem saída prende a pessoa */
+/* ⚠️ FUNDO SÓLIDO, NÃO DEGRADÊ. Com o seletor de data o rodapé ficou alto e
+   o degradê deixava o cupom aparecendo por trás das datas, ilegível nos dois. */
+#cxPalco .cxPe{position:fixed;bottom:0;left:0;right:0;z-index:10;padding:12px 20px 14px;
+  background:#F2F2F7;box-shadow:0 -10px 24px -12px rgba(0,0,0,.18);
+  display:flex;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .4s ease}
+#cxPalco.pronto .cxPe{opacity:1;pointer-events:auto}
+#cxPalco .cxBt{width:380px;max-width:100%;padding:15px;border:none;border-radius:16px;
+  font-family:inherit;font-size:16px;font-weight:700;cursor:pointer;
+  background:#1C1C1E;color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.18)}
+#cxPalco .cxBt:active{transform:scale(.97)}
+
+/* ══ a folha do extrato NASCE no centro (pedido dela) ═════════════════════
+   ⚠️ transform no .gaveta brigaria com o zoom da folha branca, então quem
+      anima é uma escala em cima do zoom — os dois se compõem sem conflito. */
+@keyframes gvNasce{0%{opacity:0;transform:scale(.88) translateY(10px)}
+  100%{opacity:1;transform:scale(1) translateY(0)}}
+.veu.on .gaveta{animation:gvNasce .26s cubic-bezier(.2,.9,.3,1.25)}
+.veu{transition:opacity .2s ease}
+
+/* a linha do saldo agora carrega dois números — precisa de espaço pra dois */
+.cabSaldo .saldo .s{max-width:430px;line-height:1.45}
+.cabSaldo .saldo .s b{color:#fff;font-weight:700}
+
+/* ── apagar uma conta ──
+   ⚠️ NÃO PODE SE CHAMAR .ctX: esse é o seletor que o ctFechar() usa pra saber
+   que o clique foi no botão de fechar a gaveta. Um ✕ de apagar com a mesma
+   classe apagava a conta E fechava o card junto. */
+.ctCheio .ctDel{flex:none;width:22px;height:22px;border-radius:99px;border:0;cursor:pointer;
+  background:rgba(20,22,26,.06);color:rgba(20,22,26,.60);font:inherit;font-size:12px;
+  line-height:1;opacity:0;transition:opacity .15s}
+.ctCheio .ctL:hover .ctDel{opacity:1}
+.ctCheio .ctDel:hover{background:rgba(188,61,32,.14);color:#BC3D20}
+.ctCheio .ctCk{cursor:pointer}
+.ctCheio .ctN,.ctCheio .ctV{cursor:pointer}
+.ctCheio .ctL{cursor:default}
+/* o card compacto: "custo diário · herdado" precisa de duas linhas */
+.mazul .ctVal em{line-height:1.25;white-space:normal}
+
+/* ── sinais marcados como pagos e não confirmados ── */
+.gaveta .exPend{margin-top:18px;padding:14px 15px;border-radius:16px;
+  background:rgba(169,104,8,.08);border:1px solid rgba(169,104,8,.28)}
+.gaveta .exPendT{font-size:13px;font-weight:700;color:#8A5506;
+  letter-spacing:.02em;margin-bottom:8px}
+.gaveta .exPendL{display:flex;align-items:baseline;gap:10px;padding:5px 0;font-size:15px;
+  border-bottom:1px solid rgba(169,104,8,.16)}
+.gaveta .exPendL:last-of-type{border-bottom:none}
+.gaveta .exPendL span{font-weight:600;flex:none;max-width:210px;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.gaveta .exPendL em{flex:1;min-width:0;font-style:normal;font-size:12.5px;
+  color:rgba(20,22,26,.60)}
+.gaveta .exPendL b{flex:none;font-weight:700;color:#8A5506;font-variant-numeric:tabular-nums}
+.gaveta .exPendP{margin-top:9px;font-size:12.5px;line-height:1.55;color:rgba(20,22,26,.75)}
+.gaveta .exPendP b{color:#14161A;font-weight:700}
+
+/* ⚠️ `display:contents` e não um bloco: o body é flex e centraliza a
+   .prancheta. Um wrapper com caixa própria viraria o filho do flex e a
+   prancheta deixaria de ser centralizada. Assim a raiz existe pro JS
+   (um nó pra trocar) e não existe pro layout. */
+.tela{display:contents}
+
+/* o título em cima dos anéis: diz de qual dinheiro eles falam */
+.aroTit{flex:none;display:flex;align-items:baseline;gap:9px;
+  font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.55);padding-bottom:7px;
+  border-bottom:1px solid rgba(255,255,255,.14)}
+.aroTit b{margin-left:auto;font-size:17px;font-weight:700;color:#fff;
+  letter-spacing:-.01em;text-transform:none}
+
+/* ── aviso de saldo curto na gaveta de saída ── */
+.gaveta .sdAviso{margin-top:14px;padding:11px 13px;border-radius:14px;font-size:13.5px;
+  line-height:1.5;background:rgba(169,104,8,.09);border:1px solid rgba(169,104,8,.28);
+  color:#8A5506}
+.gaveta .sdAviso b{color:#14161A;font-weight:700}
+.gaveta .gok[disabled]{opacity:.35;cursor:not-allowed}
+
+/* ── o pé do comprovante: confirmar o fechamento ── */
+#cxPalco .cxPe{flex-direction:column;gap:10px;align-items:center}
+#cxPalco .cxJa{width:380px;max-width:100%;font-size:13px;line-height:1.5;text-align:center;
+  color:#6B7280}
+#cxPalco .cxJa b{color:#1C1C1E;font-weight:700}
+#cxPalco .cxConf{width:380px;max-width:100%;background:#fff;border-radius:16px;
+  padding:13px 15px;box-shadow:0 2px 10px rgba(0,0,0,.10)}
+#cxPalco .cxConfT{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:#6B7280;margin-bottom:7px}
+#cxPalco .cxConfL{display:flex;justify-content:space-between;font-size:14px;padding:3px 0;
+  color:#1C1C1E}
+#cxPalco .cxConfL b{font-weight:700;font-variant-numeric:tabular-nums}
+#cxPalco .cxConfC{margin-top:10px;padding-top:9px;border-top:1px dashed #E4E4E6;
+  font-size:11px;color:#6B7280;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+#cxPalco .cxC{border:1.5px solid #E4E4E6;background:#fff;border-radius:11px;padding:5px 9px;
+  font:inherit;font-size:12px;font-weight:600;color:#1C1C1E;cursor:pointer;line-height:1.2}
+#cxPalco .cxC em{display:block;font-style:normal;font-size:10px;font-weight:500;color:#6B7280;
+  font-variant-numeric:tabular-nums}
+#cxPalco .cxC.on{border-color:var(--c);box-shadow:0 0 0 2px color-mix(in srgb, var(--c) 22%, transparent)}
+#cxPalco .cxBts{display:flex;gap:9px;width:380px;max-width:100%}
+#cxPalco .cxBts .cxBt{flex:1;width:auto}
+#cxPalco .cxBt2{flex:none;padding:15px 18px;border:none;border-radius:16px;font-family:inherit;
+  font-size:15px;font-weight:600;cursor:pointer;background:#E4E4E6;color:#1C1C1E}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   A BARRA DE ABAS — regras copiadas do gestor.html, sem "melhorar" nada.
+   ⚠️ A versão escura é a que vale aqui: o Caixa tem fundo de foto, e a barra
+      clara do gestor sumiria em cima dela.
+   ⚠️ O PAINEL PRECISOU SUBIR. A barra ocupa 66px no rodapé e cobria a faixa
+      de baixo (agendamentos e mês a mês). Em vez de encolher os cards, quem
+      cede é a margem do encaixe — o --k já é calculado com a altura livre.
+   ══════════════════════════════════════════════════════════════════════════ */
+#lt-tabbar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:40;
+  width:560px;max-width:calc(100vw - 28px);display:flex;gap:2px;align-items:stretch;
+  padding:7px;border-radius:22px;
+  background:rgba(38,36,33,.55);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);
+  border:.5px solid rgba(255,255,255,.16);
+  box-shadow:0 18px 44px -14px rgba(8,6,4,.6), inset 0 1px 0 rgba(255,255,255,.14);
+  font-family:var(--sf)}
+#lt-tabbar .lt-tab{flex:1;min-width:0;appearance:none;border:0;cursor:pointer;font-family:inherit;
+  font-weight:650;font-size:10.5px;background:transparent;padding:9px 3px;
+  border-radius:16px;transition:background .15s,color .15s;display:flex;flex-direction:column;
+  align-items:center;gap:4px;position:relative;line-height:1.1;
+  color:rgba(255,255,255,.62)}
+#lt-tabbar .lt-tab svg{width:20px;height:20px;flex:none}
+#lt-tabbar .lt-tab span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#lt-tabbar .lt-tab:hover{color:#fff}
+#lt-tabbar .lt-tab.on{background:rgba(255,255,255,.14);color:#fff;
+  box-shadow:inset 0 0 0 .5px rgba(255,255,255,.2)}
+#lt-tabbar .lt-tab.on svg{color:#C7F636}
+
+/* enquanto a varredura do Nubank não termina, a bolinha diz que está medindo
+   — número velho com cara de novo é pior que a espera declarada */
+.onde .onMed{font-style:normal;font-size:15px;font-weight:500;color:rgba(255,255,255,.5);
+  letter-spacing:0}
+
+/* ── escolher a data do caixa a fechar ── */
+#cxPalco .cxDias{width:380px;max-width:100%;display:flex;flex-wrap:wrap;gap:5px;
+  align-items:center;font-size:11px;color:#6B7280}
+#cxPalco .cxDias > span{width:100%;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  font-size:9.5px;margin-bottom:1px}
+#cxPalco .cxD{border:1.5px solid #E4E4E6;background:#fff;border-radius:10px;padding:5px 8px;
+  font:inherit;font-size:12px;font-weight:600;color:#1C1C1E;cursor:pointer;line-height:1.15;
+  display:inline-flex;align-items:center;gap:4px}
+#cxPalco .cxD em{font-style:normal;font-size:9.5px;font-weight:600;color:#6B7280}
+#cxPalco .cxD i{font-style:normal;color:#12885C;font-size:11px}
+#cxPalco .cxD.on{border-color:#1C1C1E;box-shadow:inset 0 0 0 1px #1C1C1E}
+#cxPalco .cxD.fez{background:#F4F6F4}
+
+.agPe b{color:rgba(255,255,255,.82);font-weight:700}
+
+/* a linha que diz o que o card conta — sem ela "Agendamentos do dia" se lê
+   como a agenda do dia, que é outra coisa */
+.agSub{font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:rgba(255,255,255,.45);margin-top:-1px;margin-bottom:2px}
+
+/* as três pílulas de período, dentro do card de 249×178 */
+.agPil{display:flex;gap:3px;background:rgba(255,255,255,.10);border-radius:8px;
+  padding:1.5px;margin:1px 0 2px;width:max-content}
+.agP{border:0;background:none;font:inherit;font-size:8.5px;font-weight:600;
+  letter-spacing:-.01em;color:rgba(255,255,255,.55);padding:2.5px 6px;border-radius:6px;
+  cursor:pointer;white-space:nowrap;line-height:1.15}
+.agP:hover{color:#fff}
+.agP.on{background:#fff;color:#1B1A17;font-weight:700}
+
+.agPe b.agFalta{color:#FFB86B;font-weight:700}
+.agPe{white-space:nowrap}
+
+/* nome + porcentagem numa linha só (ver o comentário no agenda.js) */
+.agLado .agNome .agPc{font-style:normal;font-weight:600;color:rgba(255,255,255,.5);
+  margin-left:3px;font-size:.85em}
+.agPe{white-space:normal;line-height:1.3}
+
+/* ⚠️ AS PÍLULAS DE PERÍODO CUSTARAM 15px DE ALTURA, e o miolo do card já
+   estava no limite: o conteúdo da coluna (ícone + número + nome) ficou 10px
+   mais alto que a caixa, e como .agLado centraliza, ele vazava pelos dois
+   lados e caía por cima do rodapé. Devolvo os 10px encolhendo o número e o
+   ícone — nada saiu da tela.
+   ⚠️ Medido com a sonda _agfit, que compara as caixas irmãs. A sonda de
+      transbordo não pegava isso: ela olha texto dentro da própria caixa, e
+      aqui a caixa inteira é que passava por cima da vizinha. */
+.cb.meia .agN{font-size:33px}
+.cb.meia .agIc{width:21px;height:21px;border-radius:7px}
+.cb.meia .agIc svg{width:12px;height:12px}
+.cb.meia .agLado{gap:2px}
+.cb.meia .agNome{font-size:14px}
+.cb.meia .agPe{margin-top:4px}
+
+/* os últimos 2px: o título do card cede um pouco da entrelinha */
+.cb.meia .agTit{font-size:15px;line-height:1.1}
+.cb.meia .agDois{margin-top:5px}
+
+.cb.meia .agNome .agPc{font-size:11px;margin-left:2px}
+.cb.meia .agNome{white-space:nowrap}
+
+/* aviso de leitura envelhecida na bolinha do Asaas */
+.onde .onVelho{display:block;font-style:normal;font-size:11px;font-weight:700;
+  color:#FFB86B;letter-spacing:0;margin-top:1px;white-space:nowrap}
+
+/* saldo negativo: lançou mais saída do que a conta tem */
+.onde .onV.onNeg{color:#FF7A5C}
+
+/* transferências: informação, não saída — por isso não são vermelhas */
+.gaveta .exTransf{margin-top:20px;padding:12px 14px;border-radius:16px;
+  background:rgba(20,22,26,.045);border:1px solid rgba(20,22,26,.12)}
+.gaveta .exTransf .exCab{border-bottom-color:rgba(20,22,26,.14);font-size:17px}
+.gaveta .exTransf .exV{color:rgba(20,22,26,.75);font-weight:600}
+.gaveta .exTransf .exPendP{margin-top:8px}
+
+/* pote que estourou: saiu mais do que o período separou */
+.aroBt .potNeg{color:#FFB86B}
+.aroBt .potAviso{font-size:12px;font-weight:600;color:#FFB86B;margin-top:2px;white-space:nowrap}
+
+/* ══ DENTRO DO GESTOR ══════════════════════════════════════════════════════
+   A barra de abas do gestor é `position:fixed` no documento de fora, num
+   z-index acima de tudo que existe aqui dentro — não dá pra passar por cima
+   dela, só pra sair de baixo. Tudo que vive colado no rodapé sobe 92px.
+   ⚠️ E o palco do comprovante encurta junto, senão o papel nasce comprido e
+      some atrás da barra em vez de rolar. */
+html.embutido #cxPalco .cxPe{bottom:92px}
+html.embutido #cxPalco{bottom:0}
+html.embutido #cxPalco .cxCentro{padding-bottom:92px}
+
+/* a linha do bônus no fechamento: informa que NÃO sai */
+#cxPalco .cxConfL.fica{color:#6B7280;font-size:12.5px;padding-top:6px;margin-top:4px;
+  border-top:1px dashed #E4E4E6}
+#cxPalco .cxConfL.fica em{font-style:normal;font-weight:600}
+#cxPalco .cxConfL.fica b{font-weight:700;color:#12885C}
+#cxPalco .cxLn .lab em{font-style:normal;font-size:10.5px;color:#A3AAB4;margin-left:4px}
+
+/* ── o aviso de que a saída foi lançada ──
+   ⚠️ z-index acima do véu (50) e do comprovante (130): ele existe justamente
+      pra ser visto por cima do que estava aberto. */
+.sdToast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(70px);
+  z-index:200;background:#12885C;color:#fff;font-family:var(--sf);font-size:14px;font-weight:600;
+  padding:13px 22px;border-radius:99px;box-shadow:0 10px 30px -8px rgba(0,0,0,.45);
+  opacity:0;transition:opacity .25s ease, transform .25s cubic-bezier(.2,.9,.3,1.2);
+  pointer-events:none;max-width:88vw;text-align:center}
+.sdToast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.sdToast.ruim{background:#BC3D20}
+html.embutido .sdToast{bottom:110px}   /* acima da barra do gestor */
+
+/* de onde vem o saldo da Equipe */
+.gaveta .sdDet{margin-top:14px;padding:12px 14px;border-radius:14px;
+  background:rgba(20,22,26,.045);border:1px solid rgba(20,22,26,.12)}
+.gaveta .sdDetT{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:rgba(20,22,26,.60);margin-bottom:6px}
+.gaveta .sdDetL{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  font-size:14px;padding:3px 0;color:#14161A}
+.gaveta .sdDetL b{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.gaveta .sdDetL em{font-style:normal;font-size:11.5px;color:rgba(20,22,26,.60);font-weight:600}
+.gaveta .sdDetL.pago{color:rgba(20,22,26,.45)}
+.gaveta .sdDetL.soma{border-top:1px dashed rgba(20,22,26,.18);margin-top:5px;padding-top:6px;
+  font-weight:700}
+.gaveta .sdDetP{margin-top:7px;font-size:11.5px;line-height:1.5;color:rgba(20,22,26,.60)}
+
+/* imposto congelado, e o sinal adiantado */
+.aroBt .potNota{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.5);margin-top:2px;
+  white-space:nowrap}
+.aroSub{flex:none;font-size:11.5px;color:rgba(255,255,255,.55);margin-top:-5px;
+  padding-bottom:0;white-space:nowrap;line-height:1.25}
+.aroSub em{font-style:normal;color:rgba(255,255,255,.42)}
+/* ⭐ a prova de que as categorias batem com as contas (ela, 16/09/2026).
+   Verde enquanto fecha; se um dia deixar de fechar, vira coral e diz os dois
+   números — conferência que só aparece quando está certa não serve pra nada. */
+.aroSoma{display:inline;margin-left:10px;font-size:12px;color:rgba(255,255,255,.62);
+  white-space:nowrap}
+.aroSoma b{color:#C7F636;font-weight:700}
+.aroSoma em{font-style:normal;color:rgba(255,255,255,.45)}
+.aroSoma.erro b, .aroSoma.erro em{color:#FF5A3C}
+
+/* ══ O BOTÃO DE ESTORNO ════════════════════════════════════════════════════
+   ⚠️ NO CANTO, NÃO NA BARRA. A barra de abas do gestor tem 560px centralizados
+      e é dele — meter um botão meu ali quebraria a barra que a página inteira
+      copia. Aqui ele fica no canto inferior esquerdo, onde sobra espaço nos
+      dois contextos (solto e dentro do gestor).
+   ⚠️ VERMELHO PORQUE TIRA DINHEIRO. É o único botão da tela que devolve
+      dinheiro pra fora; ele não pode parecer com os outros. */
+#btEstorno{position:fixed;left:18px;bottom:16px;z-index:45;display:flex;align-items:center;
+  gap:7px;border:0;cursor:pointer;font-family:var(--sf);font-size:12.5px;font-weight:700;
+  letter-spacing:-.01em;color:#fff;background:#BC3D20;padding:10px 16px;border-radius:99px;
+  box-shadow:0 8px 22px -8px rgba(188,61,32,.8), inset 0 1px 0 rgba(255,255,255,.22)}
+#btEstorno svg{width:16px;height:16px;flex:none}
+#btEstorno:hover{background:#A93518}
+#btEstorno:active{transform:scale(.96)}
+html.embutido #btEstorno{bottom:104px}   /* acima da barra do gestor */
+
+/* a gaveta do estorno */
+.gaveta .esNome{width:100%;margin-top:12px;border:1.5px solid rgba(20,22,26,.16);
+  border-radius:14px;padding:11px 13px;font:inherit;font-size:15px;color:#14161A;
+  background:#fff;outline:none}
+.gaveta .esNome:focus{border-color:rgba(20,22,26,.42)}
+.gaveta .esNome::placeholder{color:rgba(20,22,26,.42)}
+.gaveta .esPerg{margin-top:13px}
+.gaveta .esPerg > em{display:block;font-style:normal;font-size:13px;font-weight:600;
+  color:rgba(20,22,26,.70);margin-bottom:6px}
+.gaveta .esOps{display:flex;gap:8px}
+.gaveta .esOp{flex:1;border:1.5px solid rgba(20,22,26,.16);background:#fff;border-radius:14px;
+  padding:9px 11px;font:inherit;cursor:pointer;text-align:left;line-height:1.25}
+.gaveta .esOp b{display:block;font-size:15px;font-weight:700;color:#14161A}
+.gaveta .esOp span{display:block;font-size:11.5px;color:rgba(20,22,26,.60);margin-top:1px}
+.gaveta .esOp.on.nao{border-color:#8A5506;box-shadow:inset 0 0 0 1px #8A5506}
+.gaveta .esOp.on.sim{border-color:#BC3D20;box-shadow:inset 0 0 0 1px #BC3D20}
+.gaveta .esConta{margin-top:12px;padding:11px 13px;border-radius:14px;
+  background:rgba(188,61,32,.07);border:1px solid rgba(188,61,32,.24)}
+.gaveta .esContaT{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:#8A2E14;margin-bottom:5px}
+.gaveta .esL{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  font-size:14px;padding:2px 0;color:#14161A}
+.gaveta .esL b{font-weight:700;color:#BC3D20;font-variant-numeric:tabular-nums;white-space:nowrap}
+.gaveta .esNota{margin-top:6px;font-size:11.5px;line-height:1.5;color:rgba(20,22,26,.65)}
+
+/* ══ A GAVETA DO ESTORNO É MAIS COMPRIDA QUE AS OUTRAS ═════════════════════
+   Ela tem quatro blocos que as outras não têm: nome da cliente, a pergunta do
+   procedimento, a prévia do que vai ser lançado e o seletor de conta. Medido:
+   230px a mais do que cabe, e o botão "Estornar" caía fora da folha.
+   Em vez de esconder algum bloco — todos são decisão dela — a folha inteira
+   encolhe um pouco mais que as outras. */
+/* ⚠️ O TETO DE ALTURA PRECISA CRESCER JUNTO. O `max-height:720px` do .gaveta
+   é medida CSS, e o zoom multiplica ela também: com zoom .68 os 720 viravam
+   489px visuais e a folha continuava rolando. 940 × .68 = 639px na tela, que
+   cabe nos ~720 que o painel oferece. */
+/* ⚠️ 750 É MEDIDO. Com zoom .68 dá 510px na tela, e o painel oferece 513 —
+   860 vazava 7px. E o conteúdo (862px) não cabe mesmo assim, por isso o
+   botão "Estornar" é fixo no rodapé: o resto rola, mas o que confirma a
+   devolução nunca sai de vista. Botão de confirmar escondido é o defeito que
+   fez a saída de marketing dela se perder na quinta. */
+.gaveta.esG{zoom:.68;max-height:750px;position:relative;padding-bottom:0}
+.gaveta.esG .gok{position:sticky;bottom:0;margin-bottom:0;
+  box-shadow:0 -14px 20px -6px #fff, 0 -26px 20px -14px #fff}
+.gaveta.esG::after{content:'';display:block;height:12px}
+.gaveta.esG .gcampo{margin-top:12px;padding-bottom:8px}
+.gaveta.esG .gcampo input{font-size:46px}
+.gaveta.esG .gtecla{gap:6px;margin-top:10px}
+.gaveta.esG .gtecla button{font-size:23px;padding:8px 0;border-radius:14px}
+.gaveta.esG .gok{margin-top:11px;padding:14px}
+.gaveta.esG .gContas{margin-top:11px}
+/* ⚠️ o placeholder tinha 42% de opacidade = 2,7:1. Num campo que ela precisa
+   ler pra saber o que digitar, isso reprova. */
+.gaveta .esNome::placeholder{color:rgba(20,22,26,.58)}
+
+/* conta com destinação: o saldo tem dono */
+.onde .onDest{display:block;font-style:normal;font-size:14px;font-weight:700;
+  color:rgba(255,255,255,.6);letter-spacing:0;line-height:1.3;white-space:normal}
+/* ── cartão que entrou e ainda não caiu (16/09/2026) ──
+   ⚠️ NOME NOVO, CONFERIDO: `.onProc` e `.exProc` não existiam no CSS. */
+.onde .onProc{display:block;font-style:normal;font-size:14px;font-weight:700;
+  color:rgba(255,255,255,.8);letter-spacing:0;line-height:1.3;white-space:normal}
+/* o acerto com o extrato real do banco — âmbar, porque é ajuste e não movimento */
+.onde .onAj{display:block;font-style:normal;font-size:14px;font-weight:700;
+  color:#FFC46B;letter-spacing:0;line-height:1.3;white-space:normal}
+/* o bloco do processando é irmão do `.exPend`, só que na cor da Sicredi */
+.gaveta .exPend.exProc{background:rgba(63,161,16,.08);border-color:rgba(63,161,16,.30)}
+.gaveta .exPend.exProc .exPendT{color:#2C7A0B}
+.gaveta .exPend.exProc .exPendL{border-bottom-color:rgba(63,161,16,.18)}
+.gaveta .exPend.exProc .exPendL b{color:#2C7A0B}
+.gaveta .exDest{margin-top:12px;padding:11px 13px;border-radius:14px;font-size:13.5px;
+  line-height:1.5;background:rgba(20,22,26,.045);border:1px solid rgba(20,22,26,.12);
+  color:rgba(20,22,26,.75)}
+.gaveta .exDest b{color:#14161A;font-weight:700}
+.gaveta .exDest em{display:block;font-style:normal;font-size:11.5px;margin-top:4px;
+  color:rgba(20,22,26,.60)}
+
+/* ══ EXTRATO GERAL — clicar no saldo e ver tudo (dona, 09/09/2026) ═════════ */
+/* ⚠️ O SALDO PRECISA PARECER CLICÁVEL. Número grande é a coisa mais fácil de
+   olhar e a menos provável de alguém TOCAR — sem o cursor, a pista escrita e
+   o retorno ao toque, a função existiria e ninguém acharia. */
+.saldoClica{cursor:pointer;border-radius:16px;transition:background .15s,transform .1s;
+  margin:-6px -10px;padding:6px 10px}
+.saldoClica:hover{background:rgba(255,255,255,.07)}
+.saldoClica:active{transform:scale(.985)}
+.gaveta .saldoClica:hover{background:rgba(20,22,26,.05)}
+.sVer{display:block;font-style:normal;font-size:12.5px;font-weight:700;margin-top:3px;
+  letter-spacing:.02em;opacity:.72;text-decoration:underline;text-underline-offset:3px}
+
+.egResumo .egConta3{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px}
+.egConta3 span{display:flex;align-items:center;gap:6px;font-size:14px;
+  color:var(--fb-ink3)}
+.egConta3 b{font-size:16px;font-weight:700;color:#14161A;margin-left:2px;
+  font-variant-numeric:tabular-nums}
+.egConta3 i{width:9px;height:9px;border-radius:3px;flex:none}
+.egConta3 i.ent{background:#22E07A} .egConta3 i.sai{background:#FF7A5C}
+.egConta3 i.ab{background:rgba(255,255,255,.42)}
+.egNota{display:block;margin-top:10px;font-size:13px;line-height:1.5;
+  color:var(--fb-ink3)}
+
+.egFiltros{margin-top:18px;display:flex;flex-direction:column;gap:9px}
+.egFila{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+/* ⚠️ O RÓTULO DA FILA. Sem ele as duas filas de pastilha liam como uma lista só
+   de 13 filtros que se contradizem — "Nubank" e "Estoque" lado a lado parecem a
+   mesma pergunta, e não são: uma é ONDE o dinheiro está, a outra é PRA QUE ele é.
+   ⚠️ 14px porque a gaveta inteira tem `zoom:.8` — na tela isso dá 11,2px, que é
+   o piso de legibilidade aqui. Escrever 11 direto daria 8,8px. */
+.egRot{font-style:normal;font-size:14px;font-weight:600;letter-spacing:-.01em;
+  color:var(--fb-ink3,rgba(255,255,255,.5));min-width:74px;flex:none}
+/* ⚠️ 43px PRA DAR 34px NA TELA. A gaveta inteira tem `zoom:.8` (foi assim que
+   a folha encolheu pro tema claro sem reescrever 60 tamanhos de fonte) — então
+   tudo que eu escrever aqui aparece a 80%. Medido: 34px viravam 27, abaixo do
+   alvo de dedo. 34 ÷ 0,8 = 42,5 → 43. */
+.egChip{display:inline-flex;align-items:center;gap:6px;height:43px;padding:0 16px;
+  border-radius:99px;border:1.4px solid rgba(255,255,255,.22);background:transparent;
+  color:var(--fb-ink2);font:inherit;font-size:17px;font-weight:600;cursor:pointer;
+  transition:.14s;white-space:nowrap}
+.egChip i{width:9px;height:9px;border-radius:3px;background:var(--c,#fff);flex:none}
+.egChip:hover{border-color:rgba(255,255,255,.4);color:#fff}
+.egChip.on{background:#fff;border-color:#fff;color:#14161A}
+.egBusca{height:50px;border-radius:12px;border:1.4px solid rgba(255,255,255,.22);
+  background:rgba(20,22,26,.03);color:#14161A;font:inherit;font-size:15px;padding:0 14px;
+  width:100%;outline:none}
+.egBusca::placeholder{color:rgba(255,255,255,.38)}
+.egBusca:focus{border-color:rgba(255,255,255,.5)}
+
+.egCab{display:flex;align-items:baseline;gap:14px;margin-top:18px;padding-bottom:8px;
+  border-bottom:1.5px solid rgba(255,255,255,.22);font-size:15px;
+  color:var(--fb-ink3)}
+.egCab b{font-size:17px;font-variant-numeric:tabular-nums}
+.egCab b.ent{margin-left:auto;color:#22E07A} .egCab b.sai{color:#FF7A5C}
+
+/* ⚠️ A LISTA NÃO TEM ROLAGEM PRÓPRIA — quem rola é a gaveta (ela já tem
+   `overflow-y:auto`). Lista com rolagem DENTRO de caixa com rolagem é
+   armadilha de dedo no celular: o dedo escolhe a errada e a tela parece
+   travada. Uma rolagem só, e o cabeçalho do dia gruda nela. */
+.egLista{margin-top:2px}
+.egDia{margin-top:6px}
+/* o dia gruda no topo enquanto ela rola: rolando 40 lançamentos sem isso, ela
+   perde de vista em que dia está — que é exatamente o "ficando perdida" */
+.egDiaCab{position:sticky;top:0;z-index:2;display:flex;align-items:baseline;gap:10px;
+  padding:9px 0 6px;background:#fff;font-size:14px;color:var(--fb-ink3)}
+.egDiaCab b{font-size:16px;color:#14161A;font-weight:700}
+.egDiaCab em{font-style:normal;font-size:12.5px}
+.egDiaSaldo{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.egDiaSaldo.ent{color:#22E07A} .egDiaSaldo.sai{color:#FF7A5C}
+.egL .exD{width:74px}
+.egConta{flex:none;display:flex;align-items:center;gap:5px;font-size:12.5px;
+  color:var(--fb-ink3)}
+.egConta i{width:8px;height:8px;border-radius:3px;flex:none}
+
+/* ⚠️ A GAVETA É BRANCA (a regra de `zoom:.8` lá em cima venceu o vidro
+   escuro). Os estilos-base acima ficam com a cor clara direto; estas regras
+   com `.gaveta` são o que de fato pinta a tela. */
+.gaveta .egConta3 span, .gaveta .egNota, .gaveta .egCab,
+.gaveta .egDiaCab, .gaveta .egConta{color:var(--fb-ink3)}
+.gaveta .egConta3 b, .gaveta .egDiaCab b{color:#14161A}
+.gaveta .egConta3 i.ab{background:rgba(20,22,26,.3)}
+.gaveta .egChip{border-color:var(--fb-linha2);color:var(--fb-ink2)}
+.gaveta .egChip:hover{border-color:rgba(20,22,26,.35);color:#14161A}
+.gaveta .egChip.on{background:#14161A;border-color:#14161A;color:#fff}
+.gaveta .egBusca{border-color:var(--fb-linha2);background:rgba(20,22,26,.03);color:#14161A}
+.gaveta .egBusca::placeholder{color:var(--fb-ink3)}
+.gaveta .egCab{border-bottom-color:var(--fb-linha2)}
+.gaveta .egCab b.ent, .gaveta .egDiaSaldo.ent{color:var(--fb-ent)}
+.gaveta .egCab b.sai, .gaveta .egDiaSaldo.sai{color:var(--fb-sai)}
+.gaveta .egDiaCab{background:#fff}
+.gaveta .egLista::-webkit-scrollbar-thumb{background:rgba(20,22,26,.26)}
+
+/* no celular a gaveta é estreita: a forma de pagamento sai, a conta fica */
+@media (max-width:620px){
+  .egL .exF{display:none}
+  .egL .exD{width:62px;font-size:14px}
+  .egL .exV{width:96px}
+}
+
+/* ══ CAIXA REGISTRADORA — o dinheiro da gaveta (dona, 09/09/2026) ══════════ */
+/* ⚠️ AO LADO DO ESTORNO, NÃO POR CIMA. O estorno mora em left:18px e tem uns
+   150px de largura; 186 é medido pra os dois caberem lado a lado sem encostar.
+   O `bottom` acompanha o do estorno, inclusive o desvio de quando a página
+   está dentro do gestor (a barra dele flutua por cima do iframe). */
+#btCaixaD{position:fixed;left:186px;bottom:16px;z-index:45;display:flex;align-items:center;
+  gap:7px;border:0;cursor:pointer;font-family:var(--sf);font-size:12.5px;font-weight:700;
+  letter-spacing:-.01em;color:#fff;background:#12A150;padding:10px 16px;border-radius:99px;
+  box-shadow:0 8px 22px -8px rgba(18,161,80,.85), inset 0 1px 0 rgba(255,255,255,.22)}
+#btCaixaD svg{width:17px;height:17px;flex:none}
+#btCaixaD:hover{background:#0E8642}
+#btCaixaD:active{transform:scale(.96)}
+html.embutido #btCaixaD{bottom:104px}
+/* no celular os dois botões não cabem lado a lado: o verde sobe uma linha */
+@media (max-width:620px){
+  #btCaixaD{left:18px;bottom:62px}
+  html.embutido #btCaixaD{bottom:150px}
+}
+
+.cdSaldo{margin-top:20px;padding-bottom:18px;border-bottom:1.5px solid var(--fb-linha2)}
+.cdSaldo em{font-style:normal;display:block;font-size:14px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--fb-ink3)}
+.cdSaldo > b{display:block;font-size:52px;font-weight:250;letter-spacing:-.03em;
+  color:#14161A;margin-top:2px;font-variant-numeric:tabular-nums}
+.cdSaldo > b.neg{color:var(--fb-sai)}
+.cdConta{display:flex;gap:20px;flex-wrap:wrap;margin-top:10px}
+.cdConta span{font-size:15px;color:var(--fb-ink3)}
+.cdConta b{margin-left:6px;font-size:17px;font-weight:700;color:#14161A;
+  font-variant-numeric:tabular-nums}
+.cdConta b.ent{color:var(--fb-ent)} .cdConta b.sai{color:var(--fb-sai)}
+.cdNota{display:block;margin-top:12px;font-size:14px;line-height:1.55;color:var(--fb-ink3)}
+
+.cdAviso{margin-top:16px;font-size:15px;line-height:1.55;color:#14161A;
+  background:rgba(18,161,80,.10);border:1px solid rgba(18,161,80,.30);
+  border-radius:14px;padding:13px 15px}
+.cdAviso b{font-weight:700}
+
+/* ⚠️ 64px PRA DAR ~51px NA TELA: a gaveta inteira tem `zoom:.8`. Este é o
+   botão que move dinheiro — tem que ser o alvo mais fácil da gaveta. */
+.cdBt{margin-top:18px;width:100%;height:64px;border:0;border-radius:18px;cursor:pointer;
+  font:inherit;font-size:21px;font-weight:700;color:#fff;background:#12A150;
+  box-shadow:0 10px 26px -12px rgba(18,161,80,.9)}
+.cdBt:hover{background:#0E8642}
+.cdBt:active{transform:scale(.99)}
+.cdBt:disabled{background:rgba(20,22,26,.10);color:var(--fb-ink3);cursor:default;
+  box-shadow:none}
+
+.cdLista{margin-top:4px}
+.cdL .exD{width:150px}
+.cdRodape{margin-top:20px;padding-top:14px;border-top:1px solid var(--fb-linha);
+  font-size:13.5px;line-height:1.55;color:var(--fb-ink3)}
+.cdRodape b{color:#14161A}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   A ABA CAIXA NO IPHONE (dona, 09/09/2026)
+   "esse site, a aba caixa, não existe responsiva para o iPhone. Deixe a
+    desktop como está, e crie uma pra quando acessarmos pelo iPhone, que
+    tenha uma ótima navegação."
+
+   ⚠️ POR QUE NÃO BASTAVA "SER RESPONSIVO" — é a mesma doença do painel de
+   conteúdo, e a causa é a mesma: esta tela é uma PRANCHETA FIXA de 1380×794
+   que o `ajusta()` ENCOLHE pela menor dimensão. MEDIDO num iPhone 14 Pro:
+   escala 0,26 e a letra da bolinha da conta em 5,8px. E como a prancheta é
+   mais larga que a tela e fica CENTRALIZADA, metade do card do saldo ficava
+   fora da tela pela esquerda — na captura dava pra ler "ÍVEL", "2,28",
+   "ontas". Não é telefone: é uma foto pequena do computador, cortada.
+
+   Aqui a prancheta para de escalar, o `position:absolute` de cada card cede
+   lugar a uma PILHA, e a página volta a rolar. Nada disto vaza pro desktop:
+   é tudo dentro da media query.
+
+   ⚠️ `transform:none` NA PRANCHETA TAMBÉM CONSERTA AS GAVETAS. Um ancestral
+   com `transform` vira bloco-contêiner de `position:fixed` — era por isso
+   que a gaveta nascia centralizada na PRANCHETA (fora da tela) em vez de na
+   janela. Sem o transform, `fixed` volta a significar fixed.
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width:760px){
+  /* a página volta a ser uma página que rola */
+  html,body{height:auto;width:auto;overflow:visible}
+  body{display:block;padding:12px 12px 92px;background:#151109}
+  html.embutido body{padding-bottom:150px}
+  .foto{position:fixed;inset:0}
+
+  .prancheta{position:relative;width:100%!important;height:auto!important;
+    transform:none!important;flex:none}
+  .painel{position:relative;inset:auto;width:100%;height:auto;border-radius:26px;
+    overflow:visible;padding:14px 11px;display:flex;flex-direction:column;gap:11px}
+
+  /* ⚠️ TODO CARD SAI DO ABSOLUTO. Eles foram desenhados em coordenadas do
+     palco de 1380×794; soltos numa pilha, cada um ocupa a largura do telefone
+     e a altura do próprio conteúdo. A ordem é a de quem abre o caixa no
+     celular: quanto entrou hoje, quanto tem em conta, quem está no salão. */
+  .painel > .tit, .painel > .hjPer, .painel > .hoje, .painel > .over, .painel > .mtopo,
+  .painel > .mazul, .painel > .entrou, .painel > .dir, .painel > .baixo{
+    position:static!important;left:auto!important;top:auto!important;
+    width:auto!important;height:auto!important;max-width:none}
+  .painel > .tit{order:1;padding:2px 4px 0}
+  /* ⚠️ MESMO `order` DA PÍLULA, e vem antes dela no DOM — é o desempate que
+     mantém "medir [Hoje]" logo acima do número a que ele se refere. */
+  .painel > .hjPer{order:2}
+  .painel > .hoje{order:2}
+  .painel > .over{order:3}
+  .painel > .mtopo{order:4}
+  .painel > .mazul{order:5}
+  .painel > .entrou{order:6}
+  .painel > .dir{order:7}
+  .painel > .baixo{order:8}
+
+  .tit .a{font-size:15px} .tit .b{font-size:26px}
+
+  /* faturamento e lucro de hoje: duas colunas, sem pílula comprida */
+  .hoje{border-radius:22px!important;padding:12px 14px!important;flex-wrap:wrap;gap:12px!important}
+  .hjL{flex:1 1 40%}
+  /* ⚠️ NO CELULAR A CAIXA É UMA FAIXA INTEIRA, com alvo de 44px: no desktop
+     ela é um detalhe de 36px ao lado do título; aqui é o primeiro controle da
+     tela e é tocada com o dedo. */
+  .hjPer{border-radius:16px!important;padding:10px 14px!important;
+    min-height:46px;margin-bottom:10px;position:relative!important}
+  .hjPerIco{width:15px;height:15px}
+  .hjPerSel{font-size:14px;padding:6px 18px 6px 0}
+  .hjPerDatas{left:auto;right:0}
+
+  /* ── O CARD DO SALDO ─────────────────────────────────────────────────
+     ⚠️ `zoom`, e não `scale`. O desenho tem 1040px de largura; encaixá-lo por
+     `scale` na largura do telefone daria 0,33 e a letra do nome da conta cairia
+     pra 4,6px. Com `zoom` o BLOCO reflui (a largura de layout passa a ser a do
+     telefone dividida pelo zoom) e só a tipografia encolhe — aí dá pra
+     empilhar saldo, contas e anéis em vez de espremer tudo numa linha só. */
+  .over{padding:0!important;overflow:visible!important;background:none!important;
+    border:0!important;box-shadow:none!important;backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important}
+  .cardEsc{width:auto!important;height:auto!important;transform:none!important;
+    zoom:.6;padding:24px 22px 20px;background:rgba(255,255,255,.15);
+    border:1px solid rgba(255,255,255,.28);border-radius:52px}
+  .cardEsc .top{flex-wrap:wrap;gap:10px}
+  .cabSaldo{flex-direction:column!important;align-items:stretch!important;gap:18px!important}
+  .cardEsc .saldo{width:auto!important}
+  /* as quatro contas em 2×2: em fila de 4 num telefone o nome não cabe */
+  .ondes{display:grid!important;grid-template-columns:1fr 1fr;gap:14px 10px!important;
+    padding-top:0!important}
+  .onde{width:auto!important}
+  /* ⚠️ ESTES TRÊS SÃO OS QUE FICAVAM ILEGÍVEIS. Sob `zoom:.6` eles precisam
+     nascer maiores pra chegar em 12px na tela — 5,8px foi o que a sonda mediu
+     no estado anterior. */
+  .onN{font-size:21px!important} .onV{font-size:26px!important}
+  .onP{font-size:16px!important}
+
+  /* os anéis: o grande em cima, as categorias embaixo, em duas colunas */
+  .palcoA{margin-top:18px!important;height:auto!important;display:block!important}
+  .palcoA > div{flex-direction:column!important;gap:22px!important;
+    height:auto!important;align-items:stretch!important}
+  .aroBt.grande{align-self:center}
+
+  /* ── os três cards da coluna do meio ── */
+  .mtopo, .mazul{border-radius:22px!important;padding:14px 16px!important;min-height:74px}
+  .entrou{border-radius:22px!important;padding:14px 16px!important}
+
+  /* ── SEU SALÃO AGORA ──
+     ⚠️ A LISTA PERDE A ROLAGEM PRÓPRIA. Lista que rola DENTRO de página que
+     rola é armadilha de dedo: o dedo escolhe a errada e a tela parece travada.
+     Aqui quem rola é a página, e a lista mostra o dia inteiro. */
+  .dir{border-radius:26px!important;padding:16px 13px 13px!important}
+  .dir .saRolo{max-height:none!important;overflow:visible!important}
+
+  /* ── a faixa de baixo vira duas linhas ── */
+  .baixo{display:flex!important;flex-direction:column;gap:11px!important}
+  .cb{height:auto!important;min-height:150px}
+  .cb.meia, .cb.resto{flex:1 1 auto!important}
+
+  /* ── as gavetas viram folha de baixo, do tamanho da tela ── */
+  .gaveta{width:100%!important;max-width:none!important;max-height:86vh!important;
+    border-radius:30px!important;padding:22px 18px 18px!important}
+  .mtCheio, .ctCheio{width:100%!important;max-width:none!important;max-height:86vh!important;
+    border-radius:30px!important}
+  .veu, .mtVeu, .ctVeu{padding:10px!important}
+}
+
+/* ⚠️ OS DOIS BOTÕES FLUTUANTES TAPAVAM O ANEL. Empilhados no canto esquerdo
+   eles comiam 100px do meio da tela — na captura, o "R$ 1.829,12" do
+   Investimento ficava atrás do "Caixa em dinheiro". Num telefone de 393×660
+   não sobra canto pra botão grande boiando. Aqui eles viram uma barra no
+   rodapé, lado a lado, e o corpo já reserva o espaço deles (o padding-bottom
+   do body, mais alto quando a página está dentro do gestor). */
+@media (max-width:760px){
+  #btCaixaD, #btEstorno{position:fixed;height:46px;padding:0 12px;font-size:13px;
+    z-index:46;justify-content:center;bottom:calc(10px + env(safe-area-inset-bottom))}
+  #btCaixaD{left:10px;right:calc(50% + 5px)}
+  #btEstorno{left:calc(50% + 5px);right:10px}
+  html.embutido #btCaixaD, html.embutido #btEstorno{
+    bottom:calc(94px + env(safe-area-inset-bottom))}
+  #btCaixaD svg, #btEstorno svg{width:16px;height:16px}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   O DESENHO APROVADO (dona, 09/09/2026): "estorno C, e dinheiro C (sem o card
+   amarelo, deixar sem card por trás), e o botão de estorno fica de um lado, e
+   o dinheiro do outro lado."
+
+   ⚠️ SÓ FONTE DA APPLE, como ela pediu nos mockups. A folha inteira já usa
+   `--sf`, que resolve pra SF Pro no Mac e no iPhone. Nada é baixado de fora.
+   ⚠️ A GAVETA TEM `zoom:.8`. Todo tamanho aqui é escrito 1,25× maior do que o
+   que se quer ver na tela — é a mesma conta dos chips do extrato geral.
+   ══════════════════════════════════════════════════════════════════════════ */
+.cdCab{display:flex;align-items:center;gap:11px;margin-bottom:20px}
+.cdCab i{width:11px;height:11px;border-radius:4px;background:#D9A21B;flex:none}
+.cdCab.esFicha i{background:#BC3D20}
+.cdCab b{font-size:20px;font-weight:600;letter-spacing:-.01em;color:#14161A}
+.cdCab .gx{margin-left:auto}
+
+.cdOlho{font-size:13px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--fb-ink3)}
+/* o número grande, direto na folha — sem card atrás, como ela pediu */
+.cdNum{font-size:56px;font-weight:600;letter-spacing:-.035em;color:#14161A;
+  font-variant-numeric:tabular-nums;line-height:1.05;margin-top:4px;
+  display:flex;align-items:baseline;gap:6px}
+.cdNum span{font-size:30px;font-weight:500;color:var(--fb-ink3)}
+.cdNum.neg{color:var(--fb-sai)}
+
+.cdPills{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+.cdPill{display:inline-flex;align-items:baseline;gap:7px;height:38px;padding:0 15px;
+  border-radius:99px;background:rgba(20,22,26,.06);font-size:15px;color:var(--fb-ink3);
+  line-height:38px}
+.cdPill b{font-weight:700;color:#14161A;font-variant-numeric:tabular-nums}
+.cdPill.ent b{color:var(--fb-ent)} .cdPill.sai b{color:var(--fb-sai)}
+
+/* ── onde o dinheiro vivo está: gaveta, escritório e o total (16/09/2026) ──
+   ⚠️ NOME NOVO, CONFERIDO: `.cdOnde*` não existia em lugar nenhum do CSS. Já
+   perdi uma tarde com `.esConta`, que existia com outro sentido e vencia por
+   especificidade — as contas nasciam vermelhas sem ninguém pedir. */
+.cdOnde{margin-top:20px;padding-top:16px;border-top:1px solid var(--fb-linha)}
+.cdOndeL{display:flex;align-items:baseline;gap:12px;padding:9px 0;font-size:17px;
+  color:var(--fb-ink2)}
+.cdOndeL b{margin-left:auto;font-weight:700;color:#14161A;font-variant-numeric:tabular-nums}
+.cdOndeL b.neg{color:var(--fb-sai)}
+.cdOndeL.tot{margin-top:4px;padding-top:12px;border-top:1.5px solid var(--fb-linha2);
+  color:#14161A;font-weight:600}
+.cdOndeL.tot b{font-size:19px}
+.cdOndeN{margin-top:10px;font-size:15px;line-height:1.5;color:var(--fb-ink3)}
+.cdOndeN b{color:#14161A;font-weight:700}
+.cdOndeN.alerta{color:var(--fb-sai)}
+
+/* ── o extrato de uma categoria (mockup A, aprovado 16/09/2026) ──
+   ⚠️ NOMES NOVOS, CONFERIDOS: `.ptNota`, `.ptErro` e `.ptLista` não existiam. */
+.gaveta .ptNota{margin-top:16px;font-size:15px;line-height:1.5;color:var(--fb-ink3)}
+.gaveta .ptNota b{color:#14161A;font-weight:700}
+.gaveta .ptErro{margin-top:14px;padding:12px 14px;border-radius:14px;font-size:15px;
+  line-height:1.5;background:rgba(188,61,32,.09);border:1px solid rgba(188,61,32,.3);
+  color:#8C2D18}
+.gaveta .ptErro b{font-weight:700}
+/* ⚠️ A LISTA ROLA SOZINHA e o botão fica fixo embaixo. Com 83 entradas no
+   Estoque, sem isto o "Registrar saída" nascia fora da tela — o mesmo defeito
+   que a ficha do estorno já teve. */
+.gaveta .ptLista{margin-top:16px;max-height:52vh;overflow:auto;
+  border-top:1.5px solid var(--fb-linha2)}
+.gaveta .ptLista::-webkit-scrollbar{width:0}
+/* remanejamento entre potes: nem entrada nem saída — âmbar, não vermelho */
+.gaveta .exV.rem{color:#A6690B}
+
+/* ⚠️ 64px PRA DAR ~51px NA TELA (a gaveta tem zoom .8). Este é o botão que move
+   dinheiro — tem que ser o alvo mais fácil da gaveta. */
+.cdBt{margin-top:20px;width:100%;height:64px;border:0;border-radius:18px;cursor:pointer;
+  font:inherit;font-family:var(--sf);font-size:21px;font-weight:600;letter-spacing:-.01em;
+  color:#fff;background:#12A150;box-shadow:0 10px 26px -12px rgba(18,161,80,.9)}
+.cdBt:hover{background:#0E8642}
+.cdBt:active{transform:scale(.99)}
+.cdBt.vm{background:#BC3D20;box-shadow:0 10px 26px -12px rgba(188,61,32,.9)}
+.cdBt.vm:hover{background:#A93518}
+.cdBt:disabled{background:rgba(20,22,26,.10);color:var(--fb-ink3);cursor:default;box-shadow:none}
+
+.cdSec{display:flex;align-items:baseline;gap:12px;margin-top:26px;padding-bottom:9px;
+  border-bottom:1.5px solid var(--fb-linha2);font-size:19px;font-weight:700;color:#14161A}
+.cdSec b{margin-left:auto;font-size:19px;color:var(--fb-sai);font-variant-numeric:tabular-nums}
+.cdSec em{font-style:normal;font-size:14px;color:var(--fb-ink3);
+  background:rgba(20,22,26,.06);border-radius:99px;padding:2px 9px}
+.cdL{display:flex;align-items:baseline;gap:12px;padding:12px 0;
+  border-bottom:1px solid var(--fb-linha);font-size:17px}
+.cdL:last-child{border-bottom:0}
+.cdD{flex:none;width:170px;color:var(--fb-ink3);font-size:15px;font-variant-numeric:tabular-nums}
+.cdN{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#14161A}
+.cdV{flex:none;font-weight:700;color:var(--fb-sai);font-variant-numeric:tabular-nums}
+.cdVazio{font-size:16px;color:var(--fb-ink3);padding:16px 0;line-height:1.5}
+.cdPe{margin-top:24px;padding-top:16px;border-top:1px solid var(--fb-linha);
+  font-size:15px;line-height:1.55;color:var(--fb-ink3)}
+.cdPe b{color:#14161A}
+.cdAviso{margin-top:18px;font-size:17px;line-height:1.55;color:#14161A;
+  background:rgba(18,161,80,.10);border:1px solid rgba(18,161,80,.30);
+  border-radius:15px;padding:14px 16px}
+.cdAviso b{font-weight:700}
+
+/* ── a ficha do estorno ── */
+.esCampo{width:100%;height:56px;margin-top:18px;border-radius:15px;
+  border:1px solid var(--fb-linha2);background:#fff;font-family:var(--sf);font-size:18px;
+  color:#14161A;padding:0 16px;outline:none}
+.esCampo::placeholder{color:var(--fb-ink3)}
+.esCampo:focus{border-color:rgba(20,22,26,.42)}
+.esRot{font-size:16px;color:var(--fb-ink3);margin:20px 0 9px}
+.esSeg{display:flex;background:rgba(20,22,26,.06);border-radius:14px;padding:3px;gap:3px}
+.esSeg button{flex:1;height:46px;border:0;border-radius:11px;background:transparent;
+  font-family:var(--sf);font-size:18px;font-weight:500;color:var(--fb-ink2);cursor:pointer}
+.esSeg button.on{background:#fff;color:#14161A;font-weight:700;
+  box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.esVerbas{background:rgba(20,22,26,.05);border-radius:17px;padding:16px 17px;margin-top:18px}
+.esVl{display:flex;justify-content:space-between;gap:12px;font-size:17px;padding:5px 0;
+  color:var(--fb-ink2)}
+.esVl b{color:#14161A;font-weight:700;font-variant-numeric:tabular-nums}
+.esVn{font-size:14.5px;line-height:1.5;color:var(--fb-ink3);margin-top:9px}
+.esCts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.esCt{display:flex;align-items:center;gap:10px;border:1px solid var(--fb-linha2);
+  border-radius:15px;padding:12px 13px;background:#fff;cursor:pointer;font-family:var(--sf);
+  text-align:left}
+.esCt.on{border-color:#14161A;border-width:2px;padding:11px 12px}
+.esCt i{width:10px;height:10px;border-radius:4px;flex:none}
+.esCt b{display:block;font-size:17px;font-weight:600;color:#14161A}
+.esCt em{font-style:normal;font-size:15px;color:var(--fb-ink3);font-variant-numeric:tabular-nums}
+.esAviso{margin-top:16px;font-size:16px;line-height:1.5;color:#A6690B;
+  background:rgba(255,184,107,.14);border:1px solid rgba(255,184,107,.36);
+  border-radius:15px;padding:13px 15px}
+.esTec{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.esTec button{height:50px;border:0;border-radius:13px;background:rgba(20,22,26,.06);
+  font-family:var(--sf);font-size:22px;font-weight:500;color:#14161A;cursor:pointer}
+.esTec button:active{background:rgba(20,22,26,.14)}
+/* ⚠️ O BOTÃO QUE MOVE DINHEIRO NÃO PODE FICAR ABAIXO DA DOBRA. MEDIDO: a ficha
+   tem 1065px de conteúdo numa gaveta de 750 — o "Estornar" nascia 792px abaixo
+   do topo, fora da vista, e ela teria que rolar pra achar. Grudado no fim da
+   gaveta, ele está sempre à mão enquanto ela digita. */
+.gaveta.esG{padding-bottom:18px}
+.gaveta.esG .cdBt.vm{position:sticky;bottom:0;margin-top:18px;
+  box-shadow:0 -14px 22px -6px #fff, 0 10px 26px -12px rgba(188,61,32,.9)}
+.gaveta.esG .esRot{margin:16px 0 8px}
+.gaveta.esG .cdNum{font-size:48px}
+.gaveta.esG .esCampo{height:52px;margin-top:14px}
+
+/* ⚠️ A GAVETA DO ESTORNO TINHA `zoom:.68` (a classe `esG`) porque ela era mais
+   comprida que as outras. O desenho novo é mais enxuto e volta pro .8 das
+   demais — senão a letra dela fica menor que a do resto do painel. */
+.gaveta.esG{zoom:.8}
+
+/* ── os dois botões, um de cada lado (ordem dela) ── */
+#btCaixaD{left:18px;right:auto}
+#btEstorno{left:auto;right:18px}
+@media (max-width:760px){
+  #btCaixaD{left:10px;right:calc(50% + 5px)}
+  #btEstorno{left:calc(50% + 5px);right:10px}
+}
+
+/* ══ O FECHAMENTO: a nota inteira, o campo de data e os dois botões ════════ */
+/* ⚠️ O PALCO ROLA. A nota era decepada por um teto de altura pra não passar por
+   baixo do rodapé — o preço era ela não conseguir LER o próprio fechamento. */
+#cxPalco{overflow-y:auto;-webkit-overflow-scrolling:touch}
+#cxPalco .cxCentro{padding-bottom:var(--pe,320px)}
+#cxPalco.transborda .impSaida{max-height:none;overflow:visible}
+
+#cxPalco .cxDataC{display:inline-flex;align-items:center;gap:8px;font-size:12px;
+  color:#6B7280;background:#fff;border:1px solid #E4E4E6;border-radius:99px;
+  padding:5px 12px 5px 14px;cursor:pointer}
+#cxPalco .cxData{border:0;background:transparent;font-family:inherit;font-size:13px;
+  font-weight:600;color:#1C1C1E;outline:none;cursor:pointer}
+#cxPalco .cxD.meio{background:#FFF6E5;border-color:#F0C77A}
+#cxPalco .cxD i.m{color:#A6690B;font-style:normal;font-weight:700}
+#cxPalco .cxConfL.ok b{color:#12885C}
+#cxPalco .cxConfL.ok span{color:#A3AAB4;text-decoration:line-through}
+
+/* ⚠️ DOIS BOTÕES LADO A LADO, e o "Agora não" embaixo — não espremido no meio.
+   Cada um diz o valor que vai sair: botão que move dinheiro sem dizer quanto
+   é um convite a errar. */
+#cxPalco .cxBts{display:flex;gap:10px;width:380px;max-width:100%}
+#cxPalco .cxBts .cxBt{flex:1;width:auto;font-size:14px;padding:14px 10px;line-height:1.25}
+#cxPalco .cxBt.eq{background:#1C1C1E}
+#cxPalco .cxBt.lu{background:#12885C;box-shadow:0 4px 20px rgba(18,136,92,.28)}
+#cxPalco .cxBt:disabled{background:#E9E9EC;color:#A3AAB4;box-shadow:none;cursor:default}
+#cxPalco .cxBt2.largo{width:380px;max-width:100%}
+
+/* ══ A TRAVA ANTI-FURTO no rodapé do fechamento ═══════════════════════════ */
+/* ⚠️ O AVISO É BOTÃO. Ele não pode ser só um selo: ela pediu pra "clicar e ver
+   quem faltou do dia, se justificou, se não respondeu". */
+#cxPalco .afBox{width:380px;max-width:100%;display:flex;align-items:center;gap:11px;
+  border:0;border-radius:14px;padding:11px 14px;font-family:inherit;text-align:left;
+  cursor:pointer;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.10)}
+#cxPalco .afBox b{display:block;font-size:13.5px;font-weight:700;color:#1C1C1E;line-height:1.3}
+#cxPalco .afBox em{font-style:normal;font-size:12px;color:#6B7280}
+#cxPalco .afBox.medindo{color:#6B7280;font-size:12.5px;cursor:default;box-shadow:none;
+  background:rgba(0,0,0,.04)}
+#cxPalco .afAro{width:14px;height:14px;border-radius:99px;border:2px solid #C9CDD4;
+  border-top-color:#1C1C1E;animation:afGira .8s linear infinite;flex:none}
+@keyframes afGira{to{transform:rotate(360deg)}}
+#cxPalco .afBox.alerta{background:#FFF1EE;box-shadow:inset 0 0 0 1.5px #E8A08C}
+#cxPalco .afSino{width:26px;height:26px;border-radius:99px;background:#BC3D20;color:#fff;
+  font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;flex:none}
+#cxPalco .afCk{width:26px;height:26px;border-radius:99px;background:#12885C;color:#fff;
+  font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none}
+
+.afCab i{background:#BC3D20}
+.afTopo{display:flex;gap:10px;margin-top:6px}
+.afNum{flex:1;background:rgba(20,22,26,.05);border-radius:16px;padding:14px 12px;text-align:center}
+.afNum b{display:block;font-size:34px;font-weight:600;letter-spacing:-.03em;color:#14161A;
+  font-variant-numeric:tabular-nums;line-height:1.1}
+.afNum span{font-size:14px;color:var(--fb-ink3);line-height:1.3;display:block;margin-top:3px}
+.afNum.bad{background:rgba(188,61,32,.08)} .afNum.bad b{color:#BC3D20}
+.afAlerta{margin-top:16px;font-size:16px;line-height:1.55;color:#14161A;
+  background:rgba(188,61,32,.07);border:1px solid rgba(188,61,32,.26);
+  border-radius:16px;padding:15px 16px}
+.afSec{margin-top:22px;padding-bottom:8px;border-bottom:1.5px solid var(--fb-linha2);
+  font-size:18px;font-weight:700;color:#14161A}
+.afL{padding:14px 0;border-bottom:1px solid var(--fb-linha)}
+.afL:last-child{border-bottom:0}
+.afLt b{font-size:18px;font-weight:600;color:#14161A}
+.afLt em{font-style:normal;font-size:15px;color:var(--fb-ink3);margin-left:8px}
+.afLs{display:flex;align-items:center;gap:9px;margin-top:6px}
+.afLs em{font-style:normal;font-size:14px;color:var(--fb-ink3)}
+.afTag{display:inline-flex;height:28px;align-items:center;padding:0 11px;border-radius:99px;
+  font-size:14px;font-weight:600;background:rgba(20,22,26,.07);color:var(--fb-ink2)}
+.afTag.calm{background:transparent;color:var(--fb-ink3);padding:0;font-weight:500}
+.afTag.bad{background:#BC3D20;color:#fff}
+/* ⚠️ A FRASE DELA APARECE INTEIRA. É a prova — sem ela, a bandeira vira acusação
+   sem lastro e ela não tem como julgar. */
+.afFrase{margin-top:9px;font-size:16px;line-height:1.5;color:#14161A;
+  background:rgba(20,22,26,.05);border-radius:14px;padding:11px 13px}
+.afFrase em{font-style:normal;font-size:13.5px;color:var(--fb-ink3);margin-left:6px}
+.afL.bad .afFrase{background:rgba(188,61,32,.07)}
+.afVazio{margin-top:18px;font-size:16px;line-height:1.55;color:var(--fb-ink3)}
+.afPe{margin-top:24px;padding-top:16px;border-top:1px solid var(--fb-linha);
+  font-size:14.5px;line-height:1.55;color:var(--fb-ink3)}
+.afPe b{color:#14161A}
+
+/* ⚠️ `html.embutido #cxPalco .cxCentro` GANHAVA DA MINHA RESERVA. Ele fixa
+   `padding-bottom:92px` (só o tamanho da barra do gestor) e tem especificidade
+   maior que `#cxPalco .cxCentro` — então a reserva medida era ignorada e a nota
+   voltava a ficar atrás do rodapé, com 92px reservados para um rodapé de 564.
+   Aqui o `--pe` volta a mandar nos dois casos: ele JÁ soma os 92 quando a
+   página está dentro do gestor (ver cxReservarPe). */
+html.embutido #cxPalco .cxCentro{padding-bottom:var(--pe,320px)}
+
+/* ⚠️ NO TELEFONE O RODAPÉ SAI DE `fixed` E ENTRA NO FLUXO. Ele cresceu (data,
+   aviso anti-furto, cartão de conferência, dois botões) e passou a medir 564px
+   — numa tela de 660 ele É a tela, e a nota ficava atrás dele. Era o mesmo
+   defeito que ela reclamou, de outro jeito. Em cima da nota, na ordem natural:
+   ela lê o cupom, rola, e age. */
+@media (max-width:760px){
+  #cxPalco .cxPe{position:static;bottom:auto;box-shadow:none;padding:16px 14px 26px;
+    background:transparent}
+  html.embutido #cxPalco .cxPe{bottom:auto}
+  #cxPalco .cxCentro{padding-bottom:8px!important}
+  html.embutido #cxPalco{padding-bottom:96px}
+  /* os dois botões não cabem lado a lado com esse texto: empilham */
+  #cxPalco .cxBts{flex-direction:column}
+  #cxPalco .cxBts .cxBt{width:100%}
+  #cxPalco .cxDias{justify-content:flex-start}
+}
+
+/* ⚠️⚠️ O RODAPÉ DEIXOU DE FLUTUAR — NO COMPUTADOR TAMBÉM. Ele tem 564px de
+   altura (data, aviso anti-furto, cartão de conferência, dois botões e o
+   "agora não"); numa janela de 900 ele cobria dois terços da nota, e a nota
+   passava por baixo dele. Era literalmente o que ela reclamou: "uma tela
+   sobrepõe a animação da nota". Reservar espaço no fim resolvia o FIM, não o
+   MEIO — a qualquer rolagem ele continuava por cima.
+   Agora ele vem DEPOIS da nota, na ordem natural: ela lê o cupom, rola, e age.
+   O palco rola; nada cobre nada. */
+#cxPalco .cxPe{position:static;bottom:auto;box-shadow:none;background:transparent;
+  padding:6px 20px 40px}
+html.embutido #cxPalco .cxPe{bottom:auto}
+#cxPalco .cxCentro{padding-bottom:10px}
+html.embutido #cxPalco .cxCentro{padding-bottom:10px}
+html.embutido #cxPalco{padding-bottom:100px}
+
+/* ⚠️ A GAVETA DA CONFERÊNCIA ABRIA ATRÁS DO PALCO. O `#cxPalco` tem z-index 130
+   e o véu da gaveta tem 50 — ela clicava no aviso, a gaveta abria, e não
+   aparecia nada. Enquanto o fechamento está aberto, o véu sobe acima dele. */
+#cxPalco.on ~ .veu, body:has(#cxPalco.on) .veu{z-index:140}
+.afAindaVem{margin-top:14px;font-size:15px;line-height:1.5;color:var(--fb-ink3);
+  background:rgba(20,22,26,.05);border-radius:14px;padding:12px 14px}
+
+/* ── o modo do estorno: dois caminhos que fazem coisas opostas ─────────────
+   ⚠️ OS DOIS BOTÕES PRECISAM CABER O TEXTO INTEIRO. "Ela pagou tudo no balcão"
+   não pode virar reticências: é ele que diz que nenhuma verba será tocada, e
+   escolher o caminho errado aqui desfaz verba com lastro. Por isso a fonte é
+   menor que a do `.esSeg` comum e a altura cresce em vez de cortar. */
+.esSeg.esModo{gap:8px}
+.esSeg.esModo button{font-size:14px;line-height:1.25;padding:10px 12px;height:auto;
+  white-space:normal;text-align:center}
+.esVn.esModoNota{margin:-2px 0 4px;opacity:.85}
+
+/* ── o DIA da saída (ela, 01/10/2026: "ter opção de colocar a data") ──
+   ⚠️ A GAVETA É CLARA. As regras-base abaixo valem pro vidro escuro; quem de
+   fato pinta esta tela são as com `.gaveta` na frente — foi assim que o resto
+   do seletor de conta já estava escrito, e sair do padrão aqui deixaria o
+   campo branco no branco. */
+.sdDia .sdDiaL{display:flex;gap:9px;align-items:stretch}
+.sdDiaIn{flex:1;min-width:0;font:inherit;font-size:16px;font-weight:600;
+  background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.14);
+  border-radius:16px;padding:11px 12px;color:#fff;cursor:pointer}
+.sdDiaHoje{flex:none;font:inherit;font-size:14px;font-weight:600;cursor:pointer;
+  background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.14);
+  border-radius:16px;padding:11px 14px;color:rgba(255,255,255,.6)}
+.sdDiaP{display:block;margin-top:7px;font-size:11.5px;line-height:1.5;
+  color:rgba(255,255,255,.55)}
+.gaveta .sdDiaIn{background:rgba(20,22,26,.05);border-color:var(--fb-linha);
+  color:inherit}
+/* ⚠️ `appearance:none` NÃO ENTRA AQUI. No Safari do iPhone ele apaga o próprio
+   texto da data do campo — o seletor abre, ela escolhe, e o campo fica em
+   branco como se nada tivesse sido escolhido. */
+.gaveta .sdDiaHoje{background:rgba(20,22,26,.05);border-color:var(--fb-linha);
+  color:var(--fb-ink3)}
+.gaveta .sdDiaHoje.on{border-color:var(--fb-ink2);color:var(--fb-ink2)}
+.gaveta .sdDiaP{color:rgba(20,22,26,.60)}
+.gaveta .sdDiaP b{color:inherit;font-weight:700}
+
+/* ── o extrato de UMA conta no celular ──
+   A regra de ≤620px esconde `.egL .exF` porque no extrato geral a coluna da
+   conta vale mais que a forma de pagamento. Na gaveta de uma conta só não há
+   coluna de conta, e o `.exF` é o POTE da saída — some ele e a linha do
+   celular não diz de onde o dinheiro saiu. Aqui ele volta, menor. */
+@media (max-width:620px){
+  .egLc .exF{display:block;font-size:11.5px;text-align:right;max-width:34%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+.egCabSub{font-style:normal}
+@media (max-width:620px){ .egCabSub{display:none} }
+
+/* ══ O EXTRATO MAIS QUIETO (ela, 01/10/2026: "minimalista, clean") ═════════
+   A fonte já era a da Apple — `--sf` resolve em SF Pro no aparelho dela. O que
+   lia como "confuso" era o TRATAMENTO: três números no cabeçalho do dia, a
+   data repetida em toda linha e todo valor em peso 700. Aqui fica só a
+   hierarquia: o dia sussurra, o nome fala, o valor responde. */
+
+/* o cabeçalho do dia vira etiqueta de seção, como nas listas do iOS —
+   ⚠️ continua `sticky`: é ele que diz em que dia ela está enquanto rola. */
+.egDiaCab{padding:18px 0 7px;font-size:12.5px;letter-spacing:.005em}
+.egDiaCab b{font-weight:590}
+.gaveta .egDiaCab b{color:var(--fb-ink3)}
+.egDia:first-child .egDiaCab{padding-top:8px}
+
+/* a coluna da esquerda agora é só a HORA: mais estreita e mais quieta */
+.egL .exD{width:48px;font-size:13px;font-variant-numeric:tabular-nums}
+.gaveta .egL .exD{color:var(--fb-ink3)}
+
+/* ⚠️ `tabular-nums` NOS VALORES, não só por estética: sem ele os algarismos
+   têm larguras diferentes e a coluna de dinheiro fica serrilhada — é o que faz
+   uma lista de números parecer bagunçada mesmo alinhada à direita. */
+.egL .exV{font-weight:600;font-variant-numeric:tabular-nums}
+.egL .exF{font-size:12.5px}
+.egL{padding:11px 0}
+.gaveta .egL{border-bottom-color:rgba(20,22,26,.06)}
+/* a última linha do dia não precisa de risco: quem separa é o espaço do
+   próximo cabeçalho */
+.egDia .egL:last-child{border-bottom:0}
+
+.egCabLimpo{border-bottom:0;padding-bottom:0}
+
+/* a regra do cartão, no subtítulo da gaveta — quieta, não é aviso */
+.exReg{font-style:normal;opacity:.72}
+/* ⚠️ A COLUNA DA FORMA PRECISA DE MAIS ESPAÇO NO CELULAR desde que a linha de
+   cartão passou a trazer a data da venda. Com 34% saíam 71 linhas cortadas
+   justo na informação nova. */
+@media (max-width:620px){
+  .egLc .exF{max-width:44%;font-size:11px}
+}
+
+/* ── a conta da conta: as parcelas e o saldo, na mesma coluna ──
+   Substitui o aviso de acerto que anunciava uma divergência sem dizer que o
+   acerto já estava dentro do saldo.
+   ⚠️⚠️ `font-size` E `display` EXPLÍCITOS EM TODO <b> DAQUI. Este bloco mora
+   dentro de `.exSaldo`, e existe `.exSaldo b{font-size:44px;display:block}` —
+   que é o estilo do número grande do saldo. Sem travar, cada parcela saía em
+   44px e o "já está" do parágrafo virava um título. Medido na tela. */
+.exConta{margin-top:14px;border-top:1px solid var(--fb-linha);padding-top:11px}
+.exConta>div{display:flex;align-items:baseline;justify-content:space-between;
+  gap:12px;padding:5px 0;font-size:14px;color:var(--fb-ink3)}
+.exConta>div b{font-size:15px;font-weight:500;display:inline;margin:0;
+  font-variant-numeric:tabular-nums;color:var(--fb-ink2)}
+.exConta .exContaT{margin-top:5px;padding-top:9px;border-top:1px solid var(--fb-linha)}
+.exConta .exContaT span{color:var(--fb-ink2)}
+.exConta .exContaT b{font-size:17px;font-weight:600;color:#14161A}
+.exConta p{margin:10px 0 0;font-size:11.5px;line-height:1.5;color:rgba(20,22,26,.60)}
+.exConta p b{font-size:inherit;font-weight:600;display:inline;margin:0;
+  color:rgba(20,22,26,.78)}
+
+/* a porta da conciliação, dentro da conta da conta */
+.exConc{display:inline-block;margin-top:11px;font-size:13px;font-weight:600;
+  color:#1E6DFF;text-decoration:none}
+
+/* o total enquanto alguma conta ainda mede — nunca um número pela metade */
+.cabSaldo .v .medindo{font-style:normal;font-size:.44em;font-weight:500;
+  color:rgba(255,255,255,.55);letter-spacing:0}
+
+/* ══ BARRA DE REGISTRAR SAÍDA, GRUDADA NO RODAPÉ DO EXTRATO ══════════════
+   ⭐⭐ Ela, 23/10/2026: *"quero também um botão de registrar saída em cada
+   extrato, um botão que acompanha o rolar da tela."*
+
+   ⚠️ `sticky`, NUNCA `fixed`. Quem rola é a `.gaveta` (overflow-y:auto), não
+   a página: com `fixed` a barra se prenderia à janela do navegador e, no
+   celular, boiaria por cima do resto da tela e do teclado.
+   ⚠️ MARGENS NEGATIVAS IGUAIS AO PADDING DA GAVETA (30px dos lados, 24 em
+   baixo): sem isso a barra fica com 30px de vidro transparente de cada lado e
+   a lista aparece passando por trás dela.
+   ⚠️ O DEGRADÊ EM CIMA é o que impede a última linha do extrato de "colar" no
+   botão enquanto rola. Sem ele a lista parece cortada no meio de um valor. */
+.gBarra{position:sticky;bottom:0;z-index:9;
+  /* ⚠️ `bottom:0`, NÃO um valor negativo. Com `bottom:-24px` (a ideia de
+     cobrir o padding de baixo da gaveta) a barra para 24px ABAIXO da janela
+     de rolagem e some: medido no iPhone, ela não aparecia nem no topo nem no
+     meio do extrato — só quando a rolagem chegava ao fim. */
+  /* ⚠️ SEM MARGEM NEGATIVA EM BAIXO. Com `-24px` a barra encurtava o
+     scrollHeight e, no fim da rolagem, cobria 6px do total "Entrou − saiu" do
+     extrato geral e a última linha do extrato do pote — medido. O padding de
+     baixo da gaveta já faz esse papel. */
+  margin:14px -30px 0;padding:16px 30px 12px;
+  /* medido: o fundo computado da gaveta é rgb(255,255,255) — o branco aqui
+     não é palpite, é a cor que o navegador reporta nela. */
+  background:linear-gradient(to top, #fff 62%, rgba(255,255,255,0));
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.gBarra .cdBt{margin-top:0}
+/* ⚠️ O RABO BRANCO ABAIXO DA BARRA. A gaveta tem 24px de padding embaixo, e a
+   barra para em cima dele: a lista continuava aparecendo nessa faixa, embaixo
+   do botão — medido, uma linha inteira de extrato visível ali. Em vez de
+   margem negativa (que encurta o scroll e faz a barra cobrir o total do
+   extrato, o defeito anterior), o fundo se estende por um pseudo-elemento,
+   que não ocupa lugar no fluxo. */
+.gBarra::after{content:'';position:absolute;left:0;right:0;top:100%;height:30px;
+  background:#fff;pointer-events:none}
+
+/* a telinha "em qual pote?" do extrato geral e do extrato da conta */
+.sdPotes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.sdPote{display:flex;align-items:center;gap:10px;cursor:pointer;font:inherit;
+  text-align:left;padding:14px 16px;border-radius:16px;
+  background:rgba(20,22,26,.045);border:1px solid rgba(20,22,26,.09)}
+.sdPote:hover{background:rgba(20,22,26,.08)}
+.sdPote i{width:11px;height:11px;border-radius:50%;background:var(--c);flex:none}
+.sdPote span{flex:1;min-width:0;font-size:17px;font-weight:600}
+.sdPote b{font-size:15px;font-weight:700;color:var(--fb-ink2, rgba(20,22,26,.75));
+  font-variant-numeric:tabular-nums}
+.sdPotesP{margin-top:16px;font-size:15px;line-height:1.45;
+  color:var(--fb-ink3, rgba(20,22,26,.6))}
+
+@media (max-width:899px){
+  /* no celular a gaveta tem outro respiro; a barra acompanha */
+  .gBarra{margin-left:-18px;margin-right:-18px;padding-left:18px;padding-right:18px;
+    padding-bottom:10px}
+  .sdPotes{grid-template-columns:1fr}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MÊS A MÊS — a planilha (opção A aprovada em 28/10/2026)
+   Substitui o gráfico de 3 barras. Os estilos .mz* continuam existindo porque
+   o cabeçalho (.mzLer/.mzMes/.mzMg) foi reaproveitado — é a mesma grafia do
+   topo de todos os cards do painel.
+   ⚠️ 178px É O TETO. Com 5 meses sobra folga; a partir do 6º a tabela rola
+      dentro de si (.tbMes) em vez de empurrar o card e sumir atrás da barra.
+   ══════════════════════════════════════════════════════════════════════════ */
+.tbMes{flex:1;min-height:0;overflow:auto;margin-top:4px}
+.tbMes::-webkit-scrollbar{width:0;height:0}
+.tbA{width:100%;border-collapse:collapse;font-size:11px}
+.tbA th{font-size:9px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;
+  letter-spacing:.06em;text-align:right;padding:0 0 4px}
+.tbA td{text-align:right;padding:2.5px 0;border-top:1px solid rgba(255,255,255,.09);
+  font-size:12px;color:#fff}
+.tbA td.m{text-align:left;font-weight:700;font-size:11px;color:rgba(255,255,255,.75)}
+.tbA td.m i{font-style:normal;color:rgba(255,255,255,.45)}
+.tbA td.c{color:rgba(255,255,255,.52)}
+.tbA td.l{font-weight:700}
+/* ⭐ a linha é clicável: o cursor e o realce avisam antes do clique */
+.tbA tbody tr{cursor:pointer;transition:background .12s}
+.tbA tbody tr:hover td{background:rgba(255,255,255,.09)}
+.tbA tbody tr:first-child td{border-top:none}
+
+/* a gaveta do mês: ponto de cor + detalhe embaixo do nome + % ao lado do valor
+   ⚠️ A GAVETA É FOLHA BRANCA. O painel inteiro é texto branco sobre vidro, mas
+      dentro do `#gaveta` o fundo é claro e quem manda são os tokens --fb-*.
+      Escrevi o detalhe em branco na primeira volta e ele sumiu na tela — por
+      isso estes dois seletores nascem presos a `.gaveta`. */
+.gaveta .mesL .exN em{display:block;font-style:normal;font-size:12.5px;
+  color:var(--fb-ink3);white-space:normal;line-height:1.3;margin-top:2px}
+.gaveta .mesL .exN{white-space:normal;overflow:visible;font-weight:600}
+.mesPt{flex:none;width:10px;height:10px;border-radius:99px;align-self:center;margin-top:6px}
+.gaveta .mesL{align-items:flex-start;padding:11px 0}
+.gaveta .mesL .exV u{display:block;text-decoration:none;font-size:12px;font-weight:600;
+  color:var(--fb-ink3);margin-top:2px}

@@ -1,0 +1,186 @@
+<!doctype html><html lang="pt-BR"><head>
+<meta name="robots" content="noindex,nofollow">
+<meta name="googlebot" content="noindex,nofollow">
+<script src="../ls-trava.js"></script>
+<script src="../ls-casca.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Caixa · Lavou Tá Liso</title><link rel="stylesheet" href="vp.css">
+<!-- ⚠️ DEPOIS do vp.css, sempre: esta folha é a camada de organização e vence
+     por ORDEM. Invertendo, o vp.css volta a mandar e nada muda na tela. -->
+<link rel="stylesheet" href="laila-caixa.css">
+<!-- ⚠️ O TEMA ENTRA POR ÚLTIMO, e isso é de propósito: ele vence por ORDEM.
+     Invertendo, o vp.css volta a mandar e a tela continua de vidro. -->
+<link rel="stylesheet" href="ls-tema.css"></head><body>
+<div id="carregando" class="carregando"><span class="cgAro"></span>
+  <b>Lendo o caixa</b><em>pdv, agenda e chegadas de hoje</em></div>
+<script src="dados.js"></script><script src="el.js"></script>
+<script src="contas.js"></script>
+<script src="meta.js"></script>
+<script src="hoje.js"></script>
+<script src="corpo.js"></script>
+<script src="miolo-5-saldo.js"></script>
+<script src="salao.js"></script>
+<script src="mes.js"></script>
+<script src="estorno.js"></script>
+<script src="agenda.js"></script>
+<script src="navegacao.js"></script>
+<script src="saidas.js"></script>
+<script src="extrato-geral.js"></script>
+<script src="caixa-dinheiro.js"></script>
+<script src="antifurto.js"></script>
+<script src="caixa.js"></script>
+<script src="vivo.js"></script>
+<!-- ⚠️ DEPOIS de todos: o tema SUBSTITUI `bolinhas`, `cardSalao` e `miolo`
+     por versões novas. Como são funções globais e o `montaCorpo` as resolve
+     na hora da chamada, trocar aqui basta — nenhum dos 20 scripts foi
+     editado, e é por isso que os botões continuam funcionando. -->
+<script src="ls-logos.js"></script>
+<script src="ls-tema.js"></script>
+<script>
+/* ⚠️ A ALTURA LIVRE DESCONTA A BARRA DE ABAS (66px + folga). Sem isso o
+   painel encostava nela e a faixa de baixo — agendamentos e mês a mês —
+   ficava escondida atrás dos botões. */
+/* ⚠️ 132 É MEDIDO, NÃO ESTIMADO. A barra tem 66px e mora a 14px do fundo,
+   mas o painel é CENTRALIZADO — cada pixel que eu tiro da altura livre só
+   sobe o rodapé meio pixel. Com 88 ela cobria 20px da faixa de baixo e com
+   118 ainda cobria 5. Em 132 o painel acaba exatamente onde a barra começa. */
+const EMBUTIDO = location.search.includes('embutido');
+/* ⚠️ A RESERVA VALE NOS DOIS CASOS. Eu tinha zerado quando embutido, achando
+   que sem barra própria sobrava a altura toda — mas dentro do gestor a barra
+   continua existindo, só que é a DELE, fixa por cima do iframe. O rodapé do
+   painel (agendamentos e mês a mês) ficava atrás dos botões. As duas barras
+   têm a mesma altura, então a reserva é a mesma. */
+/* ⛔ OS 132 CAÍRAM EM 18/09/2026. Eles existiam porque o painel era
+   centralizado na JANELA INTEIRA: pra afastar o rodapé da barra em 53px eu
+   precisava reservar 106, e metade virava margem morta EM CIMA, onde não há
+   nada pra proteger. Medido em 1512×950: 86px sobrando acima e 86 abaixo, com
+   a barra usando 53.
+   Agora o `body` reserva embaixo só o que a barra ocupa (`--barra`, medido no
+   DOM) e o flex centra no que sobra. A reserva parou de ser paga duas vezes. */
+const BARRA_FALLBACK = 61;   /* barra 37 + 16 do fundo + 8 de folga */
+const MARGEM = 16;           /* respiro em volta do painel */
+/* ⚠️ DENTRO DO GESTOR A BARRA DELE FLUTUA POR CIMA DO IFRAME. Medido em
+   04/09: o rodapé do comprovante ia até 860 e a barra do gestor ocupa
+   770–840 — o botão "Pagar equipe e retirar lucro" ficava ATRÁS dela. Ela
+   clicava e acertava a barra. Marco o corpo e o CSS sobe o rodapé. */
+if(EMBUTIDO) document.documentElement.classList.add('embutido');
+/* ⭐ A BARRA É MEDIDA, NÃO CHUTADA. Ela é `position:fixed` no rodapé; eu pego a
+   mais alta que encosta no fundo da janela e uso o que ela ocupa DE FATO, mais
+   8px de folga. Dentro do gestor a barra é a DELE, fixa por cima do iframe —
+   por isso a medição procura no documento todo e cai no fallback se não achar
+   nada (é o caso do primeiro quadro, antes de a barra existir). */
+function _barraDoRodape(){
+  let maior = 0;
+  for(const e of document.querySelectorAll('body *')){
+    const s = getComputedStyle(e);
+    if(s.position !== 'fixed') continue;
+    const b = e.getBoundingClientRect();
+    /* ⚠️ A BARRA É BAIXA E ENCOSTA NO FUNDO. Sem o teto de altura eu pegava a
+       `.foto` (position:fixed;inset:0), que ocupa a janela inteira — o `--barra`
+       virava a altura da tela e o `--k` saía NEGATIVO (medido: −0,050, painel de
+       70×40px). Elemento que cobre a tela não é barra. */
+    if(b.height < 20 || b.height > 160 || b.width < 100) continue;
+    if(b.bottom < innerHeight - 120 || b.top > innerHeight) continue;  /* tem que estar no rodapé */
+    maior = Math.max(maior, innerHeight - b.top);
+  }
+  return maior ? Math.round(maior + 8) : BARRA_FALLBACK;
+}
+function ajusta(){
+  const barra = EMBUTIDO ? BARRA_FALLBACK : _barraDoRodape();
+  document.documentElement.style.setProperty('--barra', barra + 'px');
+  /* a altura livre já vem descontada da barra pelo padding do body — aqui só
+     tiro a margem de respiro, uma vez de cada lado */
+  document.documentElement.style.setProperty('--k',
+    Math.min((innerWidth - 2*MARGEM)/1380, (innerHeight - barra - 2*MARGEM)/794));
+}
+function pinta(){
+  /* ⚠️ TROCA, NÃO ACRESCENTA. A versão anterior apagava `.palco` — classe
+     que o corpo.js não usa mais — e o `?.` engolia o erro. Resultado: a cada
+     90s um painel inteiro era grudado no fim da página e a tela aparecia
+     dividida em duas. Agora existe uma raiz `.tela` e ela é substituída. */
+  document.getElementById('carregando')?.remove();
+  const rolo = document.querySelector('.saRolo');
+  const y = rolo ? rolo.scrollTop : 0;
+  /* ⚠️ innerHTML NUM CONTÊINER, não outerHTML nem insertAdjacentHTML. O
+     template tem fechamento de div sobrando; com innerHTML o parser
+     descarta a sobra e tudo — inclusive as quatro gavetas — fica dentro da
+     .tela. Foi assim que a duplicação parou de verdade. */
+  let tela = document.querySelector('.tela');
+  if(!tela){ tela = document.createElement('div'); tela.className='tela';
+             document.body.appendChild(tela); }
+  tela.innerHTML = montaCorpo();
+  if(document.querySelectorAll('.tela').length !== 1)
+    console.error('[caixa] mais de uma tela na página:', document.querySelectorAll('.tela').length);
+  const r2 = document.querySelector('.saRolo');
+  if(r2) r2.scrollTop = y;          /* não joga a lista do salão pro topo */
+  ajusta(); ligarMes();
+}
+/* ⚠️ NÃO REDESENHA COM ALGO ABERTO. O relógio de 90s fechava na cara dela a
+   gaveta do extrato, o card de contas ou o comprovante do caixa no meio da
+   leitura. Se tem coisa aberta, pula esta volta e tenta na próxima. */
+function temCoisaAberta(){
+  const on = id => document.getElementById(id)?.classList.contains('on');
+  return !!(on('veu') || on('ctVeu') || on('mtVeu') || on('cxPalco'));
+}
+(async () => {
+  try { await carregar(); }
+  catch(e){
+    /* ⚠️ FALHA DE LEITURA NÃO PODE VIRAR TELA BONITA COM NÚMERO ERRADO.
+       Os campos nascem zerados, então uma queda aqui aparece como zero —
+       e a faixa diz por quê. */
+    const c=document.getElementById('carregando');
+    if(c) c.innerHTML = '<b>Não consegui ler o caixa</b>'
+      + '<em>' + String(e.message||e) + '</em>'
+      + '<button class="cgBt" onclick="location.reload()">tentar de novo</button>';
+    return;
+  }
+  if(location.search.includes('exemplo')) CT = CT_EX.map(x=>({...x}));
+  pinta();
+  /* ⚠️ DENTRO DO GESTOR A PÁGINA NÃO DESENHA A PRÓPRIA BARRA. A aba caixa do
+     gestor carrega esta página num iframe, e o gestor já tem a barra dele —
+     duas barras empilhadas seria o resultado. Quem avisa é o `?embutido`. */
+  if(!EMBUTIDO) montarNav();
+  /* o botão de estorno mora fora do painel, no canto — como a barra de abas */
+  if(!document.getElementById('btEstorno'))
+    document.body.insertAdjacentHTML('beforeend', botaoEstorno());
+  /* o verde da caixa registradora fica ao lado do estorno, no mesmo canto */
+  if(!document.getElementById('btCaixaD'))
+    document.body.insertAdjacentHTML('beforeend', botaoCaixaDinheiro());
+  /* ⚠️ a varredura do Nubank vem DEPOIS da tela de pé; ela repinta sozinha */
+  carregarNubank().catch(e=>console.error('[caixa] nubank', e));
+  addEventListener("resize", ajusta);
+  /* o caixa é uma tela de acompanhar: relê sozinho a cada 90s */
+  setInterval(async()=>{
+    if(temCoisaAberta()) return;
+    /* ⚠️ O RECARREGAMENTO AUTOMÁTICO NÃO VARRE AS CONVERSAS. Era ele que,
+       de 90 em 90 segundos, disparava 2000 requisições e travava o navegador
+       inteiro — inclusive as outras abas do gestor. Aqui ele só lê o registro
+       gravado e reconcilia a lista curta da agenda. A varredura cheia fica
+       pro carregarNubank decidir, e ele só faz se a última tiver mais de
+       30 minutos. */
+    /* ⚠️⚠️ UMA PINTURA SÓ, NO FIM (ela, 01/10/2026: *"os valores ficam piscando
+       e alterando"*). Era `carregar(); pinta(); await carregarNubank();` — e o
+       `pinta()` do meio punha na tela um estado pela METADE: o `carregar()`
+       remonta o `ONDE` e o Nubank volta pra "medindo…", levando o total junto.
+       Medido no ar: 3 ciclos em 200s, cada um apagando e devolvendo dois
+       valores. No celular dela a ida e volta dura o tempo da leitura de rede.
+       Agora lê tudo, e só então pinta.
+       ⚠️ O `finally` NÃO É DETALHE: se a leitura do Nubank cair, a tela TEM
+       que ser pintada mesmo assim — senão ela fica com o número de 90 segundos
+       atrás para sempre, sem nada dizendo que parou de atualizar. */
+    try{
+      await carregar();
+      await carregarNubank({semPintar:true});
+    }catch(e){ console.error('[caixa] recarga falhou', e); }
+    finally{
+      /* ⚠️ `aplicarCusto()` NÃO PODE SUMIR JUNTO COM A REPINTURA. Quem o
+         chamava era o `repintarTudo()` lá dentro do Nubank — silenciar a
+         pintura silenciaria a CONTA também, e o lucro do período ficaria sem o
+         custo diário das contas a pagar. É idempotente: refaz do zero. */
+      try{ if(typeof aplicarCusto === 'function') aplicarCusto(); }catch(e){}
+      try{ pinta(); }catch(e){ console.error('[caixa] pintura falhou', e); }
+    }
+  }, 90000);
+})();
+</script></body></html>

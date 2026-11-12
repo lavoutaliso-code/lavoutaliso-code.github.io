@@ -1,0 +1,154 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   A IMPRESSORA DO FECHAMENTO — a MECÂNICA é a portada do
+   interno-lavoutaliso-deploy/vp.css (#cxPalco) e não mudou. O que mudou foi
+   o PAPEL: ela pediu a nota menor e no estilo do ticket da referência dela
+   (IMG_6948), medido nela:
+
+     cartão ............ #FFFFFF, cantos de 20px
+     bloco de pagamento  #F6F7FB
+     valor ............. #3D3D3D       rótulo ...... #9A9BA0
+     tracejado ......... #A5A4A9
+     assinaturas ....... recortes laterais, linha tracejada, serrilha no pé,
+                         números em fonte monoespaçada
+
+   ⚠️ O PAR DE scaleY(-1): um na saída, outro no papel. Tirar um faz o cupom
+      descer como cortina em vez de sair de dentro da fenda.
+   ⚠️ A MÁQUINA NÃO ANDA. Só a folha. Palco com overflow:hidden.
+   ⚠️ O ALVO DA ALTURA É MEDIDO (--alvo), nunca fixo.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+#cxPalco{position:fixed;inset:0;z-index:130;display:none;overflow:hidden;background:#F2F2F7;
+  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --papelC:#fff; --tinta:#3D3D3D; --tinta-2:#6B6C70; --tinta-3:#9A9BA0;
+  --trilho:#E8E8EC; --bloco:#F6F7FB; --tracejo:#C9C9CE;
+  --verde:#10B981; --vermelho:#BC3D20; --rosa:#D1016B;
+  /* ⚠️ a altura final da dobrinha é LIDA pelo JS pra calcular a escala — ela
+     tem transition, então medir o elemento no momento do cálculo dá 0. */
+  --dobra:22px}
+#cxPalco.on{display:block}
+#cxPalco .cxCentro{display:flex;flex-direction:column;align-items:center;
+  padding:var(--topo,26px) 20px 0}
+
+/* ── a máquina: branca, com a logo do lailasalon ──────────────────────── */
+/* ⭐ A NOTA ENCOLHEU DE NOVO (pedido dela: "está muito grande"): a impressora
+   saiu de 316 para 272px e o papel de 288 para 244. */
+#cxPalco .impressora{width:286px;max-width:100%;position:relative;z-index:5;
+  transform:scale(var(--k,1));transform-origin:top center}
+#cxPalco .carcaca{position:relative;z-index:2;
+  background:linear-gradient(180deg,#FFFFFF 0%,#F1F1F4 100%);
+  border:1px solid rgba(0,0,0,.07);
+  border-radius:13px;padding:11px 18px;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 10px 26px -10px rgba(16,24,40,.22),0 1px 2px rgba(16,24,40,.06)}
+#cxPalco .carcaca img{height:17px;width:auto;display:block}
+#cxPalco .fenda{position:relative;z-index:3;width:calc(100% - 24px);margin:-3px auto 0;height:6px;
+  background:linear-gradient(180deg,#1E1E22 0%,#3A3A40 100%);border-radius:0 0 4px 4px;
+  box-shadow:0 3px 10px -2px rgba(0,0,0,.22),inset 0 2px 4px rgba(0,0,0,.45);
+  transition:height .5s .3s cubic-bezier(.4,0,.2,1)}
+#cxPalco .impressora.imprimindo .fenda{height:12px}
+#cxPalco .dobrinha{position:relative;z-index:1;width:calc(100% - 38px);margin:0 auto;height:0;
+  background:linear-gradient(180deg,#e8e8e8 0%,#f5f5f5 40%,#fff 100%);border-radius:0 0 12px 12px;
+  box-shadow:0 4px 10px rgba(0,0,0,.08);
+  transform:perspective(200px) rotateX(-12deg);transform-origin:top center;
+  transition:height .8s .5s cubic-bezier(.4,0,.2,1)}
+#cxPalco .impressora.imprimindo .dobrinha{height:var(--dobra)}
+
+/* ── a folha ───────────────────────────────────────────────────────────── */
+#cxPalco .impSaida{position:relative;z-index:1;margin-top:-2px;overflow:hidden;max-height:0;
+  transition:max-height var(--dur,6s) cubic-bezier(.25,.1,.25,1);transform:scaleY(-1)}
+#cxPalco .impSaida.aberta{max-height:var(--alvo,1800px)}
+
+/* ⭐ O TICKET. Cantos de 20, recortes nas laterais e serrilha no pé — as três
+   assinaturas do estilo que ela mandou. O ::after desenha a serrilha; o
+   ::before, os dois recortes. */
+#cxPalco .impPapel{background:#fff;margin:0 14px;padding:18px 16px 20px;
+  border-radius:20px 20px 4px 4px;position:relative;transform:scaleY(-1);
+  box-shadow:0 2px 16px rgba(16,24,40,.08);
+  color:var(--tinta);text-align:left;font-size:12px;line-height:1.45}
+#cxPalco .impPapel::after{content:'';position:absolute;bottom:-5px;left:0;right:0;height:10px;
+  background:radial-gradient(circle 5px at 5px 0,transparent 4.6px,#fff 5px) 0 0 / 10px 10px repeat-x;
+  filter:drop-shadow(0 1px 2px rgba(16,24,40,.05))}
+
+/* ── o topo: o selo e as duas linhas ──────────────────────────────────── */
+#cxPalco .tkTopo{text-align:center;padding:2px 0 14px}
+#cxPalco .tkSelo{width:52px;height:52px;border-radius:50%;background:var(--verde);
+  display:inline-flex;align-items:center;justify-content:center;margin-bottom:11px;
+  box-shadow:0 10px 22px -10px rgba(16,185,129,.9)}
+#cxPalco .tkSelo svg{width:26px;height:26px}
+#cxPalco .tkTopo h4{font-size:17px;font-weight:700;letter-spacing:-.02em;margin:0}
+#cxPalco .tkTopo p{font-size:11.5px;color:var(--tinta-3);font-weight:500;margin:3px 0 0;
+  line-height:1.4}
+
+/* ⭐ os recortes laterais, como no ticket da referência */
+#cxPalco .tkCorte{position:relative;height:16px;margin:0 -16px}
+#cxPalco .tkCorte::before,#cxPalco .tkCorte::after{content:'';position:absolute;top:0;
+  width:16px;height:16px;border-radius:50%;background:#F2F2F7}
+#cxPalco .tkCorte::before{left:-8px}
+#cxPalco .tkCorte::after{right:-8px}
+#cxPalco .tkCorte span{position:absolute;left:14px;right:14px;top:7px;height:2px;
+  background:repeating-linear-gradient(90deg,var(--tracejo) 0 5px,transparent 5px 11px)}
+
+/* ── a grade de pares: rótulo em cima, valor embaixo ──────────────────── */
+#cxPalco .tkGrade{display:grid;grid-template-columns:1fr auto;gap:3px 10px;padding:4px 0 12px}
+#cxPalco .tkGrade .r{font-size:10px;font-weight:600;color:var(--tinta-3);letter-spacing:.06em;
+  text-transform:uppercase}
+#cxPalco .tkGrade .v{font-size:14px;font-weight:600;letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+#cxPalco .tkGrade .d{text-align:right}
+
+/* ── ⭐ COMO ENTROU: uma linha por forma, com a marca desenhada ────────── */
+#cxPalco .tkSec{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--tinta-3);margin:4px 0 8px}
+/* ⚠️⚠️ O BLOCO É UMA GRADE DE DUAS LINHAS, não uma linha só de flex. Em uma
+   linha, as três bandeiras (62px) + o valor (72px) comiam a largura e sobravam
+   18px para o nome: "Crédito" escreveu POR CIMA de "R$ 1.264,00" e o
+   "5 transações" saiu cortado com reticências. Agora o nome e o valor dividem
+   a linha de cima e o subtítulo ganha a linha de baixo inteira. */
+/* ⭐ SEM CARD ATRÁS (pedido dela). O bloco cinza virou linha limpa sobre o
+   papel: o que separa uma forma da outra agora é respiro e um fio de 1px,
+   não um retângulo de fundo. A grade de duas linhas fica — ela é o que
+   impede o nome de escrever por cima do valor. */
+#cxPalco .tkPg{padding:9px 1px;
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;
+  column-gap:11px;row-gap:1px;border-bottom:1px solid #F1F1F4}
+#cxPalco .tkPg:last-of-type{border-bottom:none}
+/* ⚠️ as marcas deixaram de se sobrepor: a sobreposição existia pra economizar
+   largura quando cada uma vinha numa plaquinha. Soltas, elas precisam de ar
+   entre si, senão o Visa encosta no Mastercard e vira uma mancha só. */
+#cxPalco .tkPg .bnds{grid-row:1 / 3;display:flex;align-items:center;gap:7px;
+  min-width:62px}
+#cxPalco .tkPg b{grid-column:2;grid-row:1;font-size:12.5px;font-weight:600;
+  letter-spacing:-.01em;white-space:nowrap}
+#cxPalco .tkPg .vl{grid-column:3;grid-row:1;font-size:12.5px;font-weight:600;
+  white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+#cxPalco .tkPg s{grid-column:2 / 4;grid-row:2;text-decoration:none;font-size:9.5px;
+  color:var(--tinta-3);font-weight:500;white-space:nowrap}
+
+/* ── o fecho: total e as duas saídas ──────────────────────────────────── */
+#cxPalco .tkLin{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:12px;padding:3px 0}
+#cxPalco .tkLin .l{color:var(--tinta-2)}
+#cxPalco .tkLin .n{font-weight:600;font-variant-numeric:tabular-nums}
+#cxPalco .tkLin.total{font-size:14px;padding-top:9px;margin-top:6px;border-top:1.5px solid #ECECF0}
+#cxPalco .tkLin.total .l{color:var(--tinta);font-weight:700}
+#cxPalco .tkLin.total .n{color:var(--verde);font-weight:700}
+
+#cxPalco .tkBar{text-align:center;margin-top:14px;padding-top:12px;
+  border-top:1px dashed var(--trilho)}
+#cxPalco .tkBar svg{display:block;margin:0 auto 5px}
+/* ⚠️ o asterisco das fontes da Apple fica na altura do expoente; sem este
+   ajuste ele voa acima da linha e o valor parece desalinhado. */
+#cxPalco .mk{display:inline-block;letter-spacing:1.5px;vertical-align:-.14em}
+#cxPalco .tkBar span{font-size:8px;color:var(--tinta-3);letter-spacing:.14em;font-weight:500}
+
+/* ── o rodapé ──────────────────────────────────────────────────────────── */
+/* ⚠️ NASCE 1,2s DEPOIS, não no fim da impressão: tela cheia sem saída é a
+   pior coisa que existe se a transição não terminar. */
+#cxPalco .cxPe{position:fixed;bottom:0;left:0;right:0;z-index:10;padding:14px 20px 18px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  background:linear-gradient(180deg,rgba(242,242,247,0) 0%,#F2F2F7 34%);
+  opacity:0;pointer-events:none;transition:opacity .35s}
+#cxPalco.pronto .cxPe{opacity:1;pointer-events:auto}
+#cxPalco .cxBt{width:286px;max-width:100%;padding:15px;border:none;border-radius:15px;
+  font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:-.01em;
+  background:#1C1C1E;color:#fff;transition:transform .12s}
+#cxPalco .cxBt:active{transform:scale(.97)}

@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta name="googlebot" content="noindex,nofollow">
+<script src="../ls-trava.js"></script>
+<script src="../ls-casca.js"></script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Meta do Milhão</title>
+<!--
+  ══════════════════════════════════════════════════════════════════════════
+  META DO MILHÃO — aba do gestor interno.  Aprovado 19/09/2026 (card A).
+
+  ⚠️ PÁGINA AO VIVO, NÃO CÓPIA EMBUTIDA. Mesmo desenho da aba Caixa: o
+     gestor carrega isto por `src` num iframe. Subiu aqui, apareceu lá.
+     Nunca reembutir em base64 — foi isso que fez a aba Caixa apodrecer.
+
+  ⚠️ O BANCO VEM POR `/db`, RELATIVO. O Safari dela trata firebaseio.com
+     como domínio de terceiro neste site e segura a leitura sem erro
+     nenhum. Anda junto com a regra do `_redirects` desta pasta.
+
+  ⚠️ ONDE NÃO HÁ FONTE, ESCREVE "ainda não sei" — nunca R$ 0,00.
+     Zero é informação; ausência de leitura é outra coisa.
+
+  De onde vem cada número:
+    · Salão  → `/db/pdv/ordens` ao vivo. Clientes, faturamento e o TIME
+               (quem aparece atendendo no mês) são medidos, não digitados.
+    · Tráfego pago e Lei dos Potes → agosto/2026, último mês medido no
+               painel das empresas. O servidor do Railway está fora do ar
+               (404) e o Firestore exige o login dela.
+    · Consultoria e Cosméticos → sem fonte.
+    · O time das quatro sem fonte é MANUAL e fica em
+      `/db/painel_metas/equipe/{chave}` — nó novo, nada mais usa.
+  ══════════════════════════════════════════════════════════════════════════
+-->
+<style>
+  :root{
+    --board:#E9E9ED; --panel:#F5F5F7; --card:#FFFFFF; --sub:#FAFAFB;
+    --ink:#1D1D1F; --soft:#86868B; --fraco:#AEAEB2; --fio:#D8D8DD; --fio2:#E8E8EB; --vazio:#DCDCE1;
+    --salao:#D4147A; --traf:#0E7C86; --potes:#6B3FA0; --consult:#1437DC; --cosm:#0B9B6C;
+    --sobe:#0B9B6C; --desce:#B5480E;
+    --sombra:0 1px 2px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.05);
+    --sombra2:0 1px 2px rgba(0,0,0,.03);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0; background:var(--board); color:var(--ink); overflow-x:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif;
+    font-weight:400; -webkit-font-smoothing:antialiased; line-height:1.45}
+  .n{font-variant-numeric:tabular-nums; font-feature-settings:"tnum"}
+  button{font-family:inherit}
+
+  .board{min-height:100%; display:flex; padding:clamp(12px,2.6vh,26px) clamp(12px,2vw,26px)}
+  body.embutido .board{padding:10px 12px 86px}
+  .tela{flex:1; min-height:0; max-width:1240px; margin:0 auto; width:100%;
+    background:var(--panel); border-radius:clamp(16px,2.6vh,24px);
+    padding:clamp(16px,3vh,28px) clamp(14px,1.8vw,24px);
+    box-shadow:var(--sombra); display:flex; flex-direction:column; gap:clamp(12px,2.4vh,24px)}
+
+  /* ── topo ── */
+  .topoM{display:flex; flex-direction:column; align-items:center; gap:3px; text-align:center; padding:6px 0 2px; flex:none}
+  .topoM .tit{font-size:11.5px; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--soft)}
+  .topoM .meta{font-size:clamp(34px,6.6vh,64px); font-weight:300; letter-spacing:-.05em; line-height:1.05}
+
+  /* ── cards ── */
+  .cards{flex:1; min-height:0; display:grid; gap:clamp(7px,1.1vw,12px); grid-template-columns:repeat(5,1fr)}
+  .c{background:var(--card); border:1px solid var(--fio2); border-radius:clamp(13px,2vh,18px);
+    padding:clamp(10px,1.8vh,15px) clamp(8px,1vw,13px) clamp(12px,2.2vh,17px);
+    box-shadow:var(--sombra2); display:flex; flex-direction:column; align-items:center;
+    justify-content:space-evenly; text-align:center; position:relative; min-height:0;
+    cursor:pointer; border-width:1px; transition:transform .16s ease, box-shadow .16s ease}
+  .c:hover{transform:translateY(-3px); box-shadow:0 2px 4px rgba(0,0,0,.05),0 14px 32px rgba(0,0,0,.09)}
+  .c:focus-visible{outline:2px solid currentColor; outline-offset:3px}
+  .c .pos{position:absolute; top:clamp(8px,1.4vh,13px); left:clamp(9px,1vw,14px);
+    font-size:clamp(9px,1.5vh,11px); font-weight:600; color:var(--soft); font-variant-numeric:tabular-nums}
+  .c .res{position:absolute; top:clamp(7px,1.3vh,12px); right:clamp(9px,1vw,14px);
+    font-size:clamp(9.5px,1.6vh,11.5px); font-weight:600; font-variant-numeric:tabular-nums; color:var(--ink)}
+  .c .res.zz{color:var(--soft); font-weight:400; font-size:clamp(9px,1.4vh,10.5px)}
+  .topoc{display:flex; flex-direction:column; align-items:center; width:100%}
+  .anel{position:relative; width:min(clamp(84px,25vh,190px),84%); aspect-ratio:1; margin-top:clamp(9px,1.8vh,14px)}
+  .anel svg{display:block; width:100%; height:100%}
+  .anel .mid{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center}
+  .anel .q{font-size:clamp(22px,4.6vh,36px); font-weight:300; letter-spacing:-.05em; line-height:1; color:var(--ink)}
+  .anel .q.sf{font-size:clamp(9.5px,1.65vh,13px); font-weight:400; color:var(--soft); letter-spacing:0; line-height:1.3}
+  .anel .de{font-size:clamp(8.5px,1.45vh,11px); color:var(--soft); margin-top:clamp(2px,.6vh,4px)}
+  .nm{font-size:clamp(12px,2.05vh,16px); font-weight:600; letter-spacing:-.016em; color:var(--ink); margin-top:clamp(9px,1.7vh,14px)}
+  .time{width:100%; margin-top:clamp(9px,1.7vh,14px); padding-top:clamp(8px,1.5vh,13px);
+    border-top:1px solid var(--fio2); display:flex; flex-direction:column; align-items:center; gap:clamp(5px,1vh,9px)}
+  .time .cap{font-size:clamp(8px,1.25vh,9.5px); font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:var(--soft)}
+  .bolas{display:grid; grid-template-columns:repeat(5,1fr); gap:clamp(3px,.75vh,5px); width:100%; max-width:clamp(86px,16vh,138px)}
+  .bolas i{aspect-ratio:1; border-radius:50%; display:block; background:var(--vazio)}
+  .bolas i.on{background:currentColor}
+  .time .leg{font-size:clamp(9.5px,1.65vh,12.5px); color:var(--soft); line-height:1.3}
+  .time .leg b{color:var(--ink); font-weight:600; font-size:clamp(11px,1.95vh,14px)}
+  .dica{text-align:center; font-size:12px; color:var(--fraco); flex:none; margin-top:-4px}
+
+  /* ── detalhe (card A) ── */
+  .fundo{position:fixed; inset:0; background:rgba(20,20,24,.34); backdrop-filter:blur(3px);
+    -webkit-backdrop-filter:blur(3px); z-index:80; display:none; overflow-y:auto; padding:22px 14px 40px}
+  .fundo.on{display:block}
+  .det{max-width:920px; margin:0 auto; background:var(--panel); border-radius:22px; padding:22px;
+    box-shadow:0 20px 60px rgba(0,0,0,.28); display:flex; flex-direction:column; gap:14px}
+  .dcab{display:flex; align-items:center; gap:11px; flex-wrap:wrap}
+  .dcab .pt{width:11px; height:11px; border-radius:3px; flex:none}
+  .dcab h3{margin:0; font-size:20px; font-weight:600; letter-spacing:-.022em}
+  .dcab .sb{font-size:12.5px; color:var(--soft)}
+  .dcab .x{margin-left:auto; width:30px; height:30px; border-radius:50%; background:var(--card);
+    border:1px solid var(--fio2); color:var(--soft); font-size:16px; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex:none}
+  .dcab .x:hover{color:var(--ink)}
+
+  .kpis{display:grid; gap:8px; grid-template-columns:repeat(4,1fr)}
+  .kpi{background:var(--card); border:1px solid var(--fio2); border-radius:12px; padding:11px 12px;
+    display:flex; flex-direction:column; gap:1px}
+  .kpi .l{font-size:9.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--soft)}
+  .kpi .v{font-size:22px; font-weight:300; letter-spacing:-.04em; line-height:1.15}
+  .kpi .d{font-size:11.5px; color:var(--soft)}
+  .kpi .d b.up{color:var(--sobe); font-weight:600}
+  .kpi .d b.dn{color:var(--desce); font-weight:600}
+
+  .bloco{background:var(--card); border:1px solid var(--fio2); border-radius:14px; padding:15px 17px 12px}
+  .bt{display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:11px; flex-wrap:wrap}
+  .bt .t{font-size:13px; font-weight:600; letter-spacing:-.01em}
+  .bt .lgd{display:flex; gap:11px; font-size:11px; color:var(--soft)}
+  .bt .lgd span{display:flex; align-items:center; gap:5px}
+  .bt .lgd i{width:9px; height:3px; border-radius:2px; display:block}
+  .bt .lgd i.dot{width:8px; height:8px; border-radius:50%}
+  .eixoX{display:flex; justify-content:space-between; font-size:10.5px; color:var(--soft); padding-top:5px; gap:6px}
+  .eixoX span{flex:1; text-align:center}
+  .eixoX span:first-child{text-align:left} .eixoX span:last-child{text-align:right}
+
+  .equipe{display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+  .pes{display:flex; align-items:center; gap:7px; background:var(--sub); border:1px solid var(--fio2);
+    border-radius:20px; padding:4px 11px 4px 4px; font-size:12.5px}
+  .pes i{width:23px; height:23px; border-radius:50%; color:#fff; flex:none; font-style:normal;
+    display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:600}
+  .pes small{color:var(--soft); font-size:10.5px}
+  .pes.saiu{opacity:.48}
+  .pes.saiu i{background:var(--fraco) !important}
+  .pes .rm{border:0; background:none; color:var(--fraco); cursor:pointer; font-size:14px; padding:0 0 0 2px; line-height:1}
+  .pes .rm:hover{color:var(--desce)}
+  .add{display:flex; align-items:center; gap:7px; border:1.5px dashed var(--fio); border-radius:20px;
+    padding:4px 13px 4px 5px; font-size:12.5px; color:var(--soft); background:transparent; cursor:pointer}
+  .add i{width:23px; height:23px; border-radius:50%; border:1.5px dashed var(--fio); flex:none; font-style:normal;
+    display:flex; align-items:center; justify-content:center; font-size:14px; line-height:1}
+  .add:hover{border-color:var(--ink); color:var(--ink)}
+  .add:hover i{border-color:var(--ink)}
+  .add[disabled]{opacity:.45; cursor:not-allowed}
+
+  .verd{border-radius:13px; padding:13px 16px; display:flex; flex-direction:column; gap:3px}
+  .verd .l{font-size:9.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase}
+  .verd .t{font-size:14.5px; font-weight:500; line-height:1.4; color:var(--ink)}
+  .verd .d{font-size:12.5px; color:var(--soft)}
+
+  .avisoF{background:var(--card); border:1px dashed var(--fio); border-radius:14px; padding:18px;
+    text-align:center; color:var(--soft); font-size:13.5px; line-height:1.5}
+  .avisoF b{color:var(--ink); font-weight:600}
+
+  .carregando{grid-column:1/-1; display:flex; align-items:center; justify-content:center;
+    color:var(--soft); font-size:14px; padding:40px 0}
+
+  @media (max-width:760px){
+    .cards{grid-template-columns:1fr; gap:7px}
+    .c{display:grid; grid-template-columns:20px 58px 1fr auto; grid-template-rows:auto auto;
+      column-gap:11px; row-gap:1px; align-items:center; text-align:left; padding:11px 13px; border-radius:15px}
+    .topoc{display:contents}
+    .c .pos{position:static; grid-area:1/1/3/2; align-self:center; font-size:11px}
+    .anel{grid-area:1/2/3/3; width:58px; margin:0}
+    .anel .q{font-size:19px} .anel .q.sf{font-size:7.5px; line-height:1.15} .anel .de{display:none}
+    .nm{grid-area:1/3/2/4; align-self:end; margin:0; font-size:15px}
+    .c .res{position:static; grid-area:2/3/3/4; align-self:start; font-size:12.5px; text-align:left}
+    .time{grid-area:1/4/3/5; margin:0; padding:0; border:none; width:auto;
+      display:flex; flex-direction:column; align-items:flex-end; gap:5px}
+    .time .cap{display:none}
+    .bolas{max-width:none; width:94px; gap:3.5px}
+    .time .leg{font-size:11px} .time .leg b{font-size:12.5px}
+    .kpis{grid-template-columns:1fr 1fr}
+    .det{padding:16px}
+  }
+</style>
+</head>
+<body>
+
+<div class="board">
+  <div class="tela">
+    <div class="topoM">
+      <span class="tit">Meta do Milhão</span>
+      <span class="meta n">R$ 1.000.000</span>
+    </div>
+    <div class="cards" id="cards"><div class="carregando">lendo o salão…</div></div>
+    <p class="dica">toque numa empresa para ver a evolução e mexer no time</p>
+  </div>
+</div>
+
+<div class="fundo" id="fundo"><div class="det" id="det"></div></div>
+
+<script>
+'use strict';
+if (new URLSearchParams(location.search).has('embutido')) document.body.classList.add('embutido');
+
+/* ⚠️ RELATIVO. Ver o cabeçalho: absoluto morre no Safari dela. */
+var DB = '/db/';
+
+var META_GRUPO = 1000000;
+var TETO_BOLAS = 10;
+
+/* ── as cinco empresas ──────────────────────────────────────────────
+   `fonte:'pdv'` é medido ao vivo. As outras trazem o último mês medido
+   e dizem de onde veio — nenhuma inventa número. */
+var EMPRESAS = [
+  { ch:'salao', nome:'Salão', cor:'var(--salao)', fonte:'pdv',
+    unidade:'clientes', metaCli:489, timeAuto:true },
+  /* ⚠️ TRÁFEGO: O NÚMERO É O PREÇO CHEIO, não o que sobra pra ela.
+     O painel das empresas mostra o LÍQUIDO da coprodução — medido no CSV
+     da Kiwify: de R$ 718.883,74 vendidos chegaram R$ 201.253,34, ou seja
+     28,0% no total e 26,9% nos últimos meses (não 30%). Aqui entra a
+     coluna "Preço base do produto", que é exata e não precisa de regra
+     de três nenhuma.
+     ⚠️ CARIMBO 12/08/2026 — é um retrato do CSV, não leitura ao vivo. O
+     `/painel/trafego` do Railway responde 404 em todas as rotas desde
+     pelo menos 19/09. Quando voltar, isto vira leitura e a série sai. */
+  { ch:'trafego', nome:'Tráfego pago', cor:'var(--traf)', fonte:'foto',
+    unidade:'contas', metaCli:55, clientes:38,
+    fat:45023, fatNota:'julho/2026 · último mês fechado no CSV da Kiwify',
+    carimbo:'CSV de 12/08/2026 · o Railway está fora do ar',
+    serie:[ {mes:'2026-04', fat:38986, cli:38},
+            {mes:'2026-05', fat:36998, cli:35},
+            {mes:'2026-06', fat:50565, cli:44},
+            {mes:'2026-07', fat:45023, cli:39} ] },
+  /* ⚠️ O "38 assinantes" QUE EU USAVA AQUI ERA DO TRÁFEGO, não daqui.
+     A conta não fecha: agosto deu R$ 1.829,28 líquidos = 74 pagamentos de
+     R$ 24,72. Com 38 mensais o líquido seria R$ 939,36. Quantos assinantes
+     o Lei dos Potes tem eu NÃO SEI — o Firestore devolve 403 sem o login
+     dela. O faturamento sim: 74 × R$ 29,90. */
+  { ch:'potes', nome:'Lei dos Potes', cor:'var(--potes)', fonte:null,
+    unidade:'assinantes', metaCli:458, clientes:null,
+    semContagem:['ainda','não sei'],
+    fat:2213, fatNota:'agosto · 74 pagamentos × R$ 29,90' },
+  { ch:'consultoria', nome:'Consultoria', cor:'var(--consult)', fonte:null,
+    unidade:'salões', metaCli:305, clientes:0, fat:0, fatNota:'ainda sem a primeira venda' },
+  { ch:'cosmeticos', nome:'Cosméticos', cor:'var(--cosm)', fonte:null,
+    unidade:'salões', metaCli:87, clientes:null, fat:null,
+    semContagem:['ainda','não sei'], fatNota:'sem fonte ligada' }
+];
+
+var TIME_MANUAL = {};   /* chave -> [{nome, desde}] , vindo de painel_metas/equipe */
+var SALAO = null;       /* o que o PDV devolveu */
+
+/* ═══ utilidades ═══ */
+function brl(v){ return 'R$ ' + Math.round(v).toLocaleString('pt-BR'); }
+function pct(a,b){ return b ? Math.min(100, a/b*100) : 0; }
+function ini(nome){
+  var p = String(nome||'').trim().split(/\s+/);
+  return ((p[0]||'')[0] || '?').toUpperCase() + ((p[1]||'')[0] || '').toUpperCase();
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function mesNome(m){
+  var N=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  return N[Number(m.slice(5,7))-1];
+}
+function lista(x){
+  if (!x) return [];
+  return Array.isArray(x) ? x.filter(Boolean) : Object.keys(x).map(function(k){return x[k];}).filter(Boolean);
+}
+
+/* ═══ leitura do PDV ═══
+   ⚠️ JANELA DE 4 MESES por `orderBy="$key"`. Puxar o nó inteiro cresce
+      para sempre; ordenar por chave não exige índice nenhum no RTDB. */
+function primeiroDiaDeQuatroMesesAtras(){
+  var d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 3);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-01';
+}
+function lerSalao(){
+  var de = primeiroDiaDeQuatroMesesAtras();
+  var u = DB + 'pdv/ordens.json?orderBy=' + encodeURIComponent('"$key"') +
+          '&startAt=' + encodeURIComponent('"' + de + '"');
+  return fetch(u).then(function(r){
+    if(!r.ok) throw new Error('http ' + r.status);
+    return r.json();
+  }).then(function(dias){
+    var meses = {};
+    Object.keys(dias || {}).sort().forEach(function(dia){
+      var m = dia.slice(0,7);
+      if(!meses[m]) meses[m] = { mes:m, fat:0, cli:0, dias:{}, gente:{} };
+      var mm = meses[m]; mm.dias[dia] = 1;
+      lista(dias[dia]).forEach(function(o){
+        mm.fat += Number(o.valor) || 0;
+        mm.cli += 1;
+        var profs = o.profs || {};
+        Object.keys(profs).forEach(function(k){
+          var p = profs[k]; if(!p || typeof p !== 'object') return;
+          ['aplicou','prD','prE'].forEach(function(f){
+            var nome = p[f];
+            if(!nome) return;
+            mm.gente[nome] = 1;
+            if(!SALAO.quem[nome]) SALAO.quem[nome] = { nome:nome, de:dia, ate:dia };
+            else SALAO.quem[nome].ate = dia;
+          });
+        });
+      });
+    });
+    SALAO.meses = Object.keys(meses).sort().map(function(m){
+      var a = meses[m], nd = Object.keys(a.dias).length;
+      var ultimo = (m === Object.keys(meses).sort().pop());
+      /* o mês corrente vira RITMO: o que foi feito, projetado em 22 dias.
+         Sem isso o mês pela metade parece queda. */
+      var fator = (ultimo && nd < 20) ? 22/nd : 1;
+      return { mes:m, dias:nd, parcial:(fator !== 1),
+               fat:a.fat*fator, cli:a.cli*fator,
+               gente:Object.keys(a.gente).sort() };
+    });
+    return SALAO;
+  });
+}
+
+/* ═══ time manual das empresas sem fonte ═══ */
+function lerTimeManual(){
+  return fetch(DB + 'painel_metas/equipe.json').then(function(r){
+    return r.ok ? r.json() : null;
+  }).then(function(x){ TIME_MANUAL = x || {}; }).catch(function(){ TIME_MANUAL = {}; });
+}
+function gravarTime(ch, reg){
+  TIME_MANUAL[ch] = reg;
+  return fetch(DB + 'painel_metas/equipe/' + ch + '.json', {
+    method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(reg)
+  }).then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r; });
+}
+function nomesDe(e){
+  if (e.timeAuto) {
+    var ult = SALAO && SALAO.meses.length ? SALAO.meses[SALAO.meses.length-1] : null;
+    return (ult ? ult.gente : []).map(function(n){ return { nome:n, auto:true }; });
+  }
+  var r = TIME_MANUAL[e.ch];
+  return ((r && r.nomes) || []).filter(Boolean);
+}
+/* ⚠️ `total` É QUANTA GENTE EXISTE; `nomes` são as que já foram informadas.
+   Ela sabe que o tráfego tem 10 sem me dar os 10 nomes — mostrar 0 bolinha
+   cheia por falta de nome seria mentir sobre o tamanho do time. */
+function totalDe(e){
+  if (e.timeAuto) return nomesDe(e).length;
+  var r = TIME_MANUAL[e.ch] || {};
+  return Math.max(Number(r.total) || 0, ((r.nomes)||[]).length);
+}
+function fatDe(e){
+  if (e.fonte === 'pdv') {
+    var ult = SALAO && SALAO.meses.length ? SALAO.meses[SALAO.meses.length-1] : null;
+    return ult ? ult.fat : null;
+  }
+  return e.fat;
+}
+function cliDe(e){
+  if (e.fonte === 'pdv') {
+    var ult = SALAO && SALAO.meses.length ? SALAO.meses[SALAO.meses.length-1] : null;
+    return ult ? Math.round(ult.cli) : null;
+  }
+  return e.clientes;
+}
+
+/* ═══ o painel ═══ */
+function pintar(){
+  var ordenadas = EMPRESAS.slice().sort(function(a,b){
+    var fa = fatDe(a), fb = fatDe(b);
+    if (fa == null && fb == null) return 0;
+    if (fa == null) return 1;     /* sem fonte vai pro fim */
+    if (fb == null) return -1;
+    return fb - fa;
+  });
+  var html = ordenadas.map(function(e, idx){
+    var fat = fatDe(e), cli = cliDe(e), n = totalDe(e);
+    var p = (cli == null) ? null : pct(cli, e.metaCli);
+    var bolas = '';
+    for (var i = 0; i < TETO_BOLAS; i++) bolas += '<i class="' + (i < n ? 'on' : '') + '"></i>';
+    var anel = (cli == null)
+      ? '<circle cx="64" cy="64" r="56" fill="none" stroke="var(--fio)" stroke-width="4.5" stroke-dasharray="3 4"/>'
+      : '<circle cx="64" cy="64" r="56" fill="none" stroke="var(--vazio)" stroke-width="4.5"/>' +
+        (p > 0 ? '<circle cx="64" cy="64" r="56" fill="none" stroke="currentColor" stroke-width="4.5" ' +
+          'stroke-linecap="round" pathLength="100" stroke-dasharray="' + p.toFixed(1) + ' 100" ' +
+          'transform="rotate(-90 64 64)"/>' : '');
+    var miolo = (cli == null)
+      ? '<span class="q sf">' + (e.semContagem||['ainda','não sei']).map(esc).join('<br>') + '</span>' +
+        '<span class="de n">meta ' + e.metaCli + '</span>'
+      : '<span class="q n">' + cli.toLocaleString('pt-BR') + '</span>' +
+        '<span class="de n">de ' + e.metaCli + ' ' + e.unidade + '</span>';
+    var res = (fat == null)
+      ? '<span class="res zz">sem fonte</span>'
+      : '<span class="res n' + (fat ? '' : ' zz') + '">' + brl(fat) + '</span>';
+    return '<button class="c" style="color:' + e.cor + '" data-ch="' + e.ch + '" type="button">' +
+      '<span class="pos n">' + (idx+1) + 'º</span>' + res +
+      '<span class="topoc"><span class="anel"><svg viewBox="0 0 128 128">' + anel + '</svg>' +
+      '<span class="mid">' + miolo + '</span></span>' +
+      '<span class="nm">' + esc(e.nome) + '</span></span>' +
+      '<span class="time"><span class="cap">Responsáveis</span>' +
+      '<span class="bolas">' + bolas + '</span>' +
+      '<span class="leg n"><b>' + n + '</b> de ' + TETO_BOLAS + '</span></span>' +
+      '</button>';
+  }).join('');
+  document.getElementById('cards').innerHTML = html;
+}
+
+/* ═══ o detalhe — card A ═══ */
+function abrir(ch){
+  var e = EMPRESAS.filter(function(x){ return x.ch === ch; })[0];
+  if (!e) return;
+  var html;
+  if (e.fonte === 'pdv') html = detSalao(e);
+  else if (e.serie && e.serie.length > 1) html = detFoto(e);
+  else html = detSemHistorico(e);
+  document.getElementById('det').innerHTML = html;
+  document.getElementById('fundo').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+function fechar(){
+  document.getElementById('fundo').classList.remove('on');
+  document.body.style.overflow = '';
+}
+
+function cabecalho(e, sub){
+  return '<div class="dcab"><span class="pt" style="background:' + e.cor + '"></span>' +
+    '<h3>' + esc(e.nome) + '</h3><span class="sb">' + esc(sub) + '</span>' +
+    '<button class="x" id="btFechar" type="button" aria-label="Fechar">✕</button></div>';
+}
+function pilulas(e){
+  var time = nomesDe(e), auto = !!e.timeAuto, total = totalDe(e);
+  var h = time.map(function(p, i){
+    return '<span class="pes"><i style="background:' + e.cor + '">' + esc(ini(p.nome)) + '</i>' +
+      esc(p.nome) + (p.desde ? ' <small>' + esc(p.desde) + '</small>' : '') +
+      (auto ? '' : '<button class="rm" type="button" data-rm="' + i + '" aria-label="Tirar">×</button>') +
+      '</span>';
+  }).join('');
+  if (auto) {
+    var quem = SALAO ? Object.keys(SALAO.quem).map(function(k){ return SALAO.quem[k]; }) : [];
+    var ativos = nomesDe(e).map(function(p){ return p.nome; });
+    h += quem.filter(function(q){ return ativos.indexOf(q.nome) === -1; })
+      .sort(function(a,b){ return a.ate < b.ate ? 1 : -1; })
+      .map(function(q){
+        return '<span class="pes saiu"><i>' + esc(ini(q.nome)) + '</i>' + esc(q.nome) +
+          ' <small>saiu ' + q.ate.slice(8,10) + '/' + mesNome(q.ate) + '</small></span>';
+      }).join('');
+    h += '<span style="font-size:12px;color:var(--soft)">time lido do PDV — quem atende entra sozinho</span>';
+  } else {
+    var faltam = total - time.length;
+    if (faltam > 0) h += '<span class="pes" style="opacity:.6"><i style="background:var(--fraco)">?</i>' +
+      'mais ' + faltam + ' sem nome</span>';
+    h += '<button class="add" id="btAdd" type="button"><i>+</i>Adicionar profissional</button>';
+  }
+  return '<div class="equipe">' + h + '</div>';
+}
+
+function detSalao(e){
+  var ms = SALAO.meses, ult = ms[ms.length-1], pri = ms[0];
+  var maxFat = Math.max.apply(null, ms.map(function(m){ return m.fat; })) * 1.08;
+  var maxGen = Math.max.apply(null, ms.map(function(m){ return m.gente.length; }));
+  /* ⚠️ VIEWBOX COM PROPORÇÃO DE VERDADE, sem preserveAspectRatio="none".
+     Com o SVG esticado só na horizontal, todo <circle> vira elipse — os
+     pontos da linha saíam achatados. Aqui a escala é uniforme. */
+  var W = 600, H = 160, pad = 52, passo = ms.length > 1 ? (W - pad*2) / (ms.length-1) : 0;
+  var pts = ms.map(function(m,i){
+    return { x: pad + i*passo, y: H - 14 - (m.fat/maxFat)*(H-36), m:m };
+  });
+  var linha = pts.map(function(p,i){ return (i?'L':'M') + p.x.toFixed(1) + ',' + p.y.toFixed(1); }).join(' ');
+  var area = linha + ' L' + pts[pts.length-1].x.toFixed(1) + ',' + H + ' L' + pts[0].x.toFixed(1) + ',' + H + ' Z';
+  var barras = ms.map(function(m,i){
+    var h = (m.gente.length/Math.max(maxGen,1)) * 54;
+    return '<rect x="' + (pad + i*passo - 26).toFixed(1) + '" y="' + (H - 2 - h).toFixed(1) +
+      '" width="52" height="' + h.toFixed(1) + '" rx="3" fill="var(--fraco)" opacity=".22"/>';
+  }).join('');
+  var marcos = ms.map(function(m,i){
+    if (!i) return '';
+    var mudou = m.gente.length !== ms[i-1].gente.length ||
+      m.gente.join() !== ms[i-1].gente.join();
+    return mudou ? '<circle cx="' + (pad + i*passo).toFixed(1) + '" cy="' + (H-11) +
+      '" r="5" fill="var(--consult)"/>' : '';
+  }).join('');
+  var bolinhas = pts.map(function(p){
+    return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
+      '" r="5.5" fill="var(--card)" stroke="' + e.cor + '" stroke-width="3"/>';
+  }).join('');
+
+  var varFat = pri.fat ? (ult.fat/pri.fat - 1)*100 : 0;
+  var varCli = pri.cli ? (ult.cli/pri.cli - 1)*100 : 0;
+  var ppU = ult.gente.length ? ult.fat/ult.gente.length : 0;
+  var ppP = pri.gente.length ? pri.fat/pri.gente.length : 0;
+  var varPP = ppP ? (ppU/ppP - 1)*100 : 0;
+  var dGente = ult.gente.length - pri.gente.length;
+  function sinal(v){ return (v>=0?'up':'dn'); }
+  function txt(v){ return (v>=0?'+':'−') + Math.abs(v).toFixed(1).replace('.',',') + '%'; }
+
+  var subiu = varPP > 0 && dGente < 0;
+  var veredito = subiu
+    ? { t:'Perder ' + Math.abs(dGente) + ' pessoa' + (Math.abs(dGente)>1?'s':'') +
+          ' não derrubou o faturamento — ele ' + (varFat>=0?'subiu ':'caiu ') + txt(varFat).replace(/[+−]/,'') + '.',
+        d:'O que cada pessoa produz subiu ' + txt(varPP) + ' no período. Clientes ' + txt(varCli) +
+          '. Neste projeto, resultado não está seguindo tamanho de time — são ' + ms.length +
+          ' meses, o que sugere e não prova.' }
+    : { t:'O time foi de ' + pri.gente.length + ' para ' + ult.gente.length +
+          ' e o faturamento ' + (varFat>=0?'subiu':'caiu') + ' ' + txt(varFat).replace(/[+−]/,'') + '.',
+        d:'Por pessoa: ' + txt(varPP) + '. Clientes: ' + txt(varCli) + '. São ' + ms.length +
+          ' meses medidos — sugere, não prova.' };
+
+  return cabecalho(e, mesNome(pri.mes) + ' a ' + mesNome(ult.mes) + ' de ' + ult.mes.slice(0,4)) +
+  '<div class="kpis">' +
+    '<div class="kpi"><span class="l">Faturamento</span><span class="v n">' + brl(ult.fat) + '</span>' +
+      '<span class="d n">desde ' + mesNome(pri.mes) + ' <b class="' + sinal(varFat) + '">' + txt(varFat) + '</b></span></div>' +
+    '<div class="kpi"><span class="l">Clientes</span><span class="v n">' + Math.round(ult.cli) + '</span>' +
+      '<span class="d n">desde ' + mesNome(pri.mes) + ' <b class="' + sinal(varCli) + '">' + txt(varCli) + '</b></span></div>' +
+    '<div class="kpi"><span class="l">Time</span><span class="v n">' + ult.gente.length + ' pessoas</span>' +
+      '<span class="d n">eram ' + pri.gente.length + (dGente ? ' <b class="' + sinal(dGente) + '">' +
+        (dGente>0?'+':'−') + Math.abs(dGente) + '</b>' : '') + '</span></div>' +
+    '<div class="kpi"><span class="l">Por pessoa</span><span class="v n">' + brl(ppU) + '</span>' +
+      '<span class="d n">desde ' + mesNome(pri.mes) + ' <b class="' + sinal(varPP) + '">' + txt(varPP) + '</b></span></div>' +
+  '</div>' +
+  '<div class="bloco"><div class="bt"><span class="t">Faturamento e tamanho do time, mês a mês</span>' +
+    '<span class="lgd"><span><i style="background:' + e.cor + '"></i>faturamento</span>' +
+    '<span><i style="background:var(--fraco)"></i>pessoas</span>' +
+    '<span><i class="dot" style="background:var(--consult)"></i>entrada ou saída</span></span></div>' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block" ' +
+    'role="img" aria-label="faturamento e tamanho do time por mês">' +
+    '<defs><linearGradient id="gA" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0%" stop-color="' + e.cor + '" stop-opacity=".18"/>' +
+    '<stop offset="100%" stop-color="' + e.cor + '" stop-opacity="0"/></linearGradient></defs>' +
+    '<line x1="0" y1="' + (H-2) + '" x2="' + W + '" y2="' + (H-2) + '" stroke="var(--fio2)" stroke-width="1.5"/>' +
+    '<line x1="0" y1="' + (H/2) + '" x2="' + W + '" y2="' + (H/2) + '" stroke="var(--fio2)" stroke-width="1.5" stroke-dasharray="4 6"/>' +
+    barras +
+    '<path d="' + area + '" fill="url(#gA)"/>' +
+    '<path d="' + linha + '" fill="none" stroke="' + e.cor + '" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
+    marcos + bolinhas + '</svg>' +
+    '<div class="eixoX n">' + ms.map(function(m){
+      return '<span>' + mesNome(m.mes) + ' · ' + m.gente.length + ' · ' + brl(m.fat) +
+        (m.parcial ? ' (ritmo)' : '') + '</span>'; }).join('') + '</div></div>' +
+  '<div class="bloco"><div class="bt"><span class="t">Quem está no projeto</span>' +
+    '<span style="font-size:12px;color:var(--soft)" class="n">' + ult.gente.length + ' ativos · ' +
+    (Object.keys(SALAO.quem).length - ult.gente.length) + ' já saíram</span></div>' +
+    pilulas(e) + '</div>' +
+  '<div class="verd" style="background:color-mix(in srgb, ' + e.cor + ' 7%, var(--card));' +
+    'border:1px solid color-mix(in srgb, ' + e.cor + ' 22%, transparent)">' +
+    '<span class="l" style="color:' + e.cor + '">O que os números dizem</span>' +
+    '<span class="t">' + esc(veredito.t) + '</span><span class="d">' + esc(veredito.d) + '</span></div>';
+}
+
+/* ⚠️ DETALHE DE FOTO: mesma leitura do salão, mas a série é um retrato
+   datado, não leitura ao vivo. O carimbo fica visível o tempo todo — um
+   número sem data envelhece calado, e já custou caro aqui. */
+function detFoto(e){
+  var ms = e.serie, ult = ms[ms.length-1], pri = ms[0];
+  var maxFat = Math.max.apply(null, ms.map(function(m){ return m.fat; })) * 1.08;
+  var W = 600, H = 160, pad = 52, passo = (W - pad*2) / (ms.length-1);
+  var pts = ms.map(function(m,i){ return { x: pad + i*passo, y: H - 14 - (m.fat/maxFat)*(H-36) }; });
+  var linha = pts.map(function(p,i){ return (i?'L':'M') + p.x.toFixed(1) + ',' + p.y.toFixed(1); }).join(' ');
+  var area = linha + ' L' + pts[pts.length-1].x.toFixed(1) + ',' + H + ' L' + pts[0].x.toFixed(1) + ',' + H + ' Z';
+  var bolinhas = pts.map(function(p){
+    return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) +
+      '" r="5.5" fill="var(--card)" stroke="' + e.cor + '" stroke-width="3"/>';
+  }).join('');
+  var varFat = pri.fat ? (ult.fat/pri.fat - 1)*100 : 0;
+  var varCli = pri.cli ? (ult.cli/pri.cli - 1)*100 : 0;
+  var nTime = totalDe(e);
+  function sinal(v){ return v>=0?'up':'dn'; }
+  function txt(v){ return (v>=0?'+':'−') + Math.abs(v).toFixed(1).replace('.',',') + '%'; }
+  return cabecalho(e, mesNome(pri.mes) + ' a ' + mesNome(ult.mes) + ' · ' + (e.carimbo||'')) +
+  '<div class="kpis">' +
+    '<div class="kpi"><span class="l">Faturamento</span><span class="v n">' + brl(ult.fat) + '</span>' +
+      '<span class="d n">desde ' + mesNome(pri.mes) + ' <b class="' + sinal(varFat) + '">' + txt(varFat) + '</b></span></div>' +
+    '<div class="kpi"><span class="l">Contas ativas</span>' +
+      '<span class="v n">' + (cliDe(e) == null ? '—' : cliDe(e)) + '</span>' +
+      '<span class="d n">meta ' + e.metaCli + ' · pagou nos últimos 35 dias</span></div>' +
+    '<div class="kpi"><span class="l">Time</span><span class="v n">' + nTime + ' pessoas</span>' +
+      '<span class="d">informado à mão</span></div>' +
+    '<div class="kpi"><span class="l">Por pessoa</span><span class="v n">' +
+      (nTime ? brl(ult.fat/nTime) : '—') + '</span><span class="d">no mês</span></div>' +
+  '</div>' +
+  '<div class="bloco"><div class="bt"><span class="t">Faturamento mês a mês</span>' +
+    '<span style="font-size:11.5px;color:var(--soft)">preço cheio, não o que fica com você</span></div>' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block" ' +
+    'role="img" aria-label="faturamento por mês">' +
+    '<defs><linearGradient id="gF" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0%" stop-color="' + e.cor + '" stop-opacity=".18"/>' +
+    '<stop offset="100%" stop-color="' + e.cor + '" stop-opacity="0"/></linearGradient></defs>' +
+    '<line x1="0" y1="' + (H-2) + '" x2="' + W + '" y2="' + (H-2) + '" stroke="var(--fio2)" stroke-width="1.5"/>' +
+    '<line x1="0" y1="' + (H/2) + '" x2="' + W + '" y2="' + (H/2) + '" stroke="var(--fio2)" stroke-width="1.5" stroke-dasharray="4 6"/>' +
+    '<path d="' + area + '" fill="url(#gF)"/>' +
+    '<path d="' + linha + '" fill="none" stroke="' + e.cor + '" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>' +
+    bolinhas + '</svg>' +
+    '<div class="eixoX n">' + ms.map(function(m){
+      return '<span>' + mesNome(m.mes) + ' · ' + m.cli + ' clientes · ' + brl(m.fat) + '</span>'; }).join('') + '</div></div>' +
+  '<div class="avisoF" style="text-align:left">O histórico do time <b>não existe nesta fonte</b>, então não dá para cruzar ' +
+    'entrada de gente com resultado aqui — só no salão, que lê o PDV. ' +
+    'Assim que o servidor do tráfego voltar, esta série passa a ser leitura ao vivo.</div>' +
+  '<div class="bloco"><div class="bt"><span class="t">Quem está no projeto</span></div>' + pilulas(e) + '</div>';
+}
+
+function detSemHistorico(e){
+  var fat = fatDe(e), cli = cliDe(e), nTime = totalDe(e);
+  return cabecalho(e, e.fatNota || '') +
+  '<div class="kpis">' +
+    '<div class="kpi"><span class="l">Faturamento</span><span class="v n">' +
+      (fat == null ? 'ainda não sei' : brl(fat)) + '</span><span class="d">' + esc(e.fatNota || '') + '</span></div>' +
+    '<div class="kpi"><span class="l">' + e.unidade.charAt(0).toUpperCase() + e.unidade.slice(1) + '</span>' +
+      '<span class="v n">' + (cli == null ? '—' : cli) + '</span>' +
+      '<span class="d n">meta ' + e.metaCli + '</span></div>' +
+    '<div class="kpi"><span class="l">Time</span><span class="v n">' + nTime + ' pessoas</span>' +
+      '<span class="d">informado à mão</span></div>' +
+    '<div class="kpi"><span class="l">Por pessoa</span><span class="v n">' +
+      (fat == null || !nTime ? '—' : brl(fat/nTime)) + '</span>' +
+      '<span class="d">' + (nTime ? 'no mês' : 'sem gente alocada') + '</span></div>' +
+  '</div>' +
+  '<div class="avisoF">Ainda <b>não há histórico</b> para comparar aqui. ' +
+    'O gráfico de evolução aparece quando esta empresa tiver uma fonte ligada com pelo menos dois meses — ' +
+    'igual ao do salão, que lê o PDV.</div>' +
+  '<div class="bloco"><div class="bt"><span class="t">Quem está no projeto</span>' +
+    '<span style="font-size:12px;color:var(--soft)">a entrada fica gravada com a data</span></div>' +
+    pilulas(e) + '</div>';
+}
+
+/* ═══ eventos ═══ */
+document.getElementById('cards').addEventListener('click', function(ev){
+  var b = ev.target.closest('.c'); if (b) abrir(b.dataset.ch);
+});
+document.getElementById('fundo').addEventListener('click', function(ev){
+  if (ev.target.id === 'fundo' || ev.target.id === 'btFechar') fechar();
+});
+document.addEventListener('keydown', function(ev){ if (ev.key === 'Escape') fechar(); });
+
+document.getElementById('det').addEventListener('click', function(ev){
+  var add = ev.target.closest('#btAdd');
+  var rm  = ev.target.closest('[data-rm]');
+  var ch  = (document.querySelector('.det .dcab h3') || {}).textContent;
+  var e   = EMPRESAS.filter(function(x){ return x.nome === ch; })[0];
+  if (!e) return;
+
+  if (add) {
+    var nome = (prompt('Nome do profissional que entra em ' + e.nome + ':') || '').trim();
+    if (!nome) return;
+    var hoje = new Date();
+    var reg = TIME_MANUAL[e.ch] || {};
+    var nomes = (reg.nomes || []).slice();
+    nomes.push({ nome:nome, desde: String(hoje.getDate()).padStart(2,'0') + '/' +
+      ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][hoje.getMonth()] });
+    var novo = { total: Math.max(Number(reg.total)||0, nomes.length), nomes: nomes };
+    add.disabled = true;
+    gravarTime(e.ch, novo).then(function(){ abrir(e.ch); pintar(); })
+      .catch(function(err){ alert('Não consegui gravar: ' + err.message); add.disabled = false; });
+  }
+  if (rm) {
+    var i = Number(rm.dataset.rm);
+    var reg2 = TIME_MANUAL[e.ch] || {};
+    var atual = (reg2.nomes || []).slice();
+    if (!confirm('Tirar ' + (atual[i] && atual[i].nome) + ' de ' + e.nome + '?')) return;
+    atual.splice(i, 1);
+    gravarTime(e.ch, { total: Math.max((Number(reg2.total)||1) - 1, atual.length), nomes: atual })
+      .then(function(){ abrir(e.ch); pintar(); })
+      .catch(function(err){ alert('Não consegui gravar: ' + err.message); });
+  }
+});
+
+/* ═══ partida ═══ */
+SALAO = { meses:[], quem:{} };
+Promise.all([
+  lerSalao().catch(function(err){
+    document.getElementById('cards').innerHTML =
+      '<div class="carregando">não consegui ler o salão (' + esc(err.message) + ')</div>';
+    throw err;
+  }),
+  lerTimeManual()
+]).then(pintar).catch(function(err){
+  /* ⚠️ NUNCA ENGOLIR. Um catch vazio aqui já escondeu um ReferenceError e a
+     tela ficou em "lendo o salão…" para sempre, sem uma linha no console. */
+  console.error('[metas]', err);
+  var el = document.getElementById('cards');
+  if (el && /lendo/.test(el.textContent)) {
+    el.innerHTML = '<div class="carregando">não consegui montar o painel — ' + esc(err.message) + '</div>';
+  }
+});
+</script>
+</body>
+</html>

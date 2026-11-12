@@ -1,0 +1,1662 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta name="googlebot" content="noindex,nofollow">
+<script src="../ls-trava.js"></script>
+<script src="../ls-casca.js"></script>
+
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#F2F2F5"/>
+<title>Minhas empresas</title>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+<link rel="icon" href="/icone-painel-192.png" type="image/png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Empresas"/>
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   MINHAS EMPRESAS — a estrutura do mockup B, agora com dado de verdade
+
+   O desenho é o aprovado em `desenho/MOCK-empresas-final.html`, sem
+   mexer: cartão do total em cima, grade de DOIS por linha, cada cartão
+   com selo + nome + tipo, o número, e a curva do período. O que esta
+   página acrescenta é o que ela pediu depois:
+
+     1. o seletor de período no canto direito (7 dias · mês · ano · outro)
+     2. a curva que NÃO embola — ver `curvaCabe()` mais abaixo
+     3. tudo na tela, sem rolar (no computador e no tablet)
+     4. atualiza sozinha, sem arrastar nada
+     5. os números REAIS: PDV do Lavou tá liso e Kiwify do Lei dos Potes
+
+   ⚠️ NENHUM NÚMERO DE MENTIRA AQUI. No mockup as três empresas sem
+   fonte apareciam com valores inventados marcados com ◦ — aquilo era
+   desenho. Num painel que ela vai olhar pra decidir, dinheiro inventado
+   é mentira: quem não tem fonte ligada mostra "—" e diz que não tem.
+   ══════════════════════════════════════════════════════════════════ */
+/* ══ A PALETA VIVA ═══════════════════════════════════════════════
+   ⚠️ "SUBSTITUA TODAS AS CORES OPACAS POR CORES VIVAS" (ela, 12/08).
+   O painel tinha nascido no cinza-azulado de dashboard (#667085,
+   #98A2B3, curvas em verde-musgo e petróleo) — cor que não ofende e
+   também não diz nada. Estas são as mesmas famílias, saturadas: é a
+   paleta que ela já aprovou no interno do salão (MOCKUPS-interno-10-
+   telas.html), com o texto mais escuro pra ganhar contraste em vez de
+   perder. Nada de cor nova inventada. */
+:root{
+  --fundo:#F2F2F7; --papel:#FFF; --tinta:#0E1726; --sub:#4B5565; --sub-2:#7C8798;
+  --linha:#E4E7EC; --verde-forte:#30D158;
+  --s1:0 1px 2px rgba(16,24,40,.04), 0 4px 12px -4px rgba(16,24,40,.06);
+  --s2:0 2px 4px rgba(16,24,40,.03), 0 12px 32px -12px rgba(16,24,40,.12);
+  --respiro:12px; --borda:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;background:var(--fundo)}
+body{font-family:-apple-system,'SF Pro Text',system-ui,'Helvetica Neue',sans-serif;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  background:var(--fundo);color:var(--tinta);letter-spacing:-.012em;line-height:1.47;
+  width:100%;overflow-x:hidden;
+  padding:var(--borda) var(--borda) calc(var(--borda) + env(safe-area-inset-bottom,0px))}
+.display{font-family:-apple-system,'SF Pro Display',system-ui,sans-serif}
+/* ⚠️ a fonte do dinheiro é a do app (www/index.html:506), copiada sem alterar */
+.sf-fina{font-family:-apple-system,system-ui,sans-serif;
+  font-weight:250;letter-spacing:-.035em;font-variant-numeric:tabular-nums;
+  font-variation-settings:'opsz' 30, 'wght' 250}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+.card{background:var(--papel);border-radius:22px;padding:20px;box-shadow:var(--s1)}
+.rot{font-size:12.5px;font-weight:600;color:var(--sub)}
+/* ⚠️ A ETIQUETA DO QUE O NÚMERO É (14/10/2026). Sem ela o cartão do
+   Tráfego e o do salão se leem igual, e um é faturamento e o outro é
+   lucro. Cor diferente de propósito: é pra dar na vista qual dos dois
+   ainda não tem custo lançado. */
+.mede{display:inline-block;margin-top:5px;font-size:10px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:99px}
+.mede.ok{background:#E7F7EC;color:#166534}
+.mede.bruto{background:#FEF3C7;color:#92400E}
+/* ⚠️ A CONTA TEM QUE FECHAR NA TELA — lei do financeiro dela: parcelas
+   visíveis e resultado na mesma coluna. O gigante sozinho era uma soma
+   que ninguém conseguia refazer. */
+.parcelas{margin-top:12px;border-top:1px solid var(--linha,#ECECEF);padding-top:10px}
+/* sem parcela nenhuma, a caixa não desenha risco nem reserva altura */
+.parcelas:empty{display:none;margin:0;padding:0;border:0}
+.parcela{display:flex;justify-content:space-between;align-items:baseline;
+  gap:12px;font-size:13px;padding:4px 0}
+.parcela span{color:var(--sub)}
+.parcela b{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.parcela.falta span,.parcela.falta b{color:#92400E}
+.parcela-aviso{font-size:12px;color:#92400E;margin-top:8px;line-height:1.5}
+.sob{font-size:12.5px;color:var(--sub)}
+
+/* ── O TOPO ── */
+.topo{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;
+  flex-wrap:wrap;padding:2px 4px 14px}
+.topo h1{font-size:30px;font-weight:700;letter-spacing:-.035em;line-height:1.1}
+.topo .dia{font-size:13.5px;color:var(--sub);margin-top:3px}
+
+/* ── O SELETOR DE PERÍODO ──
+   Minimalista no canto direito, como ela pediu: sem caixa, sem borda,
+   sem sombra — só o texto, e o escolhido em pílula branca. */
+/* ══ A BARRA DE PERÍODO ══════════════════════════════════════════
+   ⚠️ ELA TRANSBORDAVA NO CELULAR: 439px de conteúdo numa tela de 390,
+   medido em 18/09. Os seis botões brigavam pela largura e o resultado
+   era o amontoado que ela chamou de "tudo embolado". Agora a régua
+   ROLA por dentro, com o ativo sempre trazido à vista, e no computador
+   ela continua inteira porque lá sobra espaço.
+
+   ⚠️ E O ALVO ERA DE 30px. Abaixo dos 44 que um dedo acerta — por isso
+   errar de botão era fácil. A pílula continua com 34 de altura visível,
+   mas a área de toque vai a 44 pelo padding do trilho. */
+.periodo{display:flex;align-items:center;gap:3px;background:#EDEDF2;
+  padding:4px;border-radius:99px;flex:none;position:relative;
+  max-width:100%;overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:none;-ms-overflow-style:none;
+  scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;
+  box-shadow:inset 0 1px 2px rgba(16,24,40,.05)}
+.periodo::-webkit-scrollbar{display:none}
+.periodo button{font-family:inherit;font-size:13.5px;font-weight:600;color:var(--sub);
+  background:none;border:0;padding:9px 15px;border-radius:99px;cursor:pointer;
+  letter-spacing:-.012em;white-space:nowrap;flex:none;scroll-snap-align:center;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .18s ease, background .18s ease, box-shadow .18s ease, transform .12s ease}
+.periodo button:active{transform:scale(.96)}
+.periodo button.on{background:var(--papel);color:var(--tinta);
+  box-shadow:0 1px 2px rgba(16,24,40,.06), 0 4px 10px -4px rgba(16,24,40,.18)}
+.periodo button:disabled{opacity:.42;cursor:default}
+/* as bordas somem por trás de um esmaecido, para dizer que há mais ao lado */
+.periodo-w{position:relative;display:flex;justify-content:flex-end}
+.periodo-w:before,.periodo-w:after{content:'';position:absolute;top:0;bottom:0;width:22px;
+  pointer-events:none;z-index:2;opacity:0;transition:opacity .2s}
+.periodo-w:before{left:0;background:linear-gradient(90deg,var(--fundo,#F2F2F7),transparent)}
+.periodo-w:after{right:0;background:linear-gradient(270deg,var(--fundo,#F2F2F7),transparent)}
+.periodo-w.tem-esq:before{opacity:1}
+.periodo-w.tem-dir:after{opacity:1}
+
+/* ⚠️ SEM `min-width:0` O FLEX NÃO DEIXA ENCOLHER. A barra tem
+   `overflow-x:auto`, mas o item flex que a contém adota a largura do
+   conteúdo (460px) e estoura a tela de 390 em vez de rolar. Medido nos
+   dois motores em 18/09. */
+.topo > div{min-width:0}
+.periodo-w{min-width:0;max-width:100%}
+@media (max-width:620px){
+  .periodo-w{justify-content:stretch}
+  .periodo{width:100%}
+  .periodo button{font-size:13px;padding:9px 14px}
+}
+.datas{display:none;gap:8px;align-items:center;margin-top:9px;justify-content:flex-end}
+.datas.on{display:flex}
+.datas input{font-family:inherit;font-size:13px;color:var(--tinta);background:var(--papel);
+  border:.5px solid var(--linha);border-radius:10px;padding:7px 10px}
+.datas span{font-size:13px;color:var(--sub)}
+
+/* ── O CARTÃO DO TOTAL ── */
+.total-card{box-shadow:var(--s2);position:relative}
+.gigante{font-size:44px;line-height:1;margin-top:6px}
+.gigante small{font-size:22px;color:var(--sub-2);margin-right:5px}
+@media(min-width:900px){ .gigante{font-size:52px} }
+.vivo{position:absolute;top:20px;right:20px;display:inline-flex;align-items:center;gap:7px;
+  font-size:12.5px;font-weight:600;color:#1B8F3A;background:rgba(48,209,88,.14);
+  padding:6px 12px;border-radius:99px;white-space:nowrap}
+.vivo i{width:7px;height:7px;border-radius:50%;background:var(--verde-forte);
+  box-shadow:0 0 0 3px rgba(48,209,88,.28)}
+.total-pe{font-size:13px;color:var(--sub);margin-top:9px}
+.total-pe b{color:var(--tinta);font-weight:600}
+
+/* ── A GRADE, DOIS POR LINHA ── */
+.grade2{display:grid;grid-template-columns:1fr 1fr;gap:var(--respiro);margin-top:var(--respiro)}
+.empresa{display:flex;flex-direction:column;min-height:0}
+.empresa .cabeca{display:flex;align-items:center;gap:12px}
+.selo{width:52px;height:52px;border-radius:14px;flex:none;display:flex;align-items:center;
+  justify-content:center;color:#fff;font-weight:750;font-size:17px;letter-spacing:-.03em;
+  box-shadow:0 2px 6px rgba(16,24,40,.14), 0 10px 22px -12px rgba(16,24,40,.3);overflow:hidden}
+.selo img{width:100%;height:100%;display:block;object-fit:cover}
+.empresa .nome{font-size:15px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.valor{font-size:34px;line-height:1.05;margin-top:12px}
+.valor small{font-size:17px;color:var(--sub-2);margin-right:4px}
+.detalhe{font-size:12.5px;color:var(--sub-2);margin-top:5px;min-height:18px}
+.g-caixa{margin-top:10px}
+.sem-fonte{color:var(--sub-2)}
+/* ⚠️ CAIXA DE GRÁFICO VAZIA AINDA OCUPA. Ela é `flex:1` com piso de 96px,
+   então o cartão sem fonte reservava a altura de uma curva que nunca vai
+   ser desenhada — a linha de baixo continuou com 254px de altura mesmo
+   depois de mandada encolher. Sem fonte, a caixa não existe. */
+/* ⚠️ OS QUATRO CARTÕES TÊM O MESMO TAMANHO — decisão dela, 12/08.
+   Cheguei a encolher a linha de baixo (as duas sem fonte viraram tiras
+   de 60px) pra devolver altura às curvas. Ela mandou desfazer: quatro
+   cartões iguais, sempre, mesmo que os de baixo ainda não tenham
+   lucrado. Some só a caixa da curva que não existe — o cartão continua
+   inteiro, do tamanho dos outros. */
+/* ⚠️ LINK DE VERDADE, NÃO OUVINTE DE EVENTO.
+   O cartão não abria no iPad e duas tentativas com JavaScript falharam:
+   `onclick` montado como texto (refeito a cada repintura) e depois
+   `pointerdown` por delegação. No Safari do toque, o que nunca falha é
+   uma âncora — ela não depende de evento nenhum. Esta fica invisível,
+   cobrindo o cartão inteiro, com o gráfico embaixo dela. */
+.porta{position:relative}
+.porta-link{position:absolute;inset:0;z-index:4;display:block;
+  border-radius:inherit;-webkit-tap-highlight-color:transparent}
+.porta .g-caixa{pointer-events:none}
+.porta{cursor:pointer;transition:transform .12s, box-shadow .12s}
+.porta:hover{transform:translateY(-2px);box-shadow:0 2px 6px rgba(16,24,40,.06),0 16px 34px -14px rgba(16,24,40,.22)}
+.porta .nome::after{content:'›';margin-left:7px;color:var(--sub-2);font-weight:700}
+.empresa.sem .g-caixa{display:none}
+.empresa.sem .valor{color:var(--sub-2)}
+
+/* ── TUDO NA TELA, SEM ROLAR ──
+   ⚠️ SÓ DO TABLET PRA CIMA. No iPhone, cinco cartões numa tela de 844
+   dariam ~140px cada: a curva viraria um risco e o dinheiro não caberia.
+   Fingir que cabe é pior que rolar. No celular a página rola, e cada
+   cartão fica do tamanho que dá pra ler.
+
+   ⚠️ E "COUBE" NÃO É "DEU CERTO". Medido no Chrome a 1440×813, a
+   primeira versão coube — e o gráfico ficou com 65px de altura, um
+   risco reto onde deveria haver curva. O que sobra pro gráfico é o que
+   os outros pedaços não usaram, então no modo sem-rolagem TUDO encolhe
+   um degrau: o cartão do total vira uma linha só, o dinheiro de cada
+   empresa desce de 34 pra 28, e o recheio dos cartões de 20 pra 15.
+   A curva tem piso de 96px — abaixo disso ela deixa de ser leitura, e
+   aí é melhor a página rolar um dedo do que mentir que coube. */
+@media(min-width:820px) and (min-height:600px){
+  /* ⚠️ `overflow:hidden` no corpo CORTAVA o cartão em vez de rolar.
+     Medido em 15/10/2026 a 1440×713 (Safari dela): a linha de baixo
+     precisava de 240px e a grade só tinha 208 — a curva do Tráfego saía
+     por baixo do cartão e o rodapé ficava POR CIMA do gráfico. A grade
+     agora nunca encolhe abaixo do conteúdo (`flex:1 0 auto`) e, quando
+     não couber, a página rola — que é o que o comentário acima já
+     mandava fazer: melhor rolar um dedo do que mentir que coube. */
+  html{height:100%;overflow:hidden}
+  body{height:100%;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column}
+  .topo{padding-bottom:11px}
+  .topo h1{font-size:26px}
+  .total-card{padding:15px 20px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .total-card .gigante{font-size:38px;margin-top:0}
+  .total-card .rot{align-self:center}
+  .total-pe{margin-top:0;align-self:center}
+  .empresa{padding:15px 18px}
+  .empresa .valor{font-size:28px;margin-top:9px}
+  .empresa .detalhe{margin-top:3px}
+  .selo{width:46px;height:46px;border-radius:13px;font-size:15px}
+  .grade2{flex:1 0 auto;min-height:min-content;grid-template-rows:1fr 1fr}
+  /* ⚠️ O SVG TEM `viewBox`, LOGO TEM PROPORÇÃO — e proporção entra na
+     conta do min-content. Com a grade medindo o conteúdo, a curva
+     desenhada engordava o cartão, que no repinte dava mais altura à
+     curva: o cartão crescia sozinho a cada 2 minutos. Tirando o desenho
+     do fluxo, o piso do cartão é só o 96 daqui, que não se move. */
+  .g-caixa{flex:1;min-height:96px;display:flex;position:relative}
+  .g-caixa svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .rodape{padding-top:8px}
+}
+@media(max-width:819px){
+  .grade2{grid-template-columns:1fr}
+  .g-caixa svg{width:100%;height:auto;display:block}
+}
+@media(min-width:1400px){
+  :root{--borda:20px}
+  .topo h1{font-size:34px}
+  .valor{font-size:40px}
+  .selo{width:58px;height:58px;border-radius:16px}
+}
+
+/* ── porta (o mesmo login do painel) ── */
+#porta{position:fixed;inset:0;background:var(--fundo);z-index:50;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  padding:36px 26px calc(36px + env(safe-area-inset-bottom,0px))}
+#porta.sai{display:none}
+/* ⚠️ ENQUANTO NÃO SE SABE QUEM É, A PORTA NÃO APARECE.
+   Ela, 18/09: "quando entra no ver de onde veio continua aparecendo 1
+   segundo de login, e saindo". A porta nascia visível e só saía quando o
+   Firebase confirmava a sessão guardada — o intervalo entre as duas
+   coisas é o pisca. Sai desta classe no PRIMEIRO retorno do
+   onAuthStateChanged: aí ou some de vez (tinha sessão) ou se mostra
+   (não tinha). Mesmo conserto que o app levou. */
+#porta.decidindo{visibility:hidden}
+#porta .caixa{width:100%;max-width:380px}
+#porta img{width:76px;height:76px;border-radius:19px;display:block;margin:0 auto 18px;
+  box-shadow:0 2px 6px rgba(16,24,40,.10), 0 14px 28px -14px rgba(16,24,40,.28)}
+#porta h1{font-size:24px;font-weight:700;letter-spacing:-.03em;text-align:center}
+#porta .sub{font-size:14.5px;color:var(--sub);text-align:center;margin-bottom:26px}
+#porta input{width:100%;font-size:17px;font-family:inherit;color:var(--tinta);background:var(--papel);
+  padding:15px 17px;border:.5px solid var(--linha);border-radius:14px;margin-bottom:10px;
+  letter-spacing:-.01em;box-shadow:var(--s1)}
+#porta input:focus{outline:none;border-color:#58B834}
+#porta button{width:100%;font-size:17px;font-weight:600;font-family:inherit;color:#fff;
+  padding:16px;border:none;border-radius:14px;background:var(--verde-forte);cursor:pointer;
+  margin-top:6px;letter-spacing:-.01em}
+#porta button:disabled{opacity:.4}
+.erro{font-size:14px;color:#B4400E;margin-bottom:12px;display:none;text-align:center}
+.erro.on{display:block}
+.rodape{text-align:center;font-size:12.5px;color:var(--sub-2);padding-top:10px;flex:none}
+.rodape a{color:var(--sub);text-decoration:none;border-bottom:.5px solid var(--linha)}
+</style>
+</head>
+<body>
+
+<div id="porta" class="decidindo">
+  <div class="caixa">
+    <img src="logo.png" alt="Lei dos Potes"/>
+    <h1 class="display">Minhas empresas</h1>
+    <div class="sub">entre com a conta do painel</div>
+    <div class="erro" id="p-erro"></div>
+    <form id="p-form">
+      <input id="p-email" type="email" placeholder="E-mail" autocomplete="email"
+             autocapitalize="none" spellcheck="false" required/>
+      <input id="p-senha" type="password" placeholder="Senha" autocomplete="current-password" required/>
+      <button type="submit" id="p-botao">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<div class="topo" id="topo" style="display:none">
+  <div>
+    <h1 class="display">Minhas empresas</h1>
+    <div class="dia" id="t-dia"></div>
+  </div>
+  <div>
+    <!-- ⚠️ HOJE É O PADRÃO, E É ELE QUE ABRE. O painel abria em "este mês",
+         e o número que ela procura quando bate o olho é o do DIA — o mês
+         é filtro, não é a pergunta. Clicou, filtra; não clicou, é hoje. -->
+    <div class="periodo-w" id="seletor-w"><div class="periodo" id="seletor">
+      <button data-p="hoje" class="on">Hoje</button>
+      <button data-p="ontem">Ontem</button>
+      <button data-p="7">7 dias</button>
+      <button data-p="mes">Este mês</button>
+      <button data-p="ano">Este ano</button>
+      <button data-p="livre">Escolher</button>
+    </div></div>
+    <div class="datas" id="datas">
+      <input type="date" id="d-de"/><span>até</span><input type="date" id="d-ate"/>
+    </div>
+  </div>
+</div>
+
+<div class="card total-card" id="total-card" style="display:none">
+  <div class="vivo"><i></i>ao vivo</div>
+  <div class="rot" id="t-rotulo">O que entrou</div>
+  <div class="gigante sf-fina" id="t-valor"><small>R$</small>—</div>
+  <div class="parcelas" id="t-parcelas"></div>
+</div>
+
+<div class="grade2" id="grade" style="display:none"></div>
+<div class="rodape" id="rodape" style="display:none">
+  <a href="https://leidospotes.com.br/painel">Painel do Lei dos Potes</a> · <a href="#" onclick="sair();return false">Sair</a>
+</div>
+<div id="aviso"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+/* ══ AS DUAS CASAS DE DADO ═════════════════════════════════════════
+   São dois projetos Firebase diferentes, e por isso dois apps:
+   · fire-e28b5      → Firestore, coleção `assinaturas` (webhook da Kiwify)
+   · paineldolavou   → Realtime Database, `pdv/ordens/{data}` e `pdv/aberto`
+   O segundo nasce com nome 'pdv' pra não brigar com o primeiro — é o
+   mesmo arranjo que o `estoque-integrado-pdv.html` já usa no salão. */
+firebase.initializeApp({
+  apiKey: "AIzaSyBLNeztRmUU3RkR08Y8UPWXPOBVBvxYerM",
+  authDomain: "fire-e28b5.firebaseapp.com",
+  projectId: "fire-e28b5",
+  storageBucket: "fire-e28b5.firebasestorage.app",
+  messagingSenderId: "796288350604",
+  appId: "1:796288350604:web:37f7ee4a28c838f2d0fea9"
+});
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+const RAIZ_PDV = 'https://paineldolavou-default-rtdb.firebaseio.com/';
+/* ⚠️ AS LEITURAS DO SALÃO VÃO POR `/db/`, NÃO POR `RAIZ_PDV`.
+   13/09/2026, ela: *"na aba inicial não mostra quanto o lavou tá liso lucrou"*.
+   O cartão do Lei dos Potes aparecia (Firestore é outro domínio); só o do
+   salão ficava vazio. É o mesmo defeito que travou o caixa em 07/09 e o
+   gestor inteiro hoje: o Safari trata `firebaseio.com` como domínio de
+   TERCEIRO quando a primeira parte é este site — o mesmo firebaseio é
+   chamado de meia dúzia de `.netlify.app` dela, que é o retrato de um
+   rastreador pro navegador — e segura a leitura sem erro e sem aviso.
+
+   `PDV_REST` passa pelo proxy `/db/*` do `_redirects`: mesmo endereço da
+   página, terceiro nenhum, e sem a viagem de CORS antes de cada leitura.
+
+   ⚠️ `RAIZ_PDV` FICA, mas só para o `databaseURL` do SDK logo abaixo — ele
+   precisa de host de verdade pra abrir o WebSocket, e proxy da Netlify não
+   carrega WebSocket. Se o Safari segurar o socket também, o tempo real
+   simplesmente não dispara: quem sustenta o número é a rede de segurança por
+   REST (na volta da aba e a cada 20s), que agora vai por `/db/`.
+   ⚠️ ANDA JUNTO COM O `_redirects` DESTA PASTA — sem a regra, isto é 404. */
+const PDV_REST = '/db/';
+const appPdv = firebase.initializeApp({
+  apiKey: "AIzaSyBrYBtE5OgsOEfWSqRp14GqcXvZyjPsYHI",
+  authDomain: "paineldolavou.firebaseapp.com",
+  databaseURL: RAIZ_PDV,
+  projectId: "paineldolavou"
+}, 'pdv');
+const dbPdv = appPdv.database();
+
+/* ══ AS EMPRESAS ═══════════════════════════════════════════════════
+   `fonte` é o que separa número de desenho. Quem não tem fonte não
+   inventa valor: mostra "—" e diz que a fonte não está ligada. */
+/* ⚠️ O COSMÉTICOS MORA EM SITE PRÓPRIO (02/10/2026) — a tela cosmeticos.html, as fotos
+   e as funções que falam com a Nuvemshop. Morava neste site e "desligava toda hora":
+   o gestor/caixa é publicado de outro computador com a pasta inteira, e cada publicação
+   apagava as funções e a tela (13 vezes de 29/09 a 02/10). NÃO voltar pra endereço
+   relativo ('/.netlify/functions/cosmeticos', 'cosmeticos.html'): aqui eles não existem. */
+const CASA_COSMET = 'https://cosmeticoslavoutaliso.netlify.app';
+/* ⚠️ `mede` NASCEU DE DINHEIRO ERRADO NA TELA (ela, 14/10/2026):
+   "AS EMPRESAS DO PAINEL EMPRESAS NAO FIZERAM 29,5MIL DE LUCRO, MEDE".
+   Ela tinha razão. O número gigante se chamava "Lucro líquido" e somava
+   quatro cartões — mas só DOIS deles são lucro:
+
+     Lavou tá liso  ✅ lucro  (faturado − equipe − produto − custo fixo)
+     Cosméticos     ✅ lucro  (faturado − custo do produto)
+     Lei dos Potes  ❌ FATURAMENTO — não existe custo lançado pra ela
+     Tráfego pago   ❌ FATURAMENTO — idem
+
+   Medido em setembro/2026 no painel dela: lucro de verdade R$ 9.281,11,
+   faturamento sem custo R$ 10.422,11, e o painel escrevia R$ 19.703,22
+   com a palavra LUCRO em cima. Mais que o dobro.
+
+   Não dá pra inventar o custo das duas; dá pra parar de chamar uma coisa
+   da outra. Enquanto `mede` disser 'faturamento', a tela diz isso, no
+   cartão e no total. No dia em que o custo delas existir, muda aqui. */
+const EMPRESAS = [
+  { id:'lei',    nome:'Lei dos Potes', tipo:'assinaturas · Kiwify', cor:'#30D158',
+    logo:'logo.png', mono:'LP', fonte:'kiwify', mede:'faturamento' },
+  { id:'lavou',  nome:'Lavou tá liso', tipo:'salão · PDV',          cor:'#15C6D0',
+    mono:'LL', fonte:'pdv', mede:'lucro', link:'gestor.html' },
+  { id:'trafego',nome:'Tráfego pago',  tipo:'assinaturas · Kiwify', cor:'#5E5CE6',
+    mono:'TP', fonte:'kiwify_trafego', mede:'faturamento' },
+  { id:'cosmet', nome:'Cosméticos',    tipo:'loja · Nuvemshop',     cor:'#EC4899',
+    mono:'CO', fonte:'nuvemshop', mede:'lucro', link: CASA_COSMET + '/cosmeticos.html' },
+];
+
+const brl = n => Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const MES  = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto',
+              'setembro','outubro','novembro','dezembro'];
+const MES_C = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const SEMANA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+
+/* ⚠️ A CHAVE DO DIA É LOCAL, NUNCA `toISOString()`.
+   `toISOString` devolve UTC: no Brasil, às 21h de terça ele já escreve
+   quarta-feira. Um dia de faturamento inteiro migraria pro dia seguinte
+   toda noite. Esta função monta a chave com o relógio da casa — que é o
+   mesmo com que o PDV nomeia `pdv/ordens/{data}`. */
+const chave = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0')
+                 + '-' + String(d.getDate()).padStart(2,'0');
+const doDia = s => { const [a,m,d] = String(s).split('-').map(Number);
+                     return new Date(a, m-1, d); };
+const meiaNoite = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const somaDias = (d,n) => { const x = meiaNoite(d); x.setDate(x.getDate()+n); return x; };
+
+/* ══ A PORTA ═══════════════════════════════════════════════════════ */
+document.getElementById('p-form').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const b = document.getElementById('p-botao'), e = document.getElementById('p-erro');
+  b.disabled = true; b.textContent = 'Entrando…'; e.className = 'erro';
+  try {
+    await auth.signInWithEmailAndPassword(
+      document.getElementById('p-email').value.trim(),
+      document.getElementById('p-senha').value);
+  } catch (err) {
+    e.textContent = err.code === 'auth/invalid-credential' ? 'E-mail ou senha não conferem.' : err.message;
+    e.className = 'erro on'; b.disabled = false; b.textContent = 'Entrar';
+  }
+});
+function sair(){ auth.signOut().then(() => location.reload()); }
+
+const mostrar = on => ['topo','total-card','grade','rodape'].forEach(id => {
+  document.getElementById(id).style.display = on ? '' : 'none';
+});
+
+let pararLei = null, pararTrafego = null, ligadoPdv = false;
+let LEI_DE_QUANDO = null;   /* preenchido quando o número do Lei dos Potes é de uma leitura antiga */
+let jaDecidiu = false;
+auth.onAuthStateChanged(u => {
+  /* ⚠️ O PRIMEIRO RETORNO É O QUE REVELA A PORTA. Antes dele não se sabe
+     se há sessão, e mostrar a tela de login é chute — o chute que piscava. */
+  if (!jaDecidiu){
+    jaDecidiu = true;
+    document.getElementById('porta').classList.remove('decidindo');
+  }
+  if (u){
+    document.getElementById('porta').classList.add('sai');
+    mostrar(true);
+    montarCartoes();
+    aplicarPeriodo();
+    /* ⚠️ O TRÁFEGO NÃO VEM DO FIRESTORE DIRETO — MEDIDO: 403.
+       As regras publicadas no console não conhecem `vendas_trafego_itens`,
+       então a leitura da página é negada e o cartão fica vazio. Em vez de
+       depender de ela publicar o firestore.rules, o painel pergunta ao
+       servidor levando o token do próprio login; lá a chave de
+       administrador lê e devolve só a soma por dia. */
+    buscarTrafego();
+    setInterval(buscarTrafego, 120000);
+    buscarCosmeticos();
+    setInterval(buscarCosmeticos, 60000);
+    /* o comprovante da gestão automática — só nasce se houver entrada
+       lançada pelo robô (ver gestao.js) */
+    if (window.ligarGestaoFeita) ligarGestaoFeita();
+    /* ⚠️ A ÚLTIMA LEITURA BOA FICA GUARDADA NO APARELHO.
+       Em 13/08/2026 a cota diária de leitura do Firestore estourou e o
+       banco passou a recusar TUDO — o cartão do Lei dos Potes, que lê
+       direto daqui, ficou vazio e o gráfico perdeu a curva. Número que
+       já foi lido não some por causa de um tropeço do banco: sem
+       resposta, a tela segue mostrando a última leitura e diz de quando
+       ela é, em vez de fingir que a empresa não faturou nada. */
+    const GUARDADO = 'lei_ultima_leitura';
+    pararLei = db.collection('assinaturas').onSnapshot(
+      snap => {
+        DADOS.lei = snap.docs.map(d => d.data());
+        ERRO.lei = null; LEI_DE_QUANDO = null;
+        try { localStorage.setItem(GUARDADO, JSON.stringify({ quando: Date.now(), lista: DADOS.lei })); } catch (e) {}
+        pintar();
+      },
+      err => {
+        let salvo = null;
+        try { salvo = JSON.parse(localStorage.getItem(GUARDADO) || 'null'); } catch (e) {}
+        if (salvo && Array.isArray(salvo.lista)) {
+          DADOS.lei = salvo.lista;
+          LEI_DE_QUANDO = salvo.quando;
+          ERRO.lei = null;          /* tem número na tela: não é erro, é dado velho */
+        } else {
+          ERRO.lei = err.message;
+        }
+        pintar();
+      });
+    if (!ligadoPdv){ ligarPdv(); ligadoPdv = true; }
+  } else {
+    if (pararLei) { pararLei(); pararLei = null; }
+    DADOS.trafego = null;
+    document.getElementById('porta').classList.remove('sai');
+    mostrar(false);
+    const b = document.getElementById('p-botao'); b.disabled = false; b.textContent = 'Entrar';
+  }
+});
+
+/* ══ O PERÍODO ═════════════════════════════════════════════════════
+   `grao` decide o tamanho do passo da curva: dia a dia no curto, mês a
+   mês no ano. Um ano dia a dia seriam 365 pontos num cartão de 500px —
+   o "embolado" que ela mandou resolver, elevado a doze. */
+let PERIODO = 'hoje', DE = null, ATE = null, GRAO = 'dia', DE_G = null, ATE_G = null;
+
+/* ⚠️ A CURVA É SEMPRE DIA A DIA. Cheguei a desenhar o dia hora a hora, e
+   ela cortou: o gráfico é de DIAS. Só que "hoje" tem um dia só, e um
+   ponto não é curva — então o NÚMERO é o de hoje e a CURVA são os
+   últimos 14 dias, com hoje na ponta. São duas perguntas diferentes na
+   mesma tela: quanto deu hoje, e como hoje se compara com a quinzena.
+   Por isso existem duas faixas: a do valor (DE/ATE) e a do desenho
+   (DE_G/ATE_G). Nos outros períodos as duas são a mesma. */
+const DIAS_NA_CURVA_DO_DIA = 14;
+
+function faixa(){
+  const hoje = meiaNoite(new Date());
+  if (PERIODO === 'hoje') return { de: hoje, ate: hoje, grao:'dia',
+                                   deG: somaDias(hoje, -(DIAS_NA_CURVA_DO_DIA-1)), ateG: hoje };
+  /* ⚠️ ONTEM TERMINA EM ONTEM, inclusive na curva. Se a curva fosse até
+     hoje, o último ponto — o mais grosso, o que o olho procura — seria um
+     dia que não é o que ela pediu pra ver. */
+  if (PERIODO === 'ontem'){ const o = somaDias(hoje,-1);
+    return { de: o, ate: o, grao:'dia',
+             deG: somaDias(o, -(DIAS_NA_CURVA_DO_DIA-1)), ateG: o }; }
+  if (PERIODO === '7')   return { de: somaDias(hoje,-6), ate: hoje, grao:'dia' };
+  if (PERIODO === 'mes') return { de: new Date(hoje.getFullYear(), hoje.getMonth(), 1), ate: hoje, grao:'dia' };
+  if (PERIODO === 'ano') return { de: new Date(hoje.getFullYear(), 0, 1), ate: hoje, grao:'mes' };
+  const de  = document.getElementById('d-de').value  ? doDia(document.getElementById('d-de').value)  : somaDias(hoje,-13);
+  const ate = document.getElementById('d-ate').value ? doDia(document.getElementById('d-ate').value) : hoje;
+  const dias = Math.round((ate - de) / 86400000) + 1;
+  return { de, ate, grao: dias > 92 ? 'mes' : 'dia' };
+}
+
+const NOME_PERIODO = () => PERIODO === 'hoje' ? 'hoje'
+                        : PERIODO === 'ontem' ? 'ontem'
+                        : PERIODO === '7' ? 'nos últimos 7 dias'
+                        : PERIODO === 'mes' ? 'em ' + MES[new Date().getMonth()]
+                        : PERIODO === 'ano' ? 'em ' + new Date().getFullYear()
+                        : 'no período escolhido';
+
+document.getElementById('seletor').addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  PERIODO = b.dataset.p;
+  [...ev.currentTarget.children].forEach(x => x.classList.toggle('on', x === b));
+  document.getElementById('datas').classList.toggle('on', PERIODO === 'livre');
+  aplicarPeriodo();
+});
+['d-de','d-ate'].forEach(id =>
+  document.getElementById(id).addEventListener('change', aplicarPeriodo));
+
+function aplicarPeriodo(){
+  const f = faixa();
+  DE = f.de; ATE = f.ate; GRAO = f.grao;
+  DE_G = f.deG || f.de; ATE_G = f.ateG || f.ate;
+  const h = new Date();
+  document.getElementById('t-dia').innerHTML =
+    SEMANA[h.getDay()] + ', ' + h.getDate() + ' de ' + MES[h.getMonth()]
+    + ' · <span id="t-sinc">atualizado agora</span>';
+  /* ⚠️ NÃO É "LUCRO LÍQUIDO" — ver o comentário do `mede` no EMPRESAS.
+     Duas das quatro empresas entram aqui com FATURAMENTO, porque não têm
+     custo lançado. Chamar a soma de lucro era o erro que ela achou em
+     14/10/2026. "Resultado" é honesto: é o que o painel consegue somar
+     hoje, e as parcelas logo abaixo dizem quanto de cada coisa é. */
+  document.getElementById('t-rotulo').textContent =
+    PERIODO === 'hoje'  ? 'Resultado do dia'
+  : PERIODO === 'ontem' ? 'Resultado de ontem'
+  : 'Resultado ' + NOME_PERIODO();
+  buscarLavou();      // o PDV é buscado por dia; período novo, dias novos
+  pintar();
+  /* ⚠️ DEPOIS do pintar, e sem await: a conferência lê o banco e pode
+     demorar; segurar a tela por ela deixaria o painel branco. Ela chama
+     `pintar()` de novo quando terminar. */
+  conferirTrafego();
+}
+
+/* ══ LAVOU TÁ LISO — O PDV ═════════════════════════════════════════
+
+   O PDV guarda a cliente em dois lugares:
+     pdv/aberto/{id}         → ela chegou, a comanda está aberta
+     pdv/ordens/{data}/{id}  → a comanda foi finalizada
+
+   ⚠️ O DIA DA COMANDA VEM DE `chegada`, NÃO DE `dataHora`. `dataHora` é
+   UTC e, medido nas ordens de 11/08, sai HORAS depois da chegada (07:23
+   na porta, 14:07Z no registro) — é a hora em que a linha foi gravada,
+   não a do atendimento. Filtrar por ela jogaria toda comanda aberta
+   depois das 21h no dia seguinte. `chegada` é epoch e vira dia local
+   exato, batendo com a chave de `pdv/ordens`.
+
+   ⚠️ E O ABERTO NÃO É DE HOJE POR NATUREZA: agora mesmo há duas comandas
+   de 08/08 penduradas lá, que nunca foram finalizadas. Sem o filtro pela
+   chegada, o dia de hoje nasceria com R$444,90 de quatro dias atrás. */
+const DADOS = { lei: null, trafego: null, cosmet: null, lavouDias: {}, lavouAberto: [] };
+/* ⚠️ A HORA DA ÚLTIMA LEITURA FICA NA TELA. Sem isso, "atualizado agora"
+   é uma frase fixa que continua dizendo "agora" mesmo com a aba congelada
+   há duas horas — exatamente a impressão errada que fez ela desconfiar. */
+let ULTIMA_SINC = Date.now();
+const ERRO  = { lei: null, lavou: null, trafego: null, cosmet: null };
+const cacheDia = {};                       // data → total; dia fechado não muda mais
+
+const listaDe = v => v ? (Array.isArray(v) ? v.filter(Boolean) : Object.values(v).filter(Boolean)) : [];
+const valorDe = o => Number(o && o.valor || 0);
+
+/* ══ O LUCRO DO SALÃO ═══════════════════════════════════════════════
+   ⚠️ ISTO NÃO É FÓRMULA MINHA. É a do PDV dela, copiada linha por linha
+   do `fechamento do dia` (Desktop/PDVEQUIPEOFC.html):
+
+       lucro = faturado − mão de obra − bônus − produto − custo fixo
+
+   Ela já olha esse número todo fim de expediente. Um painel que
+   calculasse "lucro" de outro jeito mostraria dois lucros diferentes
+   para o mesmo dia, e o certo passaria a depender de qual tela ela
+   abriu. Se a regra mudar no PDV, muda aqui também.
+
+   ⚠️⚠️ E FOI EXATAMENTE ISSO QUE ACONTECEU — corrigido em 17/09/2026.
+   Ela: *"na aba do lucro de hoje dentro do caixa mostra um valor, e na
+   tela inicial onde tem as 4 empresas mostra outro valor."* Estava certa.
+   A régua mudou TRÊS vezes no caixa e esta tela ficou para trás, calada:
+
+     · 07/09 — o bônus virou **8% do que a profissional faz**, não R$28
+       por procedimento. Dentro dos R$28 havia R$8,96 de bônus (8% de
+       R$112, a mão de obra de um trio) e R$19,04 de investimento. Os 8%
+       de verdade cobrem também express, corte e hidratação, que a régua
+       antiga ignorava.
+     · 16/09 — o custo fixo deixou de ser R$464 chutado e passou a ser
+       **as contas a pagar de verdade ÷ dias úteis** (`financeiro/contas_fixas`).
+       Medido em 17/09: R$ 11.273,00 ÷ 22 = R$ 512,41/dia.
+     · 16/09 — o custo fixo corre **só de terça a sábado**, e **cliente
+       não pagante entra na mão de obra** e sai do lucro.
+
+   Medido antes do conserto, de 02 a 17/09: esta tela mostrava
+   **R$ 755,16 de lucro a mais** que o caixa, e divergia TODO dia.
+
+   · mão de obra: quem aplicou ganha `moA`; quem passou a prancha ganha
+     `moD` e `moE` (a mesma pessoa nos dois lados recebe os dois). Kit
+     paga `moSolo`; express paga 40% do preço; retoque não paga. Dois
+     nomes no mesmo serviço DIVIDEM (`solo2`/`aplicou2`) — o total não muda.
+   · equipe = mão de obra (com não pagante) + 8% da mão de obra das
+     COMANDAS + R$19,04 por procedimento.
+   · custo fixo: `CUSTO_DIA`, só em dia com movimento e só de terça a sábado.
+   · o sinal sai porque entrou noutro dia: é dinheiro que já foi
+     recebido antes, não o de hoje.                                   */
+const SERVICOS_LAVOU = [
+  {nome:'Progressiva Lavou Tá Liso', preco:349.9, tipo:'trio', moA:22, moD:45, moE:45},
+  {nome:'Manutenção Lavou Tá Liso',  preco:299.9, tipo:'trio', moA:22, moD:45, moE:45},
+  {nome:'Kit Cronograma Grande',     preco:210,   tipo:'kit',  moSolo:50},
+  {nome:'Retoque',                   preco:0,     tipo:'retoque'},
+  {nome:'Hidratação Express',        preco:65,    tipo:'express'},
+  {nome:'Cronograma Express',        preco:70,    tipo:'express'},
+  {nome:'Tintura Express',           preco:40,    tipo:'express'},
+  {nome:'Sobrancelha Express',       preco:35,    tipo:'express'},
+  {nome:'Corte Simples Express',     preco:30,    tipo:'express'},
+  {nome:'Corte Premium Express',     preco:50,    tipo:'express'},
+  {nome:'Coloração',                 preco:40,    tipo:'express'},
+];
+/* ⚠️ R$464 É SÓ O HERDADO — vale enquanto não houver conta lançada no mês.
+   Mesma regra do `ctDiario()` do caixa (contas.js), copiada para cá. */
+const CUSTO_HERDADO_DIA = 464;
+const INVEST_UN = 19.04;     /* a parte do R$28 que sempre foi investimento */
+const CT_NO = 'financeiro/contas_fixas';
+const NP_NO = 'pdv/nao_pagantes';
+let CUSTO_DIA = CUSTO_HERDADO_DIA;   /* trocado por `carregarRegraDoLucro()` */
+/* ⚠️ O CUSTO DE CADA MÊS É O DAQUELE MÊS. `CUSTO_DIA` é um número só, do
+   mês CORRENTE, e era aplicado a todos os dias — junho, julho e agosto
+   fechavam com a diária de setembro. Medido em 19/09/2026 contra o caixa
+   já corrigido: 60 dias errados por exatamente R$ 48,41 (R$ 512,41 de
+   setembro menos o herdado de R$ 464). A regra já estava escrita duas
+   linhas acima: o herdado vale "enquanto não houver conta lançada no
+   mês" — e junho, julho e agosto não têm conta lançada.
+   Quem não está no mapa usa o herdado. Ver `dois-lucros-para-o-mesmo-dia`. */
+let CUSTO_MES = {};
+const custoDiaDe = mes => {
+  if (!mes) return CUSTO_DIA;
+  const t = CUSTO_MES[mes];
+  return t ? Math.round(t / diasDeCustoNoMes(mes) * 100) / 100 : CUSTO_HERDADO_DIA;
+};
+let NP_DIA = {};                     /* dia do ATENDIMENTO → mão de obra devida */
+
+/* terça(2) a sábado(6) — domingo e segunda não carregam custo fixo */
+const diaDeCusto = iso => { const w = new Date(iso + 'T12:00:00Z').getUTCDay();
+                            return w >= 2 && w <= 6; };
+const chaveMes = (d) => { d = d || new Date(Date.now() - 3*3600e3);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`; };
+function diasDeCustoNoMes(chave){
+  const [a,m] = chave.split('-').map(Number);
+  let n = 0; const u = new Date(Date.UTC(a, m, 0)).getUTCDate();
+  for (let d = 1; d <= u; d++){ const w = new Date(Date.UTC(a, m-1, d)).getUTCDay();
+    if (w >= 2 && w <= 6) n++; }
+  return n;
+}
+/* ⚠️ LÊ ANTES DE MONTAR OS DIAS, e limpa o cache se chegar depois.
+   `cacheDia` guarda o dia já calculado ("dia fechado não muda mais"); se o
+   custo real ou o não pagante chegassem depois, os dias já montados ficariam
+   com a conta velha e a tela mostraria de novo dois lucros diferentes — o
+   defeito que este bloco existe pra matar. */
+/* ⚠️ UMA VEZ SÓ POR CARREGAMENTO, e todo mundo espera a MESMA promessa.
+   O tempo real do PDV pinta antes do `buscarLavou()` terminar; sem esta
+   espera o primeiro número da tela sairia com o custo herdado de R$464 e
+   depois pularia pro real — número errado na tela é número errado, mesmo
+   que dure um segundo. Contas fixas mudam por mês, não por minuto: quem
+   editar a lista recarrega a página. */
+let REGRA_PRONTA = null;
+const regraPronta = () => (REGRA_PRONTA = REGRA_PRONTA || carregarRegraDoLucro());
+
+async function carregarRegraDoLucro(){
+  try {
+    const mes = chaveMes();
+    /* ⚠️ O NÓ INTEIRO, não só o mês corrente: sem os outros meses não há
+       como fechar um dia de agosto com a diária de agosto. O nó é pequeno
+       (hoje: um mês) e é uma requisição só. */
+    const [todas, np] = await Promise.all([
+      fetch(PDV_REST + CT_NO + '.json').then(r => r.json()).catch(() => null),
+      fetch(PDV_REST + NP_NO + '.json').then(r => r.json()).catch(() => null),
+    ]);
+    CUSTO_MES = {};
+    Object.entries(todas || {}).forEach(([m, itens]) => {
+      const t = Object.values(itens || {}).filter(Boolean)
+                      .reduce((s,c) => s + (Number(c.v) || 0), 0);
+      if (t) CUSTO_MES[m] = t;
+    });
+    CUSTO_DIA = custoDiaDe(mes);   /* o do mês corrente, para quem só quer um */
+    /* ⚠️ PELO `refDia` — o dia em que o atendimento ACONTECEU, nunca o do
+       lançamento. É a régua do PDV e a do caixa; trocar joga a mão de obra
+       de um dia no lucro de outro. */
+    NP_DIA = {};
+    Object.values(np || {}).filter(Boolean).forEach(r => {
+      const d = String(r.refDia || r.dia || '').slice(0,10);
+      const v = Number(r.valor) || 0;
+      if (!d || !v || !r.prof) return;      /* mesma guarda do `_montarNPporDia` */
+      NP_DIA[d] = Math.round(((NP_DIA[d] || 0) + v) * 100) / 100;
+    });
+    Object.keys(cacheDia).forEach(k => delete cacheDia[k]);
+  } catch (e) { /* sem a regra nova, segue com o herdado — nunca em branco */ }
+}
+/* ⚠️ O CUSTO DE PRODUTO É R$80 POR PROGRESSIVA/MANUTENÇÃO — e mais nada
+   tem custo (ela, 13/08). Antes eu descontava o SINAL no lugar disso,
+   copiado do PDV sem questionar, e estava errado de duas maneiras:
+   o sinal é dinheiro que a cliente JÁ PAGOU (entrada antecipada, não
+   custo), e o valor não tem relação com o produto gasto. Ontem a
+   diferença foi de R$ 80: sinal somava 640, o produto de verdade soma
+   560 (7 progressivas). */
+const CUSTO_PRODUTO = 80;
+const BONUS_SVC = ['Progressiva Lavou Tá Liso','Manutenção Lavou Tá Liso'];
+/* o "#" separa o nome do serviço de um sufixo que o PDV às vezes cola */
+const cfgServico = n => SERVICOS_LAVOU.find(s => s.nome === String(n).split('#')[0]) || null;
+
+const c2 = v => Math.round((Number(v) || 0) * 100) / 100;
+
+function contaDoDia(ordens, dia){
+  let fat = 0, sinal = 0, moComandas = 0, eleg = 0;
+  /* ⚠️ DOIS NOMES NO MESMO SERVIÇO DIVIDEM a comissão (`solo2`, `aplicou2`).
+     O total da mão de obra não muda — o serviço custa o mesmo, só é repartido.
+     Aqui só o total importa, mas a leitura segue a do caixa pra não perder
+     quem estiver gravado APENAS em `solo2`. */
+  const temAlguem = (...nomes) => nomes.some(Boolean);
+  ordens.forEach(o => {
+    fat   += valorDe(o);
+    sinal += Number(o.sinal || 0);   /* guardado só pra mostrar, não entra no lucro */
+    Object.entries(o.profs || {}).forEach(([svc, i]) => {
+      const c = cfgServico(svc); if (!c) return;
+      if (c.tipo === 'trio' || c.tipo === 'retoque'){
+        if (temAlguem(i.aplicou, i.aplicou2)) moComandas += c.moA || 0;
+        if (i.prD && i.prD === i.prE) moComandas += (c.moD || 0) + (c.moE || 0);
+        else { if (i.prD) moComandas += c.moD || 0; if (i.prE) moComandas += c.moE || 0; }
+      } else if (c.tipo === 'kit'){
+        if (temAlguem(i.solo, i.solo2)) moComandas += c.moSolo || 0;
+      } else if (c.tipo === 'express'){
+        if (temAlguem(i.solo, i.solo2)) moComandas += Math.round(c.preco * .4);
+      }
+    });
+    (o.servicos || []).forEach(s => {
+      if (BONUS_SVC.includes(String(s.nome).split('#')[0])) eleg++;
+    });
+  });
+  fat = c2(fat); moComandas = c2(moComandas);
+  const produto = c2(eleg * CUSTO_PRODUTO);
+  /* ⭐ cliente não pagante: trabalho feito, devido, sem faturamento atrás.
+     Entra na mão de obra e sai do lucro — e NÃO ganha os 8% por cima, porque
+     a base da campanha Cliente Feliz sai das comandas. */
+  const npMo = c2(NP_DIA[dia] || 0);
+  const mo = c2(moComandas + npMo);
+  /* ⭐ a reserva é 8% do que a profissional FAZ, não R$28 por procedimento */
+  const bonus = c2(moComandas * 0.08);
+  const equipe = c2(mo + bonus + eleg * INVEST_UN);
+  const teve = ordens.length > 0 || npMo > 0;
+  const custoFixo = (teve && diaDeCusto(dia)) ? custoDiaDe(String(dia).slice(0,7)) : 0;
+  return { fat, sinal, mo, moComandas, npMo, bonus, produto, eleg,
+           equipe, custoFixo, n: ordens.length,
+           lucro: teve ? c2(fat - equipe - produto - custoFixo) : 0 };
+}
+
+const resumoDoDia = (ordens, dia) => Object.assign(contaDoDia(ordens, dia), {
+  ids: ordens.map(o => String(o.id))
+});
+
+async function buscarLavou(){
+  /* a busca cobre a união das duas faixas: a do número e a do desenho.
+     ⚠️ Em "hoje" elas são diferentes — o valor é de um dia só, mas a
+     curva quer os últimos 14. Buscar só a do valor deixaria a curva de
+     hoje em branco. */
+  const dias = [];
+  const ini = DE_G < DE ? DE_G : DE, fim = ATE_G > ATE ? ATE_G : ATE;
+  for (let d = new Date(ini); d <= fim; d = somaDias(d,1)) dias.push(chave(d));
+  const hoje = chave(new Date());
+  try {
+    /* ⚠️ A RÉGUA VEM PRIMEIRO. Custo fixo real e cliente não pagante têm que
+       estar carregados ANTES de montar qualquer dia — senão o `cacheDia`
+       congela a conta velha e a tela volta a divergir do caixa. */
+    await regraPronta();
+    /* ⚠️ SÓ OS DIAS QUE EXISTEM. Pedir 365 datas pro Realtime Database é
+       365 requisições, e 312 delas voltariam vazias. O `?shallow=true`
+       devolve só a lista de chaves — uma requisição — e a partir dela
+       busco apenas os dias com movimento. */
+    const r = await fetch(PDV_REST + 'pdv/ordens.json?shallow=true');
+    const existentes = new Set(Object.keys(await r.json() || {}));
+    /* ⭐ DIA COM CLIENTE NÃO PAGANTE TAMBÉM É DIA, mesmo sem comanda nenhuma.
+       14/09 é o caso medido: duas modelos da Dani, R$236 de mão de obra, zero
+       comanda. Sem esta linha o dia não existe aqui e o custo dele some. */
+    Object.keys(NP_DIA).forEach(d => existentes.add(d));
+    const faltando = dias.filter(d => existentes.has(d) && (d === hoje || !(d in cacheDia)));
+    await Promise.all(faltando.map(async d => {
+      const res = await fetch(PDV_REST + 'pdv/ordens/' + d + '.json');
+      const ordens = listaDe(await res.json());
+      cacheDia[d] = resumoDoDia(ordens, d);
+    }));
+    DADOS.lavouDias = {};
+    dias.forEach(d => { if (cacheDia[d]) DADOS.lavouDias[d] = cacheDia[d]; });
+    ERRO.lavou = null;
+  } catch (e) { ERRO.lavou = e.message; }
+  pintar();
+}
+
+function ligarPdv(){
+  const vivoOrdens = () => {
+    const hoje = chave(new Date());
+    dbPdv.ref('pdv/ordens/' + hoje).on('value', async snap => {
+      const ordens = listaDe(snap.val());
+      await regraPronta();          /* sem a régua, o lucro sai com o custo herdado */
+      cacheDia[hoje] = resumoDoDia(ordens, hoje);
+      DADOS.lavouDias[hoje] = cacheDia[hoje];
+      ULTIMA_SINC = Date.now();
+      pintar();
+    }, err => { ERRO.lavou = err.message; pintar(); });
+  };
+  vivoOrdens();
+
+  dbPdv.ref('pdv/aberto').on('value', snap => {
+    const hoje = chave(new Date());
+    DADOS.lavouAberto = listaDe(snap.val())
+      .filter(o => o.chegada && chave(new Date(Number(o.chegada))) === hoje);
+    ULTIMA_SINC = Date.now();
+    pintar();
+  }, err => { ERRO.lavou = err.message; pintar(); });
+
+  /* ⚠️ REDE DE SEGURANÇA POR REST, a cada 60s.
+     O tempo real do Firebase usa WebSocket, e onde ele não sobe — wifi
+     que bloqueia, navegador velho — o callback simplesmente NUNCA
+     dispara: não dá erro, fica em zero pra sempre. Foi medido no salão.
+     O REST roda junto: quando o tempo real funciona, chega antes e
+     manda; quando não funciona, o REST segura a barra. É também o que
+     faz a página se atualizar sozinha, sem ela arrastar nada. */
+  /* ⚠️ MEDIDO ANTES DE CONSERTAR (12/08, motor do Safari, tempo real):
+     o socket do Realtime Database conecta em 0,5s e o primeiro valor
+     chega em 0,7s. O tempo real FUNCIONA — o defeito é outro.
+
+     O defeito é que o Safari CONGELA a aba que sai de vista: celular
+     bloqueado, outra aba, app minimizado. Enquanto congelada, nem o
+     socket recebe nem o setInterval roda. Quando ela volta, o número na
+     tela é o de antes do congelamento, e só corrige no próximo tique de
+     60s — foi isso que a fez arrastar a tela pra atualizar.
+
+     A cura é sincronizar no instante em que a aba volta a aparecer, e
+     não esperar o relógio. Três gatilhos, porque o Safari não usa sempre
+     o mesmo: `visibilitychange` (voltou pra frente), `focus` (voltou pro
+     app) e `online` (a rede voltou). */
+  async function sincronizarAgora(motivo){
+    const hoje = chave(new Date());
+    try {
+      const [o, a] = await Promise.all([
+        fetch(PDV_REST + 'pdv/ordens/' + hoje + '.json?_=' + Date.now()).then(r => r.json()),
+        fetch(PDV_REST + 'pdv/aberto.json?_=' + Date.now()).then(r => r.json())
+      ]);
+      const ordens = listaDe(o);
+      await regraPronta();
+      cacheDia[hoje] = resumoDoDia(ordens, hoje);
+      DADOS.lavouDias[hoje] = cacheDia[hoje];
+      DADOS.lavouAberto = listaDe(a)
+        .filter(x => x.chegada && chave(new Date(Number(x.chegada))) === hoje);
+      ERRO.lavou = null;
+      ULTIMA_SINC = Date.now();
+      pintar();
+    } catch (e) {}
+  }
+  /* ⚠️ AO VOLTAR, O DIA PODE TER VIRADO. Se ela deixou a aba aberta de
+     ontem pra hoje, não basta reler as ordens: o listener está preso no
+     caminho de ONTEM e o período é o de ontem. Aí é remontar tudo. */
+  let diaNaTela = chave(new Date());
+  function aoVoltar(motivo){
+    const agora = chave(new Date());
+    if (agora !== diaNaTela){ diaNaTela = agora; aplicarPeriodo(); return; }
+    sincronizarAgora(motivo);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') aoVoltar('voltou pra frente');
+  });
+  addEventListener('focus',  () => aoVoltar('ganhou foco'));
+  addEventListener('online', () => aoVoltar('rede voltou'));
+  /* e o socket avisando que reconectou também é um bom momento pra reler */
+  try {
+    dbPdv.ref('.info/connected').on('value', s => { if (s.val()) sincronizarAgora('socket reconectou'); });
+  } catch (e) {}
+
+  setInterval(async () => {
+    const hoje = chave(new Date());
+    try {
+      const [o, a] = await Promise.all([
+        fetch(PDV_REST + 'pdv/ordens/' + hoje + '.json').then(r => r.json()),
+        fetch(PDV_REST + 'pdv/aberto.json').then(r => r.json())
+      ]);
+      const ordens = listaDe(o);
+      await regraPronta();
+      cacheDia[hoje] = resumoDoDia(ordens, hoje);
+      DADOS.lavouDias[hoje] = cacheDia[hoje];
+      DADOS.lavouAberto = listaDe(a)
+        .filter(x => x.chegada && chave(new Date(Number(x.chegada))) === hoje);
+      ERRO.lavou = null;
+      ULTIMA_SINC = Date.now();
+      pintar();
+    } catch (e) {}
+  }, 20000);   /* ⚠️ era 60s. Com a sincronização na volta funcionando, este
+                    relógio virou só a rede de segurança pra quem fica com a tela
+                    aberta e parada — 20s custa dois JSON pequenos e faz o
+                    contador subir sozinho enquanto ela olha. */
+
+  /* ⚠️ E QUANDO VIRA O DIA? A página fica aberta a noite inteira no
+     computador do salão. Sem isto, à meia-noite ela continuaria ouvindo
+     o caminho de ontem e mostraria "hoje" com o movimento do dia
+     anterior até alguém recarregar. */
+  let diaLigado = chave(new Date());
+  setInterval(() => {
+    const agora = chave(new Date());
+    if (agora === diaLigado) return;
+    dbPdv.ref('pdv/ordens/' + diaLigado).off();
+    diaLigado = agora;
+    vivoOrdens();
+    aplicarPeriodo();
+  }, 30000);
+}
+
+/* ══ LEI DOS POTES — A KIWIFY ══════════════════════════════════════
+   As mesmas duas peneiras do painel, e pelo mesmo motivo:
+   · `teste` — as compras de mentira que a gente disparou pra conferir o
+     webhook. Tinham status ativo e inflavam o painel em 16 pessoas.
+   · `brutoCent` — sem preço no corpo do webhook não houve pagamento.
+
+   ⚠️ O QUE ESTE DADO NÃO SABE: a coleção guarda o ÚLTIMO pagamento de
+   cada assinante, não o histórico. Enquanto ninguém tiver completado um
+   segundo mês, "último pagamento" e "todos os pagamentos" são a mesma
+   coisa e a soma está certa. Quando as renovações começarem, o mês
+   passado passa a faltar aqui — e a conta certa vai ter que vir dos
+   eventos da Kiwify, não deste retrato. */
+const realLei = l => l.teste !== true && Number(l.brutoCent) > 0;
+const dataDe = v => { if (v === null || v === undefined || v === '') return null;
+                      const d = new Date(v); return isNaN(d) ? null : d; };
+
+/* ⚠️ SÓ VENDA PAGA ENTRA. O CSV traz 1.556 linhas e só 947 estão `paid`:
+   o resto é recusada, estornada, aguardando pagamento ou chargeback. Somar
+   tudo poria R$ 718 mil de faturamento que nunca existiu.
+   E o que entra é o LÍQUIDO: em venda de coprodução o preço do produto é
+   do produto, não dela — de R$ 797 chegaram R$ 222,28. */
+const SERVIDOR = 'https://lei-dos-potes-assinaturas-production.up.railway.app';
+async function buscarTrafego(){
+  try {
+    const u = auth.currentUser;
+    if (!u) return;
+    const r = await fetch(SERVIDOR + '/painel/trafego', {
+      headers: { Authorization: 'Bearer ' + (await u.getIdToken()) }
+    });
+    if (!r.ok) throw new Error('http ' + r.status);
+    const d = await r.json();
+    DADOS.trafego = d;      /* { porDia: {dia: centavos}, pagas, produtos } */
+    ERRO.trafego = null;
+  } catch (e) { ERRO.trafego = e.message; }
+  pintar();
+}
+
+/* ══ COSMÉTICOS — A LOJA DA NUVEMSHOP (22/09/2026) ═════════════════
+   Aplicativo "Painel Minhas Empresas" (#43171, portal de parceiros da
+   conta lavoutaliso@gmail.com). A venda paga avisa a função
+   `nuvem-webhook` deste mesmo site; `cosmeticos` devolve a soma por dia,
+   no mesmo formato do tráfego, só pro login da dona.
+   ⚠️ O NÚMERO É LUCRO (22/09, ela: "assim como o salão, que lança só o
+   lucro"): valor dos produtos sem frete, de pedido PAGO e não cancelado,
+   menos o custo por unidade da tabela do PDV PRO — a conta mora na função
+   (funcoes-nuvemshop/lib/custos.mjs), aqui só se soma. */
+async function buscarCosmeticos(){
+  try {
+    const u = auth.currentUser;
+    if (!u) return;
+    const r = await fetch(CASA_COSMET + '/.netlify/functions/cosmeticos', {
+      headers: { Authorization: 'Bearer ' + (await u.getIdToken()) }, cache: 'no-store'
+    });
+    if (!r.ok) throw new Error('http ' + r.status);
+    DADOS.cosmet = await r.json();   /* { instalada, porDia: lucro por dia em centavos, fatPorDia, pagas, semCusto, ultima } */
+    ERRO.cosmet = null; tentativasCosmet = 0;
+  } catch (e) {
+    ERRO.cosmet = e.message;
+    /* ⚠️ TROPEÇO NÃO ESPERA 1 MINUTO (23/09): ela via "não consegui ler a loja"
+       e arrastava a tela até 4 vezes. Falhou → tenta de novo em 5s, até 3 vezes. */
+    if (tentativasCosmet++ < 3) setTimeout(buscarCosmeticos, 5000);
+  }
+  pintar();
+}
+let tentativasCosmet = 0;
+function porDiaCosmet(){
+  const m = {};
+  const bruto = (DADOS.cosmet && DADOS.cosmet.porDia) || {};
+  Object.keys(bruto).forEach(k => { m[k] = Number(bruto[k] || 0) / 100; });
+  return m;
+}
+
+/* ══ A CONCILIAÇÃO DO TRÁFEGO PAGO (14/10/2026) ════════════════════
+
+   ⚠️ O NÚMERO DO CARTÃO ERA UM SOMATÓRIO QUE NINGUÉM CONFERIA.
+   `vendas_trafego_itens_resumo/atual` é incrementado a cada webhook da
+   Kiwify e nunca é refeito — de propósito, porque refazer lia a coleção
+   inteira e torrava a cota do Firestore (13/08/2026). O preço escondido:
+   se um webhook entrar duas vezes, o somatório soma duas vezes e não há
+   nada no mundo que o faça perceber.
+
+   E entrou. Medido em 14/10/2026, refazendo a conta pelos 1.612 itens:
+
+       17/09   vendas R$  1.465,60   resumo R$  1.732,54   (+266,94)
+       08/10   vendas R$    213,24   resumo R$    426,48   (2× exato)
+       14/10   vendas R$    266,94   resumo R$    533,88   (2× exato)
+       2026    vendas R$ 86.716,16   resumo R$ 87.463,28   (+747,12)
+
+   Nos dois dias de outubro havia UMA venda e o resumo contava DUAS. Foi
+   isso que ela viu: "na Kiwify consta em setembro um valor, e em outubro
+   outro valor de vendas, diferente do que consta no meu painel".
+
+   O QUE MUDA AQUI: o cartão passa a mostrar a soma das VENDAS do período,
+   não a fatia do somatório. E quando os dois discordam, os DOIS aparecem
+   na tela — esconder a diferença seria escolher um número sem poder dizer
+   por quê.
+
+   ⚠️ A COTA CONTINUA SENDO O LIMITE. A conferência lê só os dias do
+   período escolhido (`where pagoEm`), e só UMA vez por período — a chave
+   do cache leva o período E o carimbo do resumo, então venda nova refaz a
+   conferência e o passar do relógio não refaz nada. O painel pergunta de
+   2 em 2 minutos; sem esse cache seria o mesmo poço de 13/08.           */
+let CONF_TRAFEGO = null;      /* { de, ate, porDia, vendas } */
+let CONF_PEDIDO  = '';        /* a chave do que já foi conferido */
+let CONF_ERRO    = null;
+
+async function conferirTrafego(){
+  if (typeof db === 'undefined' || !db || !DE || !ATE) return;
+  const de = chave(DE), ate = chave(ATE);
+  const carimbo = (DADOS.trafego && DADOS.trafego.atualizadoEm) || '';
+  const quem = de + '|' + ate + '|' + carimbo;
+  if (CONF_PEDIDO === quem) return;
+  CONF_PEDIDO = quem;
+  try {
+    /* ⚠️ `ate + '\uf8ff'` E NÃO `ate`. O campo `pagoEm` tem dois formatos
+       no banco dela: 'AAAA-MM-DD' nas vendas do webhook e
+       'AAAA-MM-DDTHH:MM:SS' nas importadas do CSV. Comparando com `ate`
+       puro, todo lançamento com hora no último dia do período ficava DE
+       FORA — e a conferência acusaria uma falta que não existe. */
+    const q = await db.collection('vendas_trafego_itens')
+      .where('pagoEm', '>=', de).where('pagoEm', '<=', ate + '\uf8ff').get();
+    const porDia = {}; let vendas = 0;
+    q.forEach(d => {
+      const x = d.data();
+      /* ⚠️ SÓ `paid`. A coleção guarda também refused, waiting_payment,
+         refunded e chargedback — somar tudo inflaria o faturamento com
+         dinheiro que nunca entrou ou que voltou. */
+      if (String(x.status || '').toLowerCase() !== 'paid') return;
+      const k = String(x.pagoEm || '').slice(0, 10);
+      if (!k) return;
+      porDia[k] = (porDia[k] || 0) + Number(x.liquidoCent || 0);
+      vendas++;
+    });
+    CONF_TRAFEGO = { de, ate, porDia, vendas };
+    CONF_ERRO = null;
+  } catch (e){
+    /* ⚠️ CONFERÊNCIA QUE FALHA NÃO PODE DAR VERDE. Se não deu pra ler as
+       vendas, o cartão volta pro somatório E DIZ que não conferiu. */
+    CONF_TRAFEGO = null; CONF_ERRO = e.message; CONF_PEDIDO = '';
+  }
+  pintar();
+}
+
+/* a soma do resumo dentro do período — é com ela que a conferência briga */
+function trafegoDoResumo(){
+  const m = {};
+  const bruto = (DADOS.trafego && DADOS.trafego.porDia) || {};
+  Object.keys(bruto).forEach(k => { m[k] = Number(bruto[k] || 0) / 100; });
+  return m;
+}
+
+/* ⚠️ AS VENDAS MANDAM. Quando a conferência do período existe, é ela que
+   vai pro cartão; o somatório só serve de alternativa enquanto ela não
+   chegou — e nesse caso o cartão avisa. */
+function porDiaTrafego(){
+  if (CONF_TRAFEGO && CONF_TRAFEGO.de === chave(DE) && CONF_TRAFEGO.ate === chave(ATE)){
+    const m = {};
+    Object.keys(CONF_TRAFEGO.porDia).forEach(k => { m[k] = CONF_TRAFEGO.porDia[k] / 100; });
+    return m;
+  }
+  return trafegoDoResumo();
+}
+
+/* o que o cartão escreve embaixo do número: bateu, não bateu, ou não deu
+   pra conferir. Nunca fica mudo — mudo se lê como "está conferido". */
+function recadoDaConferencia(){
+  const dentro = m => Object.keys(m)
+    .filter(k => { const d = doDia(k); return d >= DE && d <= ATE; })
+    .reduce((s,k) => s + m[k], 0);
+  if (!CONF_TRAFEGO || CONF_TRAFEGO.de !== chave(DE) || CONF_TRAFEGO.ate !== chave(ATE))
+    return CONF_ERRO ? '⚠ não conferi com as vendas: ' + CONF_ERRO
+                     : '⚠ ainda não conferi com as vendas';
+  const resumo = dentro(trafegoDoResumo());
+  const itens  = dentro(porDiaTrafego());
+  const dif = Math.round((resumo - itens) * 100) / 100;
+  if (Math.abs(dif) < 0.005) return CONF_TRAFEGO.vendas + ' vendas pagas · confere com o resumo';
+  return '⚠ o resumo do servidor marca R$ ' + brl(Math.abs(dif)) + (dif > 0 ? ' A MAIS' : ' A MENOS')
+       + ' que as ' + CONF_TRAFEGO.vendas + ' vendas — na tela está o das vendas';
+}
+
+function porDiaLei(){
+  const m = {};
+  (DADOS.lei || []).filter(realLei).forEach(l => {
+    const d = dataDe(l.ultimoPagamentoEm) || dataDe(l.criadoEm);
+    if (!d) return;
+    const k = chave(d);
+    m[k] = (m[k] || 0) + Number(l.liquidoCent || 0) / 100;
+  });
+  return m;
+}
+
+/* ══ A SÉRIE DO PERÍODO ════════════════════════════════════════════
+   ⚠️ O DIA SOZINHO NÃO SE IDENTIFICA QUANDO O PERÍODO PASSA DE UM MÊS.
+   Medido num período escolhido de 01/06 a 12/08: o eixo saiu "1–3 · 7–9
+   · 19–21", e não havia como saber se aquele "1–3" era de junho, julho
+   ou agosto — três blocos com valores completamente diferentes teriam o
+   mesmo rótulo. Quando a faixa cruza um mês, o mês entra no rótulo. */
+function serie(porDia){
+  const pts = [];
+  if (GRAO === 'mes'){
+    const a = DE_G.getFullYear();
+    for (let m = DE_G.getMonth(); m <= ATE_G.getMonth(); m++){
+      let v = 0;
+      Object.keys(porDia).forEach(k => {
+        const d = doDia(k);
+        if (d.getFullYear() === a && d.getMonth() === m) v += porDia[k];
+      });
+      pts.push({ v, m });
+    }
+  } else {
+    for (let d = new Date(DE_G); d <= ATE_G; d = somaDias(d,1)){
+      pts.push({ v: porDia[chave(d)] || 0, d: d.getDate(), m: d.getMonth() });
+    }
+  }
+  return pts;
+}
+const cruzaMes = () => GRAO === 'dia' && (DE_G.getMonth() !== ATE_G.getMonth()
+                                       || DE_G.getFullYear() !== ATE_G.getFullYear());
+/* o rótulo de um ponto, ou de um bloco de pontos somados */
+function rotulo(a, b){
+  if (GRAO === 'mes') return a === b ? MES_C[a.m] : MES_C[a.m] + '–' + MES_C[b.m];
+  const mm = cruzaMes();
+  if (a === b) return mm ? a.d + ' ' + MES_C[a.m] : String(a.d);
+  if (a.m === b.m) return a.d + '–' + b.d + (mm ? ' ' + MES_C[a.m] : '');
+  return a.d + ' ' + MES_C[a.m] + '–' + b.d + ' ' + MES_C[b.m];
+}
+
+/* ══ A CURVA QUE NÃO EMBOLA ════════════════════════════════════════
+
+   ⚠️ ESTE É O DEFEITO QUE ELA FOTOGRAFOU. Doze valores escritos num
+   cartão de 420px viravam "1,4k 1,6k 1,7k 1,9k" empilhados, e o eixo
+   virava um rabisco. No painel do Lei dos Potes cabe um rótulo por
+   ponto porque o gráfico tem a largura da tela inteira; aqui ele tem um
+   terço disso, e são quatro cartões.
+
+   A cura tem duas partes, nesta ordem:
+
+   1. NENHUM PONTO A MENOS DE 20px DO VIZINHO. Se o período tem mais
+      pontos do que a largura comporta, os dias são somados de N em N —
+      e o rótulo diz o bloco ("1–3"), pra ninguém ler um bloco de três
+      dias como se fosse um dia. Somar é honesto; espremer é que mente.
+      Ela sugeriu "mostrar 15 em vez de 30" — é a mesma ideia, só que
+      medida na largura de verdade em vez de chutada num número.
+   2. RÓTULO E EIXO POR PRIORIDADE, recusando quem não tem espaço. O de
+      HOJE nunca é recusado: é o número que ela abre o painel pra ver. */
+const ESPACO_MIN = 20;
+
+function agrupar(pts, largura){
+  const util = Math.max(60, largura - 48);
+  const cabem = Math.max(2, Math.floor(util / ESPACO_MIN) + 1);
+  if (pts.length <= cabem) return { pts, bloco: 1 };
+  const bloco = Math.ceil(pts.length / cabem);
+  const fora = [];
+  for (let i = 0; i < pts.length; i += bloco){
+    const p = pts.slice(i, i + bloco);
+    fora.push({ v: p.reduce((s,x) => s + x.v, 0), rot: rotulo(p[0], p[p.length-1]) });
+  }
+  return { pts: fora, bloco };
+}
+
+/* ⚠️ ARREDONDAR ANTES DE DECIDIR O FORMATO. Um dia de R$999,70 saía
+   escrito "1000" no meio de vizinhos "1,3k" e "2,0k" — três jeitos de
+   escrever grandeza igual, na mesma curva. Quem decide é o número
+   arredondado, não o cru. */
+const curtoN = n => { const r = Math.round(n), a = Math.abs(n), sinal = n < 0 ? '-' : '';
+  return Math.abs(r) >= 1000 ? sinal + (a/1000).toFixed(1).replace('.',',') + 'k'
+       : (a > 0 && a < 1 ? sinal + a.toFixed(2).replace('.',',') : String(r)); };
+
+let seq = 0;
+function desenhar(caixa, pontos, cor){
+  const L = Math.max(200, Math.round(caixa.clientWidth || 420));
+  /* ⚠️ A CAIXA É MEDIDA, NUNCA CHUTADA. Com viewBox fixo o desenho é
+     esticado até a largura da tela e a tipografia vai junto — num
+     monitor de 1600 os rótulos ficavam com o dobro do tamanho do resto
+     da página. Medindo, 1 unidade do SVG é 1 pixel de verdade. */
+  const alturaCss = caixa.clientHeight;
+  const A = alturaCss > 60 ? Math.round(alturaCss) : (L < 560 ? 170 : 190);
+
+  const { pts: vals, bloco } = agrupar(pontos, L);
+  vals.forEach((p,i) => { if (p.rot === undefined) p.rot = rotulo(p, p); });
+  if (!vals.length) { caixa.innerHTML = ''; return 1; }
+
+  const esq = 22, dir = 22, base = A - 24, topo = 20;
+  /* ⚠️ O CHÃO NÃO É ZERO QUANDO TEM PREJUÍZO. Enquanto o número era
+     faturamento, nada era negativo e a escala podia começar no zero.
+     Com lucro, 11/08 deu −R$344,30 (três comandas não pagaram o custo
+     fixo) e a curva descia PARA FORA do desenho — o dia ruim, que é
+     justamente o que ela precisa ver, era o único que sumia.
+     Agora a escala vai do menor ao maior, e quando há negativo aparece
+     a linha do zero pra separar o que sobrou do que faltou. */
+  const brutos = vals.map(p => p.v);
+  const max = Math.max(0, ...brutos) * 1.16 || 1;
+  const min = Math.min(0, ...brutos) * 1.16;
+  const vao = (max - min) || 1;
+  const px = i => vals.length === 1 ? L/2 : esq + i * ((L - esq - dir) / (vals.length - 1));
+  const py = v => base - ((v - min) / vao) * (base - topo);
+  const yZero = py(0);
+  const pts = vals.map((p,i) => [px(i), py(p.v)]);
+
+  let d = 'M' + pts[0][0] + ' ' + pts[0][1];
+  for (let i = 0; i < pts.length - 1; i++){
+    const [x0,y0] = pts[i], [x1,y1] = pts[i+1], dx = (x1 - x0) * .42;
+    d += ' C'+(x0+dx)+' '+y0+' '+(x1-dx)+' '+y1+' '+x1+' '+y1;
+  }
+
+  const id = 'deg' + (++seq);
+  let s = '<svg viewBox="0 0 '+L+' '+A+'" preserveAspectRatio="none" role="img">'
+    + '<defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0" stop-color="'+cor+'" stop-opacity=".26"/>'
+    + '<stop offset="1" stop-color="'+cor+'" stop-opacity="0"/></linearGradient></defs>';
+  for (let g = 0; g <= 3; g++){
+    const y = topo + g * (base - topo) / 3;
+    s += '<line x1="0" y1="'+y+'" x2="'+L+'" y2="'+y+'" stroke="#EAECF0" stroke-width="1"/>';
+  }
+  if (min < 0)
+    s += '<line x1="0" y1="'+yZero+'" x2="'+L+'" y2="'+yZero+'" stroke="#C9CDD4" stroke-width="1.5"/>';
+  s += '<path d="'+d+' L'+pts[pts.length-1][0]+' '+yZero+' L'+pts[0][0]+' '+yZero+' Z" fill="url(#'+id+')"/>'
+     + '<path d="'+d+'" fill="none" stroke="'+cor+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>';
+
+  const rotulado = [];
+  pts.forEach(([x,y],i) => {
+    const ultimo = i === pts.length - 1;
+    if (!ultimo && !vals[i].v) return;
+    s += '<circle cx="'+x+'" cy="'+y+'" r="'+(ultimo?5:3.6)+'" fill="#fff" stroke="'+cor
+       + '" stroke-width="'+(ultimo?3:2.2)+'"/>';
+    if (vals[i].v > 0) rotulado.push({ x, y, v: vals[i].v });
+  });
+  /* ⚠️ DOIS NÚMEROS IGUAIS, COLADOS, VIRAM BORRÃO — e não acrescentam
+     nada: "5,5k 5,5k" lado a lado só ocupa espaço que o vizinho de
+     verdade queria. Números DIFERENTES colados continuam sendo escritos,
+     porque aí é informação. É a mesma regra do painel do Lei dos Potes. */
+  const VAO = 46, VAO_IGUAL = 92, ocupados = [];
+  const cabeRot = (x,v) => ocupados.every(p =>
+      Math.abs(p.x - x) >= (p.v === v ? VAO_IGUAL : VAO));
+  const ultimoR = rotulado[rotulado.length - 1];
+  const ordem = ultimoR ? [ultimoR, ...rotulado.slice(0,-1).reverse()] : [];
+  ordem.filter(r => { if (!cabeRot(r.x, r.v)) return false; ocupados.push(r); return true; })
+       .forEach(r => { s += '<text x="'+r.x+'" y="'+(r.y-11)+'" text-anchor="middle" '
+         + 'style="font-size:11px;font-weight:650;fill:#1C1C1E">'+curtoN(r.v)+'</text>'; });
+
+  /* o eixo, por prioridade: o fim (hoje) primeiro, depois o começo,
+     depois o meio — e quem não tem folga não é escrito */
+  const FOLGA = 34, postos = [];
+  const cabe = x => postos.every(p => Math.abs(p - x) >= FOLGA);
+  const ult = vals.length - 1;
+  const cand = [{ i: ult, fim:true }, { i: 0 }, { i: Math.floor(ult/2) },
+                { i: Math.floor(ult/4) }, { i: Math.floor(3*ult/4) }];
+  cand.forEach(({ i, fim }) => {
+    if (i < 0 || i > ult) return;
+    const x = px(i);
+    if (!cabe(x)) return;
+    postos.push(x);
+    const fimDeHoje = fim && PERIODO !== 'livre';
+    /* ⚠️ O RÓTULO DA PONTA OLHA A DATA DO PONTO, NÃO O PERÍODO. Amarrá-lo
+       ao período estava errado de dois jeitos ao mesmo tempo: no período
+       "hoje" ele dizia "ontem" (medido), e num período escolhido que
+       terminasse hoje ele não dizia nada. Agora quem responde é a data:
+       se o último ponto É hoje, escreve "hoje"; se é ontem, "ontem";
+       senão, o próprio dia. */
+    const ultimoPonto = vals[ult];
+    const hojeAgora = new Date();
+    const ontemAgora = somaDias(hojeAgora, -1);
+    const ehDia = (p, d) => GRAO === 'dia' && p && p.d === d.getDate() && p.m === d.getMonth();
+    const nomeDoFim = GRAO === 'mes' ? MES_C[hojeAgora.getMonth()]
+                    : ehDia(ultimoPonto, hojeAgora)  ? 'hoje'
+                    : ehDia(ultimoPonto, ontemAgora) ? 'ontem'
+                    : (ultimoPonto ? ultimoPonto.rot : '');
+    s += '<text x="'+x+'" y="'+(base+16)+'" text-anchor="middle" style="font-size:11px;fill:'
+       + (fimDeHoje ? '#1C1C1E;font-weight:650' : '#98A2B3') + '">'
+       + (fimDeHoje ? nomeDoFim : vals[i].rot) + '</text>';
+  });
+  caixa.innerHTML = s + '</svg>';
+  return bloco;
+}
+
+/* ══ A TELA ════════════════════════════════════════════════════════ */
+function montarCartoes(){
+  document.getElementById('grade').innerHTML = EMPRESAS.map(e => `
+    <div class="card empresa${e.fonte ? '' : ' sem'}${e.link ? ' porta' : ''}" id="c-${e.id}"
+         ${e.link ? 'data-link="' + e.link + '" style="touch-action:manipulation"' : ''}>${e.link ? '<a class="porta-link" href="' + e.link + '" aria-label="Abrir ' + esc(e.nome) + '"></a>' : ''}
+      <div class="cabeca">
+        ${e.logo ? '<span class="selo"><img src="'+e.logo+'" alt=""></span>'
+                 : '<span class="selo" style="background:'+e.cor+'">'+e.mono+'</span>'}
+        <div style="flex:1;min-width:0">
+          <div class="nome">${esc(e.nome)}</div>
+          <div class="sob">${esc(e.tipo)}${e.fonte ? '' : ' · sem fonte ligada'}</div>
+        </div>
+      </div>
+      <div class="valor sf-fina" id="v-${e.id}"><small>R$</small>—</div>
+      <div class="detalhe" id="d-${e.id}"></div>
+      <div class="g-caixa" id="g-${e.id}"></div>
+    </div>`).join('');
+}
+
+function pintar(){
+  if (!DE) return;
+  const hoje = chave(new Date());
+  const dentro  = k => { const d = doDia(k); return d >= DE   && d <= ATE; };
+  const dentroG = k => { const d = doDia(k); return d >= DE_G && d <= ATE_G; };
+
+  /* ⚠️ COMANDA ABERTA NÃO ENTRA NO LUCRO. Entrava quando o número era
+     faturamento — fazia sentido: ela está no salão, o dinheiro é dela.
+     Mas lucro é o que sobrou DEPOIS de mão de obra, bônus e custo fixo,
+     e nada disso está fechado enquanto a cliente não sai. O PDV usa só
+     as finalizadas no fechamento do dia, e aqui é a mesma conta. */
+  const idsFinalizados = new Set((DADOS.lavouDias[hoje] || {}).ids || []);
+  const abertasHoje = DADOS.lavouAberto.filter(o => !idsFinalizados.has(String(o.id)));
+
+  const diasLavou = {}, curvaLavou = {};
+  Object.keys(DADOS.lavouDias).forEach(k => {
+    const l = DADOS.lavouDias[k].lucro;
+    if (dentro(k))  diasLavou[k]  = l;
+    if (dentroG(k)) curvaLavou[k] = l;
+  });
+
+  const diasLei = {}, curvaLei = {};
+  const bruto = porDiaLei();
+  Object.keys(bruto).forEach(k => {
+    if (dentro(k))  diasLei[k]  = bruto[k];
+    if (dentroG(k)) curvaLei[k] = bruto[k];
+  });
+
+  const diasTrafego = {}, curvaTrafego = {};
+  const brutoTrafego = porDiaTrafego();
+  Object.keys(brutoTrafego).forEach(k => {
+    if (dentro(k))  diasTrafego[k]  = brutoTrafego[k];
+    if (dentroG(k)) curvaTrafego[k] = brutoTrafego[k];
+  });
+  const diasCosmet = {}, curvaCosmet = {};
+  const brutoCosmet = porDiaCosmet();
+  Object.keys(brutoCosmet).forEach(k => {
+    if (dentro(k))  diasCosmet[k]  = brutoCosmet[k];
+    if (dentroG(k)) curvaCosmet[k] = brutoCosmet[k];
+  });
+  const soma  = { lei: diasLei,  lavou: diasLavou,  trafego: diasTrafego,  cosmet: diasCosmet };
+  const curva = { lei: curvaLei, lavou: curvaLavou, trafego: curvaTrafego, cosmet: curvaCosmet };
+  let total = 0, algumErro = null;
+  /* AS PARCELAS. `totLucro` é o que tem custo descontado de verdade;
+     `totBruto` é faturamento de quem não tem custo lançado. `faltando`
+     guarda quem a fonte não leu — ver o comentário em `t-valor`. */
+  let totLucro = 0, totBruto = 0; const faltando = [];
+
+  EMPRESAS.forEach(e => {
+    const cv = document.getElementById('v-'+e.id);
+    const cd = document.getElementById('d-'+e.id);
+    const cg = document.getElementById('g-'+e.id);
+    if (!cv) return;
+
+    if (!e.fonte){
+      cv.innerHTML = '<small>R$</small>—';
+      cv.classList.add('sem-fonte');
+      cd.textContent = 'sem fonte ligada ainda';
+      cg.innerHTML = '';
+      return;
+    }
+    if (e.id === 'lei' && ERRO.lei)    { cv.innerHTML='<small>R$</small>—'; cd.textContent='não consegui ler'; algumErro = ERRO.lei; faltando.push(e.nome); return; }
+    if (e.id === 'lavou' && ERRO.lavou){ cv.innerHTML='<small>R$</small>—'; cd.textContent='não consegui ler o PDV'; faltando.push(e.nome); return; }
+    if (e.id === 'trafego' && ERRO.trafego){ cv.innerHTML='<small>R$</small>—'; cd.textContent='não consegui ler as vendas'; faltando.push(e.nome); return; }
+    /* número já lido não some por um tropeço — igual ao Lei dos Potes */
+    if (e.id === 'cosmet' && ERRO.cosmet && !DADOS.cosmet){ cv.innerHTML='<small>R$</small>—'; cd.textContent='não consegui ler a loja'; faltando.push(e.nome); return; }
+    if (e.id === 'cosmet' && DADOS.cosmet && DADOS.cosmet.instalada === false){
+      cv.innerHTML='<small>R$</small>—'; cd.textContent='falta instalar o aplicativo na loja'; cg.innerHTML=''; return; }
+    if (e.id === 'cosmet' && !DADOS.cosmet){ cv.innerHTML='<small>R$</small>—'; cd.textContent='lendo a loja…'; incompleto = true; return; }
+
+    const v = Object.values(soma[e.id] || {}).reduce((s,x) => s+x, 0);
+    total += v;
+    if (e.mede === 'lucro') totLucro += v; else totBruto += v;
+    /* ⚠️ LUCRO PODE SER NEGATIVO — e tem que aparecer negativo. De manhã
+       cedo o custo fixo já entrou e nenhuma comanda fechou; esconder o
+       sinal faria o painel mentir justo na hora em que a informação mais
+       vale. O "-" vem antes do R$, como se lê em português. */
+    cv.innerHTML = (v < 0 ? '-' : '') + '<small>R$</small>' + brl(Math.abs(v));
+    cv.classList.remove('sem-fonte');
+
+    const bloco = desenhar(cg, serie(curva[e.id] || {}), e.cor);
+
+    const partes = [];
+    if (e.id === 'lavou'){
+      const d = DADOS.lavouDias[hoje];
+      if (PERIODO === 'hoje' && d){
+        partes.push('R$ ' + brl(d.fat) + ' faturado');
+        partes.push(d.n + (d.n === 1 ? ' comanda fechada' : ' comandas fechadas'));
+        if (abertasHoje.length) partes.push(abertasHoje.length + ' ainda no salão');
+      } else if (PERIODO === 'hoje'){
+        partes.push('nenhuma comanda fechada ainda');
+        if (abertasHoje.length) partes.push(abertasHoje.length + ' no salão agora');
+      } else {
+        const fat = Object.keys(DADOS.lavouDias).filter(dentro)
+          .reduce((s,k) => s + DADOS.lavouDias[k].fat, 0);
+        partes.push('R$ ' + brl(fat) + ' faturado');
+      }
+      /* ⚠️ SEM A CONTA ABERTA AQUI (ela, 13/08). Eu tinha posto as cinco
+         parcelas no rodapé pra facilitar a conferência, e em dia sem
+         movimento elas viravam quatro zeros: "mão de obra R$ 0,00 ·
+         produto R$ 0,00 · bônus R$ 0,00 · fixo R$ 0,00" — ruído puro.
+         O cartão espelha o lucro líquido do PDV, e é só isso; quem quer
+         a conta aberta abre o fechamento do caixa, que é o lugar dela. */
+    } else if (e.id === 'trafego'){
+      /* ⚠️ O MIX DE PRODUTO FICA À VISTA. O CSV tem, além das quatro linhas
+         de GESTÃO DE TRÁFEGO, três produtos que podem ser de outra empresa
+         (Planner Agenda Lotada, Planner Empresária Organizada, Método 1%).
+         Importei tudo como ela disse — mas um total escondido é um número
+         que ninguém consegue auditar. Aqui ela vê de quantas vendas e de
+         quantos produtos ele saiu, e pode mandar tirar algum. */
+      /* ⚠️ "0 dias com venda · 947 vendas pagas · 10 produtos" era ruído:
+         três números que não respondem a pergunta que ela faz olhando o
+         cartão. O que importa numa assinatura é quantas estão de pé.
+         ⚠️ E "ativo" aqui é uma DEFINIÇÃO, não um campo: a Kiwify não
+         manda "assinante ativo" no CSV. É quem pagou nos últimos 35 dias
+         — uma mensal que renovou dentro da janela. 35 e não 30 porque a
+         cobrança escorrega alguns dias. Medido: 38 assinantes. */
+      const ass = (DADOS.trafego && DADOS.trafego.assinantes) || 0;
+      partes.push(ass + (ass === 1 ? ' assinante ativo' : ' assinantes ativos'));
+      /* ⚠️ A CONFERÊNCIA FICA À VISTA, sempre — ver `conferirTrafego`. */
+      partes.push(recadoDaConferencia());
+    } else if (e.id === 'cosmet'){
+      /* o faturamento fica embaixo, como no cartão do salão */
+      const fp = DADOS.cosmet.fatPorDia || {};
+      const fat = Object.keys(fp).filter(dentro).reduce((s,k) => s + fp[k], 0) / 100;
+      partes.push('R$ ' + brl(fat) + ' faturado');
+      const u = DADOS.cosmet.ultima;
+      if (u && PERIODO === 'hoje'){
+        const q = new Date(u.quando);
+        partes.push('última venda ' + String(q.getDate()).padStart(2,'0') + '/' + String(q.getMonth()+1).padStart(2,'0'));
+      }
+      /* venda com produto fora da tabela de custos não entra no lucro — e diz */
+      if (DADOS.cosmet.semCusto) partes.push(DADOS.cosmet.semCusto + ' venda(s) sem custo cadastrado');
+    } else if (e.id === 'lei'){
+      const n = (DADOS.lei || []).filter(realLei)
+        .filter(l => l.status !== 'cancelado' && l.status !== 'bloqueado').length;
+      partes.push(n + (n === 1 ? ' assinante ativo' : ' assinantes ativos'));
+      /* o banco recusou a leitura e o número na tela é o da última boa:
+         dizer de quando ele é vale mais do que mostrar um traço */
+      if (LEI_DE_QUANDO){
+        const h = new Date(LEI_DE_QUANDO);
+        partes.push('lido às ' + String(h.getHours()).padStart(2,'0')
+                              + ':' + String(h.getMinutes()).padStart(2,'0'));
+      }
+    }
+    if (bloco > 1) partes.push('somado de ' + bloco + ' em ' + bloco
+                            + (GRAO === 'mes' ? ' meses' : ' dias'));
+    cd.textContent = partes.join(' · ');
+  });
+
+  const gig = (n) => (n < 0 ? '-' : '') + '<small>R$</small>' + brl(Math.abs(n));
+  document.getElementById('t-valor').innerHTML = gig(total);
+
+  /* ⚠️ A CONTA FECHA NA TELA. Lei do financeiro dela: parcelas à vista e
+     resultado na mesma coluna — se ela precisa perguntar por que dois
+     números divergem, o desenho está errado. Aqui o gigante é a soma
+     EXATA das duas linhas abaixo dele, e a terceira linha diz o que ficou
+     de fora em vez de deixar o total parecer completo.
+     ⚠️ EMPRESA QUE A FONTE NÃO LEU SUMIA DO TOTAL EM SILÊNCIO. Medido em
+     14/10/2026 no leidospotes.com.br/empresas: o Cosméticos estava em 404
+     e o gigante mostrava R$ 17.754,12 como se fosse o total das quatro —
+     era o das três. O `return` dos ramos de erro pula o `total +=`, e
+     nada na tela dizia. */
+  const alvoP = document.getElementById('t-parcelas');
+  if (alvoP){
+    alvoP.innerHTML =
+        (faltando.length
+          ? '<div class="parcela falta"><span>não entrou — a fonte não respondeu</span><b>'
+            + faltando.join(' · ') + '</b></div>'
+            + '<div class="parcela-aviso">Este número NÃO é o total do período: '
+            + 'falta ' + (faltando.length === 1 ? 'uma empresa' : faltando.length + ' empresas') + '.</div>'
+          : '');
+  }
+
+  pintarSinc();
+  if (algumErro) avisoErro(algumErro);
+}
+
+/* ⚠️ O AVISO MORA NUM BLOCO PRÓPRIO. No painel ele já substituiu o
+   conteúdo inteiro uma vez, levando os cartões junto — e quem entrasse
+   depois com a conta certa via a página tentar preencher elementos que
+   já não existiam e quebrar no meio. */
+const UID_ESPERADO = 'mwJh21e1sIbheYFq4Tbj52ENhqf1';
+function avisoErro(msg){
+  const u = auth.currentUser;
+  const permissao = /permission|insufficient/i.test(msg || '');
+  document.getElementById('aviso').innerHTML =
+      '<div class="card" style="margin-top:var(--respiro)">'
+    + '<div class="rot">Lei dos Potes: não consegui ler as assinaturas</div>'
+    + '<p style="font-size:13.5px;color:var(--sub);margin-top:8px">' + esc(msg) + '</p>'
+    + (permissao
+        ? '<p style="font-size:13.5px;color:var(--sub);margin-top:10px">uid desta conta: <code>'
+          + esc(u && u.uid || '—') + '</code> · uid na regra: <code>' + UID_ESPERADO + '</code>'
+          + (u && u.uid === UID_ESPERADO
+              ? ' — os dois batem, então o que falta é publicar o firestore.rules.'
+              : ' — são diferentes: esta conta não é a que a regra libera.') + '</p>'
+        : '') + '</div>';
+}
+
+/* ⚠️ MEDIR UMA VEZ SÓ NÃO BASTA: girar o tablet ou arrastar a janela muda
+   a largura, e a curva ficaria desenhada pra caixa antiga — e o número de
+   pontos que cabem muda junto. Redesenha com o que já está na tela, sem
+   ir buscar nada de novo. */
+/* o relógio da última leitura anda sozinho: se a aba congelar, o texto
+   passa a dizer "há 3 min" em vez de mentir "agora" */
+function pintarSinc(){
+  const el = document.getElementById('t-sinc');
+  if (!el) return;
+  const seg = Math.round((Date.now() - ULTIMA_SINC) / 1000);
+  el.textContent = seg < 25 ? 'atualizado agora'
+                 : seg < 90 ? 'atualizado há ' + seg + 's'
+                 : 'atualizado há ' + Math.round(seg/60) + ' min';
+  el.style.color = seg > 120 ? 'var(--bad)' : '';
+}
+setInterval(pintarSinc, 5000);
+
+addEventListener('resize', () => {
+  clearTimeout(addEventListener.t);
+  addEventListener.t = setTimeout(pintar, 120);
+});
+</script>
+<script>
+/* ⚠️ O CARTÃO-PORTA NÃO ABRIA NO TABLET.
+   Duas causas somadas, e as duas já morderam este projeto antes:
+   1. o `onclick` era montado como TEXTO dentro do template do cartão, e
+      o cartão é refeito a cada repintura — mesmo padrão que fez o
+      "desfazer" dos chamados desfazer todos;
+   2. `onclick` em <div> comum nem sempre é entregue no Safari do toque —
+      foi o que fez o teclado do app subir "verde" e não escrever no dedo.
+   A correção cobre as duas: escuta por DELEGAÇÃO (sobrevive a qualquer
+   repintura) e por `pointerdown` (chega igual no mouse e no dedo). */
+(function(){
+  var indo = false;
+  function abrir(e){
+    var porta = e.target && e.target.closest && e.target.closest('.porta[id^="c-"]');
+    if (!porta || indo) return;
+    var destino = porta.getAttribute('data-link') || 'gestor.html';
+    indo = true;
+    e.preventDefault();
+    location.href = destino;
+  }
+  document.addEventListener('pointerdown', abrir, true);
+  document.addEventListener('click', abrir, true);   /* rede do mouse */
+})();
+
+
+/* ══ A RÉGUA DE PERÍODO ROLA ═══════════════════════════════════════
+   ⚠️ No celular a barra não cabe (439px de conteúdo em 390 de tela).
+   Quem está escolhido é trazido à vista sozinho — senão ela tocaria
+   em "Hoje" e não veria que ficou selecionado, porque o botão estaria
+   fora do trecho visível. E os esmaecidos das pontas dizem que há mais
+   coisa para o lado; sem eles a barra parece cortada, não rolável. */
+(function(){
+  const w = document.getElementById('seletor-w');
+  const s = document.getElementById('seletor');
+  if (!w || !s) return;
+  const pintarBordas = () => {
+    const sobra = s.scrollWidth - s.clientWidth;
+    w.classList.toggle('tem-esq', s.scrollLeft > 4);
+    w.classList.toggle('tem-dir', sobra > 4 && s.scrollLeft < sobra - 4);
+  };
+  const trazerAtivo = () => {
+    const on = s.querySelector('button.on');
+    if (on && s.scrollWidth > s.clientWidth)
+      on.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  };
+  s.addEventListener('scroll', pintarBordas, { passive: true });
+  window.addEventListener('resize', () => { pintarBordas(); trazerAtivo(); });
+  s.addEventListener('click', () => setTimeout(() => { trazerAtivo(); pintarBordas(); }, 60));
+  /* ⚠️ NÃO DÁ PARA MEDIR NA CARGA. A barra nasce dentro de um bloco
+     `display:none` (só aparece depois do login), e ali toda largura é
+     zero — o esmaecido nunca acendia. O observador dispara no instante
+     em que ela ganha tamanho, que é quando a conta faz sentido. */
+  if (window.ResizeObserver){
+    new ResizeObserver(() => { pintarBordas(); trazerAtivo(); }).observe(s);
+  } else {
+    setTimeout(() => { pintarBordas(); trazerAtivo(); }, 400);
+  }
+})();
+</script>
+<script src="divisao.js"></script>
+<script src="gestao.js"></script>
+</body>
+</html>

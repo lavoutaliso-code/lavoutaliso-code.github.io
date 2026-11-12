@@ -1,0 +1,105 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   ABA CAIXA — a camada de organização, trazida do lailasalon-sistema
+   ══════════════════════════════════════════════════════════════════════════
+   Ela, 19/09/2026: *"conserte a identidade visual da aba caixa, pra ficar
+   organizada igual a que fizemos do lailasalon-sistema recentemente."*
+
+   ⚠️ SÃO DOIS SISTEMAS DIFERENTES, E NÃO SE JUNTAM (ordem dela): o
+   `internolavoutalisoficial` é o que ELA usa; o `lailasalon-sistema` é o que
+   está À VENDA. O que atravessa é só o VISUAL — nunca o código.
+   Por isso aqui NÃO entram: o botão flutuante "configurar" (é o assistente da
+   versão de venda), o `LAILA_CFG` (a divisão configurável) nem o lockup
+   "laila salon" no título — este painel é do Lavou Tá Liso e continua sendo
+   "Painel Financeiro".
+
+   A régua foi MEDIDA na referência (`lailasalon-sistema/menu.html`, amostrada
+   com Pillow): papel #FFFFFF em 96,9% dos pixels, tinta #0D0D10, tinta fraca
+   #6E6E76, borda #E9E9EE e o pink #FF2D87 em **0,2% dos pixels**. É isso que
+   faz uma tela parecer organizada e a outra não: a cor da marca é um ACENTO,
+   não o preenchimento.
+
+   ⚠️ Esta folha entra DEPOIS do vp.css e vence por ordem, não por !important
+   gratuito — cada !important abaixo existe porque o vp.css tem regra de mesma
+   especificidade no mesmo seletor.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1 · O QUE POLUÍA, SAI ─────────────────────────────────────────────────
+   A maior parte disso eu já tinha tirado na fonte em 18/09 (ver
+   [[o-anel-da-expansao-e-amortecedor]]); o que fica aqui é a rede de baixo,
+   para o caso de alguma voltar por outra sessão. `display:none` em seletor
+   que não existe não custa nada. */
+.onAj, .onDest, .aroSub, .dica, .potNota, .mais, .sVer { display: none !important; }
+
+/* ── 2 · O SALDO, CENTRALIZADO ─────────────────────────────────────────────
+   Era o número mais importante da tela e vivia encostado na borda esquerda,
+   com o seletor de data disputando a mesma linha. */
+.cabSaldo { display: block !important; height: auto !important; text-align: center !important; }
+.cabSaldo > *:first-child {
+  width: 100% !important; text-align: center !important;
+  display: flex !important; flex-direction: column !important; align-items: center !important;
+  margin-bottom: 7px !important;
+}
+
+/* ── 3 · AS CONTAS: CÍRCULO MAIOR, SEM CARD ATRÁS ──────────────────────────
+   ⚠️ A FILEIRA NÃO PODE TER NÚMERO FIXO DE COLUNAS. Ela tinha 4 contas quando
+   o desenho nasceu, hoje são 5 (o Processando entrou em 17/09) e amanhã podem
+   ser 6. Coluna automática vale para qualquer quantidade; grade fixa quebra em
+   duas fileiras e bate no "o que o salão faturou".
+   ⚠️ AQUI O NOME FICA. Na versão de venda ele some ("só o valor"), mas lá as
+   contas se chamam "Conta do sinal / do site / do balcão" e as três viram a
+   MESMA inicial "C" — medido na foto de 18/09. Aqui elas são Nubank, Asaas,
+   Sicredi, Dinheiro e Processando: N·A·S·D·P, todas distintas, e o nome é o
+   que diz onde o dinheiro está. */
+.ondes {
+  display: grid !important; grid-auto-flow: column !important;
+  grid-auto-columns: minmax(0, 1fr) !important; grid-template-columns: none !important;
+  width: 100% !important; gap: 0 !important;
+  align-content: start !important; margin-bottom: 14px !important;
+}
+.onde {
+  background: none !important; border: 0 !important; box-shadow: none !important;
+  border-radius: 0 !important; padding: 0 !important;
+  display: flex !important; flex-direction: column !important;
+  align-items: center !important; justify-content: flex-start !important;
+  gap: 9px !important; height: auto !important;
+}
+.onde .bola {
+  width: 62px !important; height: 62px !important; min-width: 62px !important;
+  max-width: 100% !important; border-radius: 50% !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+}
+.onde .bola .ini { font-size: 23px !important; line-height: 1 !important; }
+.onde .bola svg { width: 28px !important; height: 28px !important; }
+.onde .onTx {
+  display: flex !important; flex-direction: column !important;
+  align-items: center !important; width: 100% !important; min-width: 0 !important;
+}
+.onde .onN {
+  font-size: 12.5px !important; letter-spacing: .01em !important;
+  color: rgba(255, 255, 255, .62) !important; text-align: center !important;
+  width: 100% !important; white-space: nowrap !important;
+  overflow: hidden !important; text-overflow: ellipsis !important;
+}
+.onde .onV {
+  font-size: 19px !important; line-height: 1.15 !important;
+  text-align: center !important; width: 100% !important; white-space: nowrap !important;
+}
+
+/* ── 4 · O ARCO É PINK; O TRILHO, NUNCA ────────────────────────────────────
+   ⚠️ FOI ESTE O DEFEITO DE 18/09 NA OUTRA CÓPIA: pintar `svg circle[stroke]`
+   inteiro deixava o TRILHO (o círculo de fundo) pink junto com o arco, e todo
+   anel aparecia 100% cheio, sempre. O trilho é sempre o PRIMEIRO circle do
+   svg — a cor da marca vai em todos menos ele. */
+.aroBt svg circle:not(:first-of-type),
+.hjAro svg circle:not(:first-of-type),
+.mtAro svg circle:not(:first-of-type),
+[class*="Aro"] svg circle:not(:first-of-type) { stroke: #FF2D87 !important; }
+
+/* ── 5 · DADO CLICÁVEL TEM QUE PARECER ─────────────────────────────────────
+   Metade desta tela abre gaveta e nada dizia isso. */
+.onde, .aroBt, .cxNum { cursor: pointer; }
+.onde:hover .bola, .aroBt:hover svg { filter: brightness(1.08); }
+.onde:hover .onV {
+  text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-thickness: 1px; text-decoration-color: rgba(255, 255, 255, .45);
+}

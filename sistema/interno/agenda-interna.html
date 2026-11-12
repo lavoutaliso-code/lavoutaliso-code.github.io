@@ -1,0 +1,2676 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta name="googlebot" content="noindex,nofollow">
+<script src="../ls-trava.js"></script>
+<script src="../ls-casca.js"></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAILLA APP · Agenda</title>
+<!-- SF Pro (a dona, 12/08): a tela usa SO a familia da Apple. Sem fonte de
+     fora — nada de Inter nem DM Sans, nada baixado do Google. -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>:root{
+  /* ⚠️ A ORDEM AQUI E MEDIDA, NAO COPIADA. `-apple-system` e o apelido do
+     Safari e o Chrome NAO o entende; `BlinkMacSystemFont` e `system-ui` sao
+     os que fazem o Chrome pegar a San Francisco. Sem os dois no meio, a pilha
+     escorregava ate a Helvetica Neue e a tela nao era SF Pro coisa nenhuma —
+     medido com canvas: -apple-system 267px (nao resolve), system-ui 291px (SF),
+     Helvetica Neue 303px. Nao tire nenhum dos tres primeiros. */
+  --sf:-apple-system,BlinkMacSystemFont,system-ui,'SF Pro Display','SF Pro Text','Helvetica Neue',Helvetica,Arial,sans-serif
+}</style>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+:root {
+  --lilas:    #820AD1;
+  --lilas-d:  #6A0DAD;
+  --lilas-xd: #4A0072;
+  --lilas-lt: #F6EDFB;
+  --lilas-lt2:#EBD6F5;
+  --cyan:     #06B6D4;
+  --green:    #10B981;
+  --pink:     #EC4899;
+  --amber:    #F59E0B;
+  --red:      #EF4444;
+  --ink:      #1E1B2E;
+  --ink2:     #4B4763;
+  --ink3:     #8B8AA0;
+  --line:     #ECEAF3;
+  --line2:    #F5F3FA;
+  --bg:       #FBFAFE;
+  --white:    #FFFFFF;
+}
+html, body { height: 100%; overflow: hidden; font-family: var(--sf); background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased }
+button { font-family: var(--sf); cursor: pointer; border: none; background: none }
+
+.app { height: 100vh; display: flex; flex-direction: column }
+
+/* ════ TOPBAR — organizado em 3 zonas claras ════ */
+.topbar {
+  flex-shrink: 0; background: var(--white);
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center;
+  padding: 0 24px; height: 64px; gap: 24px;
+}
+/* zona 1: marca */
+.brand { display: flex; align-items: center; gap: 12px }
+.brand-logo {
+  width: 42px; height: 42px; border-radius: 12px;
+  background: var(--lilas); display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(130,10,209,.3);
+}
+.brand-logo svg { width: 22px; height: 22px; stroke: #fff; stroke-width: 2.2; fill: none }
+.brand-text { display: flex; flex-direction: column; gap: 1px }
+.brand-title { font-size: 17px; font-weight: 900; color: var(--ink); letter-spacing: -.5px; line-height: 1 }
+.brand-sub { font-size: 11px; font-weight: 600; color: var(--lilas-xd); letter-spacing: .02em }
+.fb-status { font-size: 10px; font-weight: 700; margin-left: 4px }
+.fb-status.fb-on  { color: #16A34A }
+.fb-status.fb-off { color: #9CA3AF }
+
+/* zona 2: navegação de data (centro) */
+.date-zone { display: flex; align-items: center; gap: 10px; margin: 0 auto }
+.nav-arrow {
+  width: 34px; height: 34px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink2); transition: .14s;
+}
+.nav-arrow:hover { background: var(--lilas-lt); border-color: var(--lilas); color: var(--lilas-d) }
+.nav-arrow svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.5; fill: none }
+.date-box {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 5px 18px; border-radius: 12px;
+  background: var(--lilas-lt); border: 1px solid var(--lilas-lt2);
+  cursor: pointer; min-width: 150px; transition: .14s;
+}
+.date-box:hover { border-color: var(--lilas) }
+.date-box-day { font-size: 10px; font-weight: 700; color: var(--lilas-xd); text-transform: uppercase; letter-spacing: .08em }
+.date-box-date { font-size: 15px; font-weight: 800; color: var(--ink); letter-spacing: -.3px }
+.date-zone { position: relative }
+.cal-pop {
+  position: absolute; top: 52px; left: 50%; transform: translateX(-50%) translateY(-8px);
+  width: 296px; background: var(--white);
+  border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(30,27,46,.2);
+  padding: 16px; z-index: 120;
+  opacity: 0; pointer-events: none; transition: opacity .16s, transform .16s;
+}
+.cal-pop.open { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0) }
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px }
+.cal-title { font-size: 14px; font-weight: 800; color: var(--ink); text-transform: capitalize }
+.cal-nav {
+  width: 30px; height: 30px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--white);
+  display: flex; align-items: center; justify-content: center; color: var(--ink2); transition: .12s;
+}
+.cal-nav:hover { background: var(--lilas-lt); border-color: var(--lilas); color: var(--lilas-xd) }
+.cal-nav svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.5; fill: none }
+.cal-weekdays { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; margin-bottom: 6px }
+.cal-weekdays span { text-align: center; font-size: 11px; font-weight: 700; color: var(--ink3) }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px }
+.cal-day {
+  aspect-ratio: 1; border-radius: 9px; border: none; background: none;
+  font-size: 13px; font-weight: 600; color: var(--ink2);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; transition: .12s;
+}
+.cal-day:hover:not(.closed):not(.empty) { background: var(--lilas-lt); color: var(--lilas-xd) }
+.cal-day.empty { cursor: default }
+.cal-day.closed { color: #D1CDD8; cursor: not-allowed; text-decoration: line-through; opacity: .6 }
+.cal-day.today { border: 1.5px solid var(--lilas); color: var(--lilas-xd); font-weight: 800 }
+.cal-day.selected { background: var(--lilas); color: #fff; font-weight: 800 }
+.cal-day.selected:hover { background: var(--lilas-d); color: #fff }
+.cal-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line) }
+.cal-legend { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 600; color: var(--ink3) }
+.cal-dot-closed { width: 8px; height: 8px; border-radius: 50%; background: #D1CDD8 }
+.cal-today-btn {
+  padding: 6px 14px; border-radius: 8px; border: 1px solid var(--lilas);
+  background: var(--lilas-lt); color: var(--lilas-xd); font-size: 12px; font-weight: 700; cursor: pointer; transition: .12s;
+}
+.cal-today-btn:hover { background: var(--lilas); color: #fff }
+.date-box.day-closed { border-color: #F59E0B; background: #FFF7ED }
+.date-box.day-closed .date-box-day { color: #C2410C }
+.closed-banner {
+  flex-shrink: 0; display: flex; align-items: center; gap: 8px;
+  background: #FFF7ED; border-bottom: 1px solid #FED7AA;
+  color: #C2410C; font-size: 13px; font-weight: 700;
+  padding: 10px 20px;
+}
+.closed-banner svg { stroke: #EA580C; flex-shrink: 0 }
+
+/* zona 3: ações */
+.actions { display: flex; align-items: center; gap: 10px }
+.btn-today {
+  height: 38px; padding: 0 16px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--white);
+  font-size: 13px; font-weight: 600; color: var(--ink2); transition: .14s;
+}
+.btn-today:hover { background: var(--lilas-lt); border-color: var(--lilas); color: var(--lilas-d) }
+.btn-new {
+  height: 38px; padding: 0 18px; border-radius: 10px;
+  background: var(--lilas); display: flex; align-items: center; gap: 7px;
+  font-size: 13px; font-weight: 700; color: #fff; transition: .14s;
+  box-shadow: 0 4px 12px rgba(130,10,209,.3);
+}
+.btn-new:hover { background: var(--lilas-d); color: #fff; box-shadow: 0 6px 18px rgba(130,10,209,.45) }
+.btn-new svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.5; fill: none }
+
+/* ════ STATS — linha separada, respirada ════ */
+.stats {
+  flex-shrink: 0; background: var(--white);
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; padding: 10px 24px; gap: 10px;
+}
+.stat {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: 10px;
+  background: var(--bg); border: 1px solid var(--line);
+}
+.stat-icon {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.stat-icon svg { width: 14px; height: 14px; stroke: #fff; stroke-width: 2.2; fill: none }
+.stat-meta { display: flex; flex-direction: column; gap: 0 }
+.stat-num { font-size: 15px; font-weight: 800; color: var(--ink); line-height: 1.1 }
+.stat-lbl { font-size: 10px; font-weight: 600; color: var(--ink3); text-transform: uppercase; letter-spacing: .04em }
+.stat.fat { margin-left: auto; background: var(--lilas-lt); border-color: var(--lilas-lt2) }
+.stat.fat .stat-num { color: var(--lilas-xd) }
+
+/* ════ SECTION LABELS ════ */
+.sec-bar { flex-shrink: 0; display: flex; background: var(--white); border-bottom: 1px solid var(--line) }
+.sec-gutter { width: 60px; flex-shrink: 0; border-right: 1px solid var(--line) }
+.sec-zone { flex: 1; display: flex }
+.sec {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 7px 0; font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .07em;
+}
+.sec.prog { color: #820AD1; border-right: 1px solid var(--line) }
+.sec.expr { color: #A855F7 }
+.sec-pill { padding: 1px 9px; border-radius: 100px; font-size: 11px; font-weight: 800 }
+.sec.prog .sec-pill { background: #F3E8FB; color: #820AD1 }
+.sec.expr .sec-pill { background: #F3E8FB; color: #A855F7 }
+
+/* ════ COLUMNS WRAPPER (scroll horizontal!) ════ */
+.cols-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column }
+.cols-scroll {
+  flex: 1; overflow: auto;
+  display: flex;
+  scrollbar-width: thin; scrollbar-color: var(--line) transparent;
+}
+.cols-scroll::-webkit-scrollbar { width: 8px; height: 8px }
+.cols-scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px }
+.cols-scroll::-webkit-scrollbar-thumb:hover { background: var(--ink3) }
+
+/* time gutter sticky */
+.time-gut {
+  width: 60px; flex-shrink: 0; position: sticky; left: 0; z-index: 8;
+  background: var(--white); border-right: 1px solid var(--line);
+}
+.tg-head-spacer {
+  position: sticky; top: 0; z-index: 9;
+  background: var(--white); border-bottom: 2px solid var(--line);
+  /* altura ajustada por JS para bater exatamente com o cabeçalho das colunas */
+}
+.tg-cell {
+  height: 76px; padding: 8px 8px 0 0;
+  font-size: 11px; font-weight: 700; color: var(--ink3);
+  text-align: right; border-bottom: 1px solid var(--line2);
+}
+
+.cols-body { display: flex; flex: 1 }
+
+/* ════ PRO COLUMN ════ */
+.pro-col {
+  width: 270px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--line);
+}
+.col-header {
+  position: sticky; top: 0; z-index: 6;
+  background: var(--white); border-bottom: 2px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px 12px;
+  position: relative;
+}
+.col-type {
+  font-size: 14px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase;
+  text-align: center; line-height: 1;
+}
+.col-type.prog { color: #820AD1 }
+.col-type.expr { color: #A855F7 }
+.col-sub {
+  display: flex; align-items: center; gap: 6px;
+}
+.col-av {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; color: #fff; flex-shrink: 0;
+  position: relative;
+}
+.col-av.prog { background: #820AD1 }
+.col-av.expr { background: #A855F7 }
+.col-av-badge {
+  position: absolute; bottom: -1px; right: -1px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green); border: 2px solid var(--white);
+}
+.col-name { font-size: 12px; font-weight: 600; color: var(--ink2); line-height: 1 }
+.col-add-btn {
+  position: absolute; top: 8px; right: 10px;
+  width: 26px; height: 26px; border-radius: 7px;
+  background: var(--bg); border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ink3); transition: .14s;
+}
+.col-add-btn:hover { background: var(--lilas-lt); border-color: var(--lilas); color: var(--lilas-xd) }
+.col-add-btn svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2.2; fill: none }
+
+/* slots */
+.col-slots { flex: 1; display: flex; flex-direction: column }
+.col-slot {
+  height: 76px; flex-shrink: 0;
+  border-bottom: 1px solid var(--line2);
+  padding: 4px 6px; cursor: pointer; transition: background .1s;
+}
+.col-slot:hover { background: var(--lilas-lt) }
+.col-slot.blocked { cursor: not-allowed; background: repeating-linear-gradient(-45deg, transparent, transparent 7px, var(--line2) 7px, var(--line2) 8px) }
+
+/* ════ APPOINTMENT CARD — fundo colorido, layout da imagem ════ */
+.appt {
+  height: calc(100% - 4px); margin: 2px;
+  border-radius: 12px; padding: 8px 11px;
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer; position: relative; overflow: hidden;
+  transition: transform .14s, box-shadow .14s;
+}
+.appt:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(130,10,209,.35); filter: brightness(1.05) }
+
+.appt.c-cyan,
+.appt.c-green,
+.appt.c-lilas,
+.appt.c-pink,
+.appt.c-amber,
+.appt.c-blk    { background: #9D6FD6; color: #fff; border: none }
+.appt.c-blk    { cursor: pointer; justify-content: center }
+.appt.c-auto   { background: #F59E0B; color: #fff; border: none; cursor: not-allowed }
+.appt.c-lunch  { background: #9D6FD6; color: #fff; border: none; cursor: default; justify-content: center }
+.blk-inner { display: flex; align-items: center; gap: 8px; justify-content: center; width: 100% }
+.blk-inner svg { width: 15px; height: 15px; stroke: #fff; stroke-width: 2; fill: none; flex-shrink: 0 }
+.blk-text { display: flex; flex-direction: column; gap: 1px; align-items: flex-start }
+.blk-title { font-size: 12px; font-weight: 800; color: #fff; line-height: 1.1 }
+.blk-motivo { font-size: 10px; font-weight: 500; color: rgba(255,255,255,.85) }
+/* menu de ação ao clicar num slot vazio */
+.slot-menu {
+  position: fixed; z-index: 300;
+  background: #fff; border: 1px solid #ECEAF3; border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(30,27,46,.2); padding: 6px; min-width: 180px;
+}
+.slot-menu button {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 10px 12px; border: none; background: none; border-radius: 8px;
+  font-family: var(--sf); font-size: 13px; font-weight: 600; color: #1E1B2E;
+  cursor: pointer; text-align: left; transition: background .12s;
+}
+.slot-menu button:hover { background: #F6EDFB }
+.slot-menu button svg { width: 16px; height: 16px; stroke: #A855F7; stroke-width: 2; fill: none; flex-shrink: 0 }
+.slot-menu button.blk-opt svg { stroke: #6B7280 }
+
+.col-slot.outro-tipo { cursor: not-allowed; background: repeating-linear-gradient(-45deg, transparent, transparent 9px, var(--line2) 9px, var(--line2) 10px) }
+.col-slot.outro-tipo:hover { background: repeating-linear-gradient(-45deg, transparent, transparent 9px, var(--line2) 9px, var(--line2) 10px) }
+.appt.c-fora { background: transparent; border: 1px dashed var(--line2); box-shadow: none }
+.fora-inner { display:flex; align-items:center; justify-content:center; height:100%; font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:#b3aabb }
+.dia-sem-escala { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 24px; text-align:center; gap:10px }
+.sem-escala-titulo { font-size:17px; font-weight:700; color:#6b6377 }
+.sem-escala-texto { font-size:13.5px; color:#9c94a6; line-height:1.6; max-width:38ch }
+.col-slot.lunch { cursor: default }
+.col-slot.lunch:hover { background: transparent }
+.lunch-inner { display: flex; align-items: center; gap: 10px; justify-content: center; width: 100% }
+.lunch-emoji { font-size: 22px; line-height: 1 }
+.lunch-text { display: flex; flex-direction: column; gap: 1px }
+.lunch-title { font-size: 12px; font-weight: 800; color: #fff; line-height: 1.1 }
+.lunch-time { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.85) }
+
+.appt-hora { font-size: 16px; font-weight: 900; min-width: 46px; flex-shrink: 0; line-height: 1; color: #fff }
+.appt-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center }
+.appt-name { font-size: 11px; font-weight: 600; line-height: 1.2; color: rgba(255,255,255,.85) }
+.appt-tel  { font-size: 10px; color: #8A8499; margin-top: 1px }
+.appt-svc  { font-size: 13px; font-weight: 800; color: #fff; line-height: 1.25 }
+.appt-right { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex-shrink: 0; min-width: 24px; transition: opacity .12s }
+.appt:hover .appt-right { opacity: 0 }
+.appt-selo-check {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #16A34A; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(22,163,74,.4);
+}
+.appt-selo-check svg { width: 12px; height: 12px; stroke: #fff; stroke-width: 3.5; fill: none }
+.appt-selo-label { font-size: 8px; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: .03em; line-height: 1; text-align: center }
+
+.appt-auto-inner { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700 }
+.appt-auto-inner svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 2; fill: none; flex-shrink: 0 }
+.appt-blk-inner { font-size: 11px; font-weight: 600 }
+
+.appt-acts { position: absolute; top: 5px; right: 5px; display: flex; gap: 3px; opacity: 0; transition: opacity .12s }
+.appt:hover .appt-acts { opacity: 1 }
+.act-btn { width: 21px; height: 21px; border-radius: 6px; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; transition: background .12s }
+.act-btn:hover { background: rgba(255,255,255,.4) }
+.act-btn:hover svg { stroke: #fff }
+.act-btn svg { width: 11px; height: 11px; stroke: #fff; stroke-width: 2.5; fill: none }
+
+/* ════ MODAL ════ */
+.overlay { position: fixed; inset: 0; z-index: 200; background: rgba(30,27,46,.45); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 16px }
+.overlay.open { display: flex }
+.modal { background: var(--white); border-radius: 18px; width: 100%; max-width: 440px; box-shadow: 0 24px 64px rgba(30,27,46,.25); animation: up .22s ease }
+@keyframes up { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:none } }
+.m-head { padding: 18px 20px 16px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between }
+.m-title { font-size: 16px; font-weight: 800; color: var(--ink) }
+.m-x { width: 28px; height: 28px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; color: var(--ink3); transition: .12s }
+.m-x:hover { background: #FEF2F2; border-color: var(--red); color: var(--red) }
+.m-x svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.5; fill: none }
+.m-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 12px }
+.r2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
+.fg { display: flex; flex-direction: column; gap: 5px }
+.fg label { font-size: 10px; font-weight: 700; color: var(--ink3); text-transform: uppercase; letter-spacing: .06em }
+.fg input, .fg select { height: 38px; padding: 0 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; font-family: var(--sf); font-size: 13px; color: var(--ink); outline: none; transition: border-color .12s }
+.fg input:focus, .fg select:focus { border-color: var(--lilas); background: var(--white) }
+.fg input::placeholder { color: var(--ink3) }
+.clr-row { display: flex; gap: 6px }
+.clr { width: 26px; height: 26px; border-radius: 7px; cursor: pointer; border: 2px solid transparent; transition: .14s }
+.clr.on { border-color: var(--ink); transform: scale(1.18) }
+.m-foot { padding: 14px 20px 18px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px }
+.btn-c { height: 38px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--white); font-size: 13px; font-weight: 600; color: var(--ink2); transition: .12s }
+.btn-c:hover { border-color: var(--ink3) }
+.btn-s { height: 38px; padding: 0 20px; border-radius: 10px; background: var(--lilas-d); font-size: 13px; font-weight: 700; color: #fff; transition: .12s; box-shadow: 0 4px 12px rgba(168,85,247,.3) }
+.btn-s:hover { background: var(--lilas-xd) }
+.pago-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 10px; transition: .14s; user-select: none }
+.pago-toggle:hover { border-color: #16A34A }
+.pago-toggle.on { border-color: #16A34A; background: #F0FDF4 }
+.pago-check { width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: .14s }
+.pago-toggle.on .pago-check { background: #16A34A; border-color: #16A34A }
+.pago-check svg { width: 13px; height: 13px; stroke: #fff; stroke-width: 3; fill: none; opacity: 0; transition: .14s }
+.pago-toggle.on .pago-check svg { opacity: 1 }
+.pago-label { font-size: 13px; font-weight: 700; color: var(--ink2) }
+.pago-toggle.on .pago-label { color: #16A34A }
+
+/* VIEW MODAL */
+.v-bar { height: 5px; border-radius: 18px 18px 0 0 }
+.v-head { padding: 18px 20px 16px; border-bottom: 1px solid var(--line) }
+.v-hr { display: flex; align-items: flex-start; justify-content: space-between }
+.v-name { font-size: 19px; font-weight: 900; color: var(--ink); letter-spacing: -.3px }
+.v-tel { font-size: 12px; color: var(--ink3); margin-top: 3px; display: flex; align-items: center; gap: 5px }
+.v-tel svg { width: 12px; height: 12px; stroke: var(--lilas); stroke-width: 2; fill: none }
+.v-rows { padding: 16px 20px; display: flex; flex-direction: column; gap: 12px }
+.v-row { display: flex; align-items: flex-start; gap: 11px }
+.v-ico { width: 32px; height: 32px; border-radius: 9px; background: var(--lilas-lt); display: flex; align-items: center; justify-content: center; flex-shrink: 0 }
+.v-ico svg { width: 14px; height: 14px; stroke: var(--lilas-d); stroke-width: 2; fill: none }
+.v-lb { font-size: 10px; font-weight: 700; color: var(--ink3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px }
+.v-vl { font-size: 13px; font-weight: 700; color: var(--ink) }
+.v-foot { padding: 14px 20px 18px; border-top: 1px solid var(--line); display: flex; gap: 8px }
+.vb { flex: 1; height: 38px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: .12s }
+.vb-ok { background: #D1FAE5; color: #065F46; border-color: #A7F3D0 }
+.vb-ok:hover { background: var(--green); color: #fff }
+.vb-edit { background: var(--lilas-lt); color: var(--lilas-d); border-color: var(--lilas-lt2) }
+.vb-edit:hover { background: var(--lilas-d); color: #fff }
+.vb-del { background: #FEE2E2; color: var(--red); border-color: #FECACA }
+.vb-del:hover { background: var(--red); color: #fff }
+
+/* TOAST */
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(6px); padding: 10px 18px; border-radius: 10px; font-size: 12px; font-weight: 700; color: #fff; opacity: 0; transition: .22s; z-index: 999; pointer-events: none; white-space: nowrap }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0) }
+.toast.ok { background: var(--lilas); color: #fff }
+.toast.err { background: var(--red) }
+.toast.warn { background: var(--amber) }
+
+/* FAB */
+.fab { position: fixed; bottom: 20px; right: 20px; z-index: 50; width: 48px; height: 48px; border-radius: 50%; background: var(--lilas); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(130,10,209,.45); transition: .15s }
+.fab:hover { background: var(--lilas-d); transform: scale(1.08) }
+.fab svg { width: 20px; height: 20px; stroke: #fff; stroke-width: 2.5; fill: none }
+</style>
+<!-- ═══════════════════════════════════════════════════════════════════
+     LAYOUT D1 — só apresentação (07/08)
+     Reproduz o mockup aprovado agenda-interna-layout-D1.html.
+     TODAS as variáveis levam prefixo --d1- e TODO seletor é escopado em
+     #app-content, pra nada vazar pros modais/toast/tela de login, que
+     continuam usando as variáveis antigas (--ink, --line, --lilas...).
+     Nenhuma regra de negócio mora aqui.
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="d1-layout">
+/* ═══════════════════════════════════════════════════════════════════
+   LAYOUT FINAL (08/08) — reproduz o mockup agenda-lavou-final.html.
+   Só apresentação. TODO seletor é escopado em #app-content e TODA
+   variável leva prefixo --d1-, pra nada vazar pros modais, pro toast
+   nem pra tela de login, que seguem usando as variáveis antigas.
+   Nenhuma regra de negócio mora aqui.
+   ═══════════════════════════════════════════════════════════════════ */
+#app-content{
+  --d1-prog:#15C6D0; --d1-prog-d:#0E97A0; --d1-prog-soft:#DFF7F9;
+  --d1-exp:#EC4899;  --d1-exp-d:#C0316F;  --d1-exp-soft:#FCE5F0;
+  --d1-ink:#0E1726;  --d1-muted:#8A9BA3;  --d1-muted2:#B4C1C8;
+  --d1-line:#E7ECEF; --d1-surf:#FFFFFF;   --d1-appbg:#F4F6F8;
+  --d1-free:#9DB4BE; --d1-free-bg:#EDF1F3;
+  font-family:var(--sf);
+  background:var(--d1-appbg); color:var(--d1-ink);
+}
+/* horários, data e números na fonte nativa do iPhone */
+#app-content .d1-ios{
+  font-family:var(--sf);
+  font-feature-settings:"tnum";
+}
+
+/* ═══ O TOPO NOVO (opcao 1): equipe · data · anel, numa faixa so ═══ */
+#app-content .lx-topo{
+  display:flex;align-items:center;gap:30px;padding:26px 18px 22px;
+  border-bottom:.5px solid rgba(0,0,0,.10);
+}
+#app-content .lx-esq{flex:1;min-width:0;display:flex;align-items:center;}
+#app-content .lx-marca{
+  font-size:14.5px;font-weight:600;letter-spacing:-.3px;color:var(--d1-ink);white-space:nowrap;
+}
+#app-content .lx-fio{width:1px;height:26px;background:rgba(0,0,0,.10);margin:0 16px;flex:0 0 auto;}
+#app-content .lx-eqn{font-size:14px;font-weight:500;margin-left:15px;white-space:nowrap;}
+#app-content .lx-dir{
+  flex:1;min-width:0;display:flex;align-items:center;justify-content:flex-end;gap:16px;
+}
+#app-content .lx-anelt{text-align:right;min-width:0;}
+#app-content .lx-frase{font-size:15px;font-weight:600;letter-spacing:-.3px;color:var(--d1-ink);white-space:nowrap;}
+#app-content .lx-sub{font-size:11.5px;color:var(--d1-muted2);margin-top:3px;white-space:nowrap;}
+#app-content .lx-anel{flex:0 0 auto;}
+/* ⚠️ O "50%" mora dentro do SVG e tinha pilha propria de dois itens
+   (-apple-system,'SF Pro Display') — nenhum dos dois resolve no Chrome, entao
+   o numero saia em SERIF. Esta regra vence o atributo do SVG e devolve ele
+   pra MESMA pilha do resto da tela. */
+#app-content #lx-pct{font-family:var(--sf);}
+
+/* ── TOPO: flutua sobre o fundo do app, sem cartão branco ── */
+#app-content .d1-head{flex-shrink:0;background:var(--d1-appbg);}
+#app-content .d1-inner{max-width:1180px;margin:0 auto;width:100%;}
+#app-content .d1-hrow{display:flex;align-items:center;gap:10px;padding:10px 18px 4px;}
+#app-content .d1-logo{
+  width:38px;height:38px;flex:0 0 38px;border-radius:12px;background:#12313f;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;letter-spacing:-1px;
+}
+#app-content .d1-brand .bn{font-size:16px;font-weight:800;letter-spacing:-.5px;line-height:1;}
+#app-content .d1-brand .bs{font-size:10.5px;color:var(--d1-muted);font-weight:600;margin-top:3px;display:flex;align-items:center;gap:6px;}
+#app-content .d1-avatar{
+  width:38px;height:38px;flex:0 0 38px;border-radius:50%;background:#EF6C9A;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;
+}
+#app-content .d1-topacts{margin-left:auto;display:flex;align-items:center;gap:8px;}
+#app-content .d1-topacts .btn-new{
+  background:var(--d1-ink);border-radius:12px;height:36px;padding:0 14px;
+  font-family:var(--sf);font-weight:700;font-size:13px;
+  display:flex;align-items:center;gap:7px;color:#fff;transition:.15s;
+}
+#app-content .d1-topacts .btn-new svg{width:16px;height:16px;stroke:#fff;stroke-width:2.4;fill:none;}
+#app-content .d1-topacts .btn-today{
+  background:var(--d1-surf);color:var(--d1-ink);border:1px solid var(--d1-line);
+  border-radius:12px;height:36px;padding:0 14px;
+  font-family:var(--sf);font-weight:700;font-size:13px;transition:.15s;
+}
+
+/* ── DATA estilo iPhone, flutuando ── */
+#app-content .d1-datezone{position:relative;text-align:center;padding:0;flex:0 0 auto;}
+#app-content .d1-diasem{font-size:14px;font-weight:600;color:var(--d1-muted);letter-spacing:.2px;}
+#app-content .d1-datelinha{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:3px;}
+#app-content .d1-chev{
+  width:36px;height:36px;flex:0 0 36px;border-radius:50%;background:var(--d1-surf);color:var(--d1-ink);
+  display:flex;align-items:center;justify-content:center;transition:.15s;
+  box-shadow:0 2px 6px -2px rgba(14,23,38,.18);
+}
+#app-content .d1-chev svg{width:8px;height:14px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+#app-content .d1-date{
+  font-size:34px;font-weight:700;letter-spacing:-1.4px;color:var(--d1-ink);
+  cursor:pointer;padding:2px 8px;border-radius:12px;transition:.15s;white-space:nowrap;
+}
+#app-content .d1-date.day-closed{color:var(--d1-muted);}
+/* a classe .date-box vem do layout antigo (o hdr() marca .day-closed nela);
+   o visual dela — fundo lilás, borda, coluna — é neutralizado aqui */
+#app-content .d1-date.date-box{display:block;background:none;border:none;min-width:0;gap:0;}
+#app-content .d1-date.date-box:hover{border-color:transparent;}
+#app-content .d1-datezone .cal-pop{top:78px;}
+
+/* ── EQUIPE DO DIA, flutuando ── */
+#app-content .d1-hero{text-align:center;padding:16px 16px 20px;}
+#app-content .d1-herolbl{font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--d1-muted);}
+#app-content .d1-avs{display:flex;flex-direction:row-reverse;align-items:center;flex:0 0 auto;}
+/* ⚠️ as bolinhas se sobrepõem de propósito (margin-right negativo). Com o
+   herói em UMA linha, essa sobra negativa da bolinha mais à direita puxava o
+   "N profissionais" por cima dela. row-reverse => o :first-child é o que fica
+   mais à direita; nele a sobra é zerada. */
+#app-content .d1-avs .d1-av:first-child{margin-right:0;}
+#app-content .d1-av{
+  border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;
+  flex:0 0 auto;width:46px;height:46px;font-size:15.5px;
+  border:3px solid var(--d1-appbg);margin-right:-13px;
+  box-shadow:0 2px 5px -1px rgba(14,23,38,.28);
+}
+#app-content .d1-heron{font-size:14.5px;font-weight:600;color:var(--d1-ink);margin-top:11px;}
+
+/* ── ÁREA QUE ROLA ── */
+#app-content .cols-scroll{display:block;background:var(--d1-appbg);}
+/* ⚠️ TRÊS CARTÕES POR LINHA (dona, 08/08): a lista em coluna única obrigava a
+   rolar o dia inteiro. Só a LARGURA mudou — altura, cor e conteúdo do cartão
+   seguem iguais. A ordem do relógio continua: lê-se da esquerda pra direita,
+   linha por linha. */
+#app-content .cols-body{display:block;width:100%;}
+#app-content .d1-lista{
+  /* ⚠️ A ORDEM DESCE, NÃO ATRAVESSA (dona, 08/08): "7h embaixo 7h30, embaixo
+     8h". Com o fluxo normal do grid a lista corria da esquerda pra direita e o
+     07:30 caía AO LADO do 07:00. Com grid-auto-flow:column ela desce a primeira
+     coluna inteira, depois vai pra segunda. O número de linhas é calculado no
+     JS (d1AjustaColunas), porque depende de quantos horários o dia tem. */
+  display:grid;grid-auto-flow:column;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:7px;align-items:start;width:100%;
+}
+#app-content .d1-lista > *{margin-bottom:0 !important;}
+#app-content .d1-stage{max-width:1180px;margin:0 auto;padding:12px 16px 26px;}
+
+/* ── LEGENDA ── */
+#app-content .d1-legend{display:flex;align-items:center;justify-content:center;gap:16px;padding:4px;flex-wrap:wrap;}
+#app-content .d1-lchip{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--d1-ink);}
+#app-content .d1-ldot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;}
+#app-content .d1-lnum{color:var(--d1-muted);margin-left:2px;}
+
+/* ── OS NÚMEROS DO DIA que a legenda não cobre ──
+   Não estão no mockup, mas confirmadas, pendentes e faturamento são
+   informação que já existia na tela e sumir com ela seria perda. Ficam
+   numa linha discreta, sem competir com a agenda. */
+#app-content .d1-kpis{
+  display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;
+  padding:6px 4px 2px;font-size:11px;color:var(--d1-muted);font-weight:600;
+}
+#app-content .d1-kpi{display:flex;align-items:center;gap:5px;}
+#app-content .d1-kpi .n{color:var(--d1-ink);font-weight:700;}
+#app-content .d1-kpi .l{text-transform:uppercase;letter-spacing:.5px;font-size:9.5px;}
+
+/* ── CARTÃO DE CLIENTE: cor sólida do tipo, texto branco ── */
+#app-content .d1-slot{
+  border-radius:15px;padding:12px 14px;margin-bottom:9px;color:#fff;
+  display:flex;align-items:center;gap:12px;cursor:pointer;transition:.15s;
+}
+#app-content .d1-slot.prog{background:var(--d1-prog);}
+#app-content .d1-slot.expr{background:var(--d1-exp);}
+#app-content .d1-slotmid{flex:1;min-width:0;}
+#app-content .d1-linha1{display:flex;align-items:center;gap:10px;min-width:0;}
+#app-content .d1-hora{font-size:15px;font-weight:600;letter-spacing:-.4px;flex:0 0 auto;}
+#app-content .d1-nome{
+  font-size:14px;font-weight:700;letter-spacing:-.3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+}
+#app-content .d1-proc{font-size:11px;opacity:.92;margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* ⭐ OBS DA CLIENTE (a dona, 22/08): "essa obs deve aparecer no card que mostra que a cliente
+   está pra chegar, abaixo do nome dela". Ex: "tem preferencia em fazer com Dani e Fran".
+   Quem escreve e a Lailla, no campo `obs` do agendamento — a equipe so LE.
+   Mais discreta que o procedimento de proposito: e recado, nao e o servico. E numa linha so:
+   obs que quebra o card faz a equipe parar de ler, e ai a que importava se perde junto. */
+#app-content .d1-obs{
+  font-size:10.5px;font-style:italic;opacity:.78;margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+/* check de confirmação, centralizado na vertical */
+#app-content .d1-marcas{flex:0 0 auto;display:flex;align-items:center;gap:6px;}
+#app-content .d1-sinal{
+  width:26px;height:26px;border-radius:50%;background:#22C55E;
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+}
+#app-content .d1-sinal.vazio{background:none;box-shadow:inset 0 0 0 2.2px rgba(255,255,255,.85);}
+#app-content .d1-sinal svg{width:14px;height:14px;stroke:#fff;stroke-width:3.2;fill:none;}
+
+/* ── HORÁRIO LIVRE: cartão neutro, mesma altura, sem tracejado ── */
+#app-content .d1-free{
+  background:var(--d1-free-bg);border-radius:15px;padding:11px 12px 11px 14px;margin-bottom:9px;
+  min-height:60px;display:flex;align-items:center;gap:10px;transition:.15s;
+}
+#app-content .d1-free .d1-hora{font-size:15px;font-weight:700;letter-spacing:-.4px;flex:0 0 auto;}
+#app-content .d1-free.prog .d1-hora{color:var(--d1-prog-d);}
+#app-content .d1-free.expr .d1-hora{color:var(--d1-exp-d);}
+#app-content .d1-freetxt{
+  font-size:12.5px;font-weight:600;color:var(--d1-muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;
+}
+#app-content .d1-btnag{
+  flex:0 0 auto;border:none;color:#fff;font-family:var(--sf);
+  font-size:12.5px;font-weight:700;letter-spacing:-.2px;padding:8px 14px;border-radius:11px;
+  display:flex;align-items:center;gap:6px;cursor:pointer;transition:.15s;
+}
+#app-content .d1-btnag svg{width:14px;height:14px;stroke:#fff;stroke-width:2.6;fill:none;stroke-linecap:round;}
+#app-content .d1-free.prog .d1-btnag{background:var(--d1-prog);}
+#app-content .d1-free.expr .d1-btnag{background:var(--d1-exp);}
+/* linha travada (pausa do almoço, bloqueio manual): neutra, sem botão */
+#app-content .d1-free.travado{cursor:default;}
+#app-content .d1-free.travado .d1-hora{color:var(--d1-free);}
+
+/* ── DIA SEM ESCALA ── */
+#app-content .d1-vazio{
+  background:var(--d1-surf);border-radius:18px;padding:34px 22px;text-align:center;
+  box-shadow:0 4px 16px -10px rgba(14,23,38,.25);
+}
+#app-content .d1-vazio .t{font-size:15px;font-weight:700;color:var(--d1-ink);}
+#app-content .d1-vazio .s{font-size:12.5px;color:var(--d1-muted);margin-top:8px;line-height:1.55;}
+
+/* ── CELULAR: a faixa de tres zonas vira coluna ──
+   "no celular nao precisa alterar" (dona, 08/08): abaixo de 900px o topo
+   volta a ser empilhado — equipe, data e anel um embaixo do outro, centrados,
+   como a tela do celular sempre foi. */
+@media (max-width:899px){
+  #app-content .lx-topo{flex-direction:column;gap:14px;padding:18px 16px 16px;}
+  #app-content .lx-dir{flex:0 0 auto;justify-content:center;width:100%;}
+  #app-content .lx-anelt{text-align:right;}
+  /* ⚠️ No iPhone (390px) a zona da esquerda NAO cabe em uma linha: com 8
+     profissionais os avatares sozinhos ja passam de 250px, e o "8
+     profissionais" era cortado na borda. Entao ela quebra em tres linhas
+     centradas — nome, bolinhas, contagem — que e como o celular sempre foi. */
+  #app-content .lx-esq{flex:0 0 auto;width:100%;flex-wrap:wrap;justify-content:center;}
+  #app-content .lx-marca{width:100%;text-align:center;}
+  #app-content .lx-fio{display:none;}
+  #app-content .d1-avs{justify-content:center;}
+  #app-content .lx-eqn{width:100%;text-align:center;margin-left:0;margin-top:2px;}
+}
+
+/* ── DESKTOP: usa a largura, com hover ── */
+/* ⚠️ O APERTO É SÓ DO DESKTOP (dona, 08/08): "no celular não precisa alterar".
+   No celular ficam os valores do mockup; aqui em cima o topo encolhe pra
+   sobrar altura pras três colunas. Nenhum CARTÃO muda de altura. */
+@media (min-width:900px){
+  #app-content .d1-hrow{padding:6px 24px 2px;}
+  #app-content .d1-date{font-size:36px;}
+  #app-content .d1-stage{padding:14px 24px 10px;}
+  #app-content .d1-datezone{padding:22px 16px 6px;}
+  #app-content .d1-hero{padding:6px 16px 8px;}
+  #app-content .d1-avs{margin-top:6px;}
+  #app-content .d1-av{width:42px;height:42px;font-size:14px;border-width:2.5px;margin-right:-12px;}
+  #app-content .d1-heron{margin-top:6px;font-size:14px;}
+  /* o herói vira UMA linha: rótulo + bolinhas + contagem lado a lado */
+  #app-content .d1-hero{display:flex;align-items:center;justify-content:center;gap:14px;padding:14px 16px 16px;}
+  #app-content .d1-avs{margin-top:0;}
+  #app-content .d1-heron{margin-top:0;}
+  /* legenda e números do dia dividem a mesma linha */
+  #app-content .d1-legend{padding:0 4px 6px;gap:20px;}
+  #app-content .d1-kpis{padding:0 4px 14px;}
+  #app-content .d1-lista{gap:6px;}
+  #app-content .d1-nome{font-size:15px;}
+  #app-content .d1-proc{font-size:11.5px;}
+  #app-content .d1-hora{font-size:16px;}
+  #app-content .d1-slot{padding:13px 16px;}
+  #app-content .d1-free{padding:12px 14px 12px 16px;}
+}
+@media (hover:hover) and (pointer:fine){
+  #app-content .d1-slot:hover{transform:translateY(-1px);box-shadow:0 10px 22px -14px rgba(14,23,38,.65);filter:brightness(1.05);}
+  #app-content .d1-free:hover{background:#E4EAED;}
+  #app-content .d1-btnag:hover{filter:brightness(1.08);transform:translateY(-1px);}
+  #app-content .d1-chev:hover{background:var(--d1-ink);color:#fff;}
+  #app-content .d1-date:hover{background:rgba(14,23,38,.05);}
+  #app-content .d1-topacts .btn-new:hover{background:#26324a;}
+  #app-content .d1-topacts .btn-today:hover{border-color:var(--d1-ink);}
+}
+/* ── CELULAR: alvo de toque confortável ── */
+@media (max-width:1100px){
+  #app-content .d1-lista{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media (max-width:700px){
+  #app-content .d1-lista{grid-template-columns:minmax(0,1fr);}
+}
+@media (max-width:899px){
+  #app-content .d1-chev{width:40px;height:40px;flex:0 0 40px;}
+  #app-content .d1-date{font-size:27px;}
+}
+@media (max-width:640px){
+  /* "Hoje" e "Novo agendamento" não cabem em 390px — as duas ações
+     continuam no botão flutuante e dentro do calendário */
+  #app-content .d1-topacts{display:none;}
+  #app-content .d1-avatar{margin-left:auto;}
+  #app-content .d1-stage{padding:10px 12px 26px;}
+}
+/* o botão flutuante do mockup */
+.fab{border-radius:20px !important;background:#0E1726 !important;
+  box-shadow:0 16px 28px -8px rgba(14,23,38,.55) !important;width:58px !important;height:58px !important;}
+.fab:hover{background:#26324a !important;}
+</style>
+</head>
+<body>
+
+<!-- ═══ TELA DE LOGIN (senha única da equipe) ═══ -->
+<div id="lock-screen" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#F6EDFB,#FBFAFE);display:flex;align-items:center;justify-content:center;font-family:var(--sf)">
+  <div style="background:#fff;border:1px solid #ECEAF3;border-radius:20px;box-shadow:0 16px 48px rgba(30,27,46,.16);padding:36px 32px;width:340px;text-align:center">
+    <div style="width:56px;height:56px;border-radius:16px;background:#D8B4FE;display:flex;align-items:center;justify-content:center;margin:0 auto 18px">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div style="font-size:18px;font-weight:900;color:#1E1B2E;letter-spacing:-.3px">LAILLA APP</div>
+    <div style="font-size:13px;color:#6B6880;margin-top:4px;margin-bottom:22px">Digite a senha para acessar a agenda</div>
+    <input id="lock-pass" type="password" placeholder="Senha" autocomplete="off"
+      onkeydown="if(event.key==='Enter')tentarLogin()"
+      style="width:100%;height:44px;padding:0 14px;border:1.5px solid #ECEAF3;border-radius:12px;font-size:15px;color:#1E1B2E;outline:none;text-align:center;font-family:var(--sf)">
+    <div id="lock-erro" style="color:#EF4444;font-size:12px;font-weight:600;min-height:16px;margin-top:8px"></div>
+    <button onclick="tentarLogin()"
+      style="width:100%;height:44px;margin-top:8px;background:#A855F7;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sf)">Entrar</button>
+  </div>
+</div>
+
+<div class="app" id="app-content" style="display:none">
+
+  <!-- ═══ CABEÇALHO (layout D1) ═══
+       Mesmos ganchos de antes: fb-status, lbl-w, lbl-d, D(-1)/D(1),
+       toggleCal, .date-box (o hdr() marca .day-closed nela). -->
+  <div class="d1-head">
+   <div class="d1-inner">
+    <!-- ⚠️ A LINHA DA MARCA SAI DA VISTA (dona, 08/08): "o topo está muito
+         embolado, remove o L / Lavou Tá Liso / Agenda do dia / ● conectado /
+         Hoje / Novo agendamento / Iz". Ela fica no DOM, escondida, porque o
+         JS ainda escreve no #fb-status (atualizarStatusFB) — tirar do HTML
+         quebraria. "Hoje" continua dentro do calendário e "Novo agendamento"
+         continua no botão flutuante. -->
+    <div class="d1-hrow" style="display:none">
+      <div class="d1-logo">L</div>
+      <div class="d1-brand">
+        <div class="bn">Lavou Tá Liso</div>
+        <div class="bs">Agenda do dia <span id="fb-status" class="fb-status fb-off" title="Clique para conectar ao banco de dados" onclick="abrirConexao()" style="cursor:pointer">● local</span></div>
+      </div>
+      <div class="d1-topacts">
+        <button class="btn-today" onclick="goToday()">Hoje</button>
+        <button class="btn-new" onclick="openNew(null,null)">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Novo agendamento
+        </button>
+      </div>
+      <div class="d1-avatar">Iz</div>
+    </div>
+
+    <!-- ═══ O TOPO (a dona, 12/08 — opcao 1 dos mockups) ═══
+         Uma faixa so, tres zonas: EQUIPE a esquerda, DATA no centro, ANEL a
+         direita. Sem cartao branco: o que separa da agenda e um fio de meio
+         pixel. Os ganchos antigos continuam todos vivos — lbl-w, lbl-d,
+         d1-avs, d1-equipe-n, date-box/toggleCal e as setas D(-1)/D(1). -->
+    <div class="lx-topo">
+
+    <!-- ── ESQUERDA: o nome do sistema e a equipe do dia ── -->
+    <div class="lx-esq">
+      <span class="lx-marca">Laila Salon</span>
+      <span class="lx-fio"></span>
+      <div class="d1-avs" id="d1-avs"></div>
+      <span class="lx-eqn d1-ios" id="d1-equipe-n">—</span>
+    </div>
+
+    <!-- ── CENTRO: a data (com as setas e o calendario) ── -->
+    <div class="d1-datezone">
+      <div class="d1-diasem" id="lbl-w">---</div>
+      <div class="d1-datelinha">
+      <button class="d1-chev" onclick="D(-1)" title="Dia anterior" aria-label="Dia anterior"><svg viewBox="0 0 9 15"><path d="M7 1L1.5 7.5 7 14"/></svg></button>
+      <div class="d1-date d1-ios date-box" onclick="toggleCal(event)" title="Abrir calendário">
+        <span id="lbl-d">--/--/----</span>
+      </div>
+      <button class="d1-chev" onclick="D(1)" title="Próximo dia" aria-label="Próximo dia"><svg viewBox="0 0 9 15"><path d="M2 1l5.5 6.5L2 14"/></svg></button>
+      </div>
+
+      <!-- POPOVER CALENDÁRIO -->
+      <div class="cal-pop" id="cal-pop">
+        <div class="cal-head">
+          <button class="cal-nav" onclick="calMonth(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <div class="cal-title" id="cal-title">—</div>
+          <button class="cal-nav" onclick="calMonth(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+        <div class="cal-weekdays">
+          <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="cal-foot">
+          <span class="cal-legend"><span class="cal-dot-closed"></span> Sem expediente (dom/seg)</span>
+          <button class="cal-today-btn" onclick="goToday(); closeCal()">Hoje</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DIREITA: quanto da agenda do dia ja foi preenchido ──
+         O numero sai do MESMO `conta` que desenha a legenda (d1Legenda), pra
+         nao existir duas contas paralelas que possam divergir. -->
+    <div class="lx-dir">
+      <div class="lx-anelt">
+        <div class="lx-frase d1-ios" id="lx-frase">Agenda —</div>
+        <div class="lx-sub d1-ios" id="lx-sub">—</div>
+      </div>
+      <svg class="lx-anel" width="74" height="74" viewBox="0 0 74 74">
+        <circle cx="37" cy="37" r="32.5" fill="none" stroke="#E6EAEC" stroke-width="9"/>
+        <circle id="lx-arco" cx="37" cy="37" r="32.5" fill="none" stroke="var(--d1-prog)"
+                stroke-width="9" stroke-linecap="round" stroke-dasharray="204.2"
+                stroke-dashoffset="204.2" transform="rotate(-90 37 37)"/>
+        <text id="lx-pct" x="37" y="44" text-anchor="middle" font-size="21" font-weight="600"
+              fill="#0E1726" font-family="-apple-system,'SF Pro Display'" letter-spacing="-1">—</text>
+      </svg>
+    </div>
+
+    </div><!-- /lx-topo -->
+   </div>
+  </div>
+
+  <!-- RÓTULOS DE SEÇÃO (layout antigo) — ficam no DOM, escondidos.
+       buildGrid() continua escrevendo sp-cnt/se-cnt: gancho preservado. -->
+  <div class="sec-bar" style="display:none">
+    <div class="sec-gutter"></div>
+    <div class="sec-zone">
+      <div class="sec prog" id="sec-prog">Progressiva &amp; Manutenção <span class="sec-pill" id="sp-cnt">2</span></div>
+      <div class="sec expr" id="sec-expr">Express — Encaixe <span class="sec-pill" id="se-cnt">2</span></div>
+    </div>
+  </div>
+
+  <!-- ═══ A AGENDA ═══ -->
+  <div class="cols-wrap">
+    <div class="cols-scroll" id="cols-scroll">
+      <div class="d1-stage">
+
+        <!-- LEGENDA — some da VISTA (opcao 1 do topo, dona 12/08): quem diz
+             progressiva/express/livres agora e a linha embaixo do anel. O
+             elemento fica no DOM porque d1Legenda() escreve nele E ele e a
+             fonte do numero do anel. -->
+        <div class="d1-legend" id="d1-legend" style="display:none"></div>
+
+        <!-- Os números que a legenda não cobre. Não estão no mockup, mas
+             confirmadas, pendentes e faturamento já existiam na tela e sumir
+             com eles seria perda de informação. Ficam numa linha discreta.
+             kp e ke seguem no DOM (o kpi() escreve neles) mas escondidos,
+             porque a legenda já mostra progressiva e express. -->
+        <div class="d1-kpis" style="display:none">
+          <span class="d1-kpi" style="display:none"><span class="n d1-ios" id="kp">0</span></span>
+          <span class="d1-kpi" style="display:none"><span class="n d1-ios" id="ke">0</span></span>
+          <span class="d1-kpi"><span class="n d1-ios" id="kc">0</span><span class="l">confirmadas</span></span>
+          <span class="d1-kpi"><span class="n d1-ios" id="kpe">0</span><span class="l">pendentes</span></span>
+          <span class="d1-kpi"><span class="n d1-ios" id="kf">R$ 0</span><span class="l">no dia</span></span>
+        </div>
+
+        <!-- régua de horários do layout antigo: fora da vista, gancho vivo -->
+        <div class="time-gut" id="tg" style="display:none"></div>
+        <!-- aqui entra a agenda: UMA lista só, ordenada por horário -->
+        <div class="cols-body" id="cols-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="fab" onclick="openNew(null,null)"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+
+<!-- MODAL FORM -->
+<div class="overlay" id="mf">
+  <div class="modal">
+    <div class="m-head">
+      <div class="m-title" id="mt">Novo agendamento</div>
+      <button class="m-x" onclick="cm('mf')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="m-body">
+      <div class="fg"><label>Serviço</label>
+        <select id="fs" onchange="onS(); aoTrocarServico()">
+          <optgroup label="Progressiva &amp; Manutenção">
+            <option value="Progressiva Lavou tá liso + kit cronograma capilar" data-v="349.90" data-g="prog">Progressiva — R$ 349,90</option>
+            <option value="Manutenção Lavou tá liso (até 3 meses)" data-v="299.90" data-g="prog">Manutenção — R$ 299,90</option>
+          </optgroup>
+          <optgroup label="Express">
+            <option value="Pacote Hidratado (hidratação + escova + prancha)" data-v="65.00" data-g="expr">Pacote Hidratado — R$ 65,00</option>
+            <option value="Corte" data-v="49.90" data-g="expr">Corte — R$ 49,90</option>
+            <option value="Coloração (tinta do cliente)" data-v="39.90" data-g="expr">Coloração — R$ 39,90</option>
+            <option value="Sobrancelha" data-v="34.90" data-g="expr">Sobrancelha — R$ 34,90</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="fg"><label>Horário</label><select id="fh"></select></div>
+      <div class="fg"><label>Cliente</label><input type="text" id="fn" placeholder="Nome completo"></div>
+      <div class="r2">
+        <div class="fg"><label>Telefone</label><input type="tel" id="ft" placeholder="(31) 99999-9999" oninput="mTel(this)"></div>
+        <div class="fg"><label>Valor R$</label><input type="number" id="fv" placeholder="349.90" step="0.01"></div>
+      </div>
+      <label class="pago-toggle" id="pago-toggle" onclick="togglePago()">
+        <span class="pago-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>
+        <span class="pago-label">Sinal pago</span>
+      </label>
+    </div>
+    <div class="m-foot">
+      <button class="btn-c" onclick="cm('mf')">Cancelar</button>
+      <button class="btn-s" onclick="save()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VIEW -->
+<div class="overlay" id="mv">
+  <div class="modal">
+    <div class="v-bar" id="vbar"></div>
+    <div class="v-head">
+      <div class="v-hr">
+        <div>
+          <div class="v-name" id="vn">—</div>
+          <div class="v-tel"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.8a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span id="vt">—</span></div>
+        </div>
+        <button class="m-x" onclick="cm('mv')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+    <div class="v-rows">
+      <div class="v-row"><div class="v-ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div><div class="v-lb">Data &amp; Hora</div><div class="v-vl" id="vd">—</div></div></div>
+      <div class="v-row"><div class="v-ico"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div><div class="v-lb">Profissional</div><div class="v-vl" id="vp">—</div></div></div>
+      <div class="v-row"><div class="v-ico"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/></svg></div><div><div class="v-lb">Serviço</div><div class="v-vl" id="vs2">—</div></div></div>
+      <div class="v-row"><div class="v-ico"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="v-lb">Valor</div><div class="v-vl" id="vv">—</div></div></div>
+    </div>
+    <div class="v-foot">
+      <button class="vb vb-ok"   onclick="conf_()">Confirmar</button>
+      <button class="vb vb-edit" onclick="edit_()">Editar</button>
+      <button class="vb vb-del"  onclick="del_()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONEXÃO FIREBASE -->
+<div class="overlay" id="fb-modal">
+  <div class="modal" style="max-width:420px">
+    <div class="m-head">
+      <div class="m-title">Conectar ao banco de dados</div>
+      <button class="m-x" onclick="cm('fb-modal')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="m-body">
+      <p style="font-size:13px;color:var(--ink2);line-height:1.5;margin-bottom:4px">
+        Cole aqui o <b>token</b> (Database secret) do Firebase. Ele fica salvo com segurança só neste navegador — você só precisa fazer isso uma vez.
+      </p>
+      <div class="fg">
+        <label>Token do banco</label>
+        <input type="password" id="fb-token-input" placeholder="cole o token aqui" autocomplete="off">
+      </div>
+      <p style="font-size:11px;color:var(--ink3);line-height:1.5">
+        🔒 O token não é enviado a ninguém além do seu próprio Firebase. Mantenha-o privado.
+      </p>
+    </div>
+    <div class="m-foot" style="justify-content:space-between">
+      <button class="btn-c" id="fb-desconectar" onclick="fbDesconectar()" style="display:none">Desconectar</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn-c" onclick="cm('fb-modal')">Cancelar</button>
+        <button class="btn-s" onclick="fbSalvarToken()">Conectar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var PROS = [
+  {id:0, name:'Ana Paula', role:'Progressiva', type:'prog'},
+  {id:1, name:'Juliana',   role:'Progressiva', type:'prog'},
+  {id:2, name:'Camila',    role:'Express',     type:'expr'},
+  {id:3, name:'Fernanda',  role:'Express',     type:'expr'},
+];
+
+// ─── CAPACIDADE POR DIA DA SEMANA ───
+// Sábado (getDay()===6): 2 Progressiva + 2 Express (4 no total), com bloqueio cruzado.
+// Terça a sexta: 1 Progressiva + 1 Express (2 no total), vagas INDEPENDENTES.
+function ehSabado(d){ return (d || cur).getDay() === 6; }
+// profissionais ativas conforme o dia exibido
+function activePros(){
+  if(ehSabado()) return PROS;                 // sábado: as 4
+  return [PROS[0], PROS[2]];                    // ter-sex: 1 prog (Ana Paula) + 1 expr (Camila)
+}
+function activeProgIds(){ return activePros().filter(function(p){return p.type==='prog';}).map(function(p){return p.id;}); }
+function activeExprIds(){ return activePros().filter(function(p){return p.type==='expr';}).map(function(p){return p.id;}); }
+// capacidade total do dia exibido
+function capDia(){ return activePros().length; }
+
+// ─── OS HORÁRIOS DO DIA (04/08) ───
+// Antes esta lista era FIXA: 07:00 até 18:15 de 45 em 45, igual todo dia, escrita
+// aqui dentro. Por isso a tela continuava mostrando os mesmos horários de sempre
+// mesmo depois da agenda no banco mudar.
+//
+// Agora quem manda é a ESCALA: o backend monta `agenda/{data}` a partir de quem
+// aceitou o turno no gestor (3 pessoas = 7 horários de 1h30, 5 = 14 de 45min,
+// 8 = 21...). Esta tela passa a DESENHAR os horários que o dia realmente tem.
+//
+// A lista de baixo virou só o desenho de emergência: vale enquanto o dia ainda
+// não carregou, ou se o banco não responder.
+function slotsPadrao(){
+  var out=[], h=7, m=0;
+  while(true){ out.push(z(h)+':'+z(m)); m+=45; if(m>=60){h++;m-=60;} if(h>18||(h===18&&m>15))break; }
+  return out;
+}
+// os horários que ESTE dia tem no banco, em ordem
+function slotsDoDia(dia){
+  // DIA SEM ESCALA NÃO TEM HORÁRIO (04/08). Se o backend não montou o dia —
+  // porque ninguém aceitou o turno — a tela NÃO pode desenhar a grade padrão:
+  // isso deixaria marcar cliente num dia em que não tem ninguém trabalhando.
+  // Grade vazia, e a tela avisa.
+  if(!dia) return [];
+  var horas = Object.keys(dia).map(function(k){
+    return (dia[k] && dia[k].hora) ? dia[k].hora : horaFromKey(k);
+  }).filter(Boolean);
+  horas.sort();
+  return horas;
+}
+var SLOTS = slotsPadrao();
+var ROW_H = 76;
+var ALMOCO = '11:30';  // pausa fixa do almoço — bloqueia todas as profissionais
+
+// ⭐⭐ O 11:30 SÓ É ALMOÇO NO DIA DE GRADE APERTADA (a dona, 04/11/2026):
+//   "os dias que as clientes são agendadas a cada 1h30 ou superior a isso, não precisa ter
+//    horário de almoço, pode abrir esse horário. Agora, os dias que as clientes estão
+//    agendadas a cada 45 minutos, aí você bloqueia o de 11h30."
+// A régua estava CHUMBADA em 7 lugares desta tela (`hora===ALMOCO`), então o dia de 1h30
+// continuava desenhando «Pausa pro almoço» mesmo com o backend já tendo aberto o horário.
+// Agora quem decide é o BANCO — fonte única, a mesma do site e da IA.
+function ehAlmoco(hora){
+  if(hora !== ALMOCO) return false;
+  var s = (typeof _diaFB !== 'undefined' && _diaFB) ? _diaFB[horaKey(hora)] : null;
+  if(s && s.almoco === true) return true;    // o backend marcou a pausa (grade de 45min)
+  if(s && s.grade === true) return false;    // o backend fez dele horário de cliente (1h30)
+  return true;                               // dia ainda não montado: mantém a pausa
+}
+
+var A = [];
+var NID=20, pagoState=false, cur=new Date(), cor='c-cyan', eid=null, vid=null, pPro=0, pHora=null;
+
+/* ═══════════════════════════════════════════════════════════════════
+   ███  INTEGRAÇÃO FIREBASE REALTIME DATABASE (via REST)  ███
+   ───────────────────────────────────────────────────────────────────
+   ⚠️  COLE AQUI O SEU TOKEN (Database secret do projeto paineldolavou).
+       Ele NÃO deve ser compartilhado publicamente. Quem tiver esse
+       token acessa todo o banco. Mantenha o arquivo privado.
+   ─────────────────────────────────────────────────────────────────── */
+var FB_URL   = 'https://paineldolavou-default-rtdb.firebaseio.com';
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ⭐⭐ QUEM DECIDE SE O SALÃO ABRE NÃO É O CALENDÁRIO (a dona, 05-06/09)
+
+   "domingo abrimos sim, se tiver profissional confirmado, abrimos. tudo é de
+    acordo com a capacidade de profissionais."
+
+   O QUE ACONTECEU (06/09): o domingo estava aberto — a Amanda Souza confirmou,
+   o backend montou a grade e já servia 11:00 e 15:00 pro site da cliente — e
+   ESTA TELA recusava, com SEIS `dow===0||dow===1` espalhados: o cabeçalho
+   pintava o dia de fechado, o banner vermelho aparecia, o calendário nem
+   pendurava o clique no dia, e o openNew() e o save() respondiam "Salão
+   fechado neste dia". A dona não conseguia agendar uma cliente num dia que a
+   casa tinha aberto.
+
+   ⚠️ ERA A QUARTA TELA COM A PRÓPRIA RÉGUA (cadencia, agenda.js, o site da
+   cliente e esta). Enquanto cada uma tiver a sua, abrir um dia vai continuar
+   exigindo lembrar de N lugares. Agora esta PERGUNTA: `/agenda/abertos` roda
+   o `planoDoDia` no backend, que é quem sabe.
+
+   ⚠️ TERÇA A SÁBADO NÃO PERGUNTA NADA — responde na hora, sem rede, como
+   sempre respondeu. A pergunta só existe pro dia que o calendário fecharia.
+   ⚠️ SEM RESPOSTA, FECHADO. Se a rede falhar, a tela volta ao comportamento
+   antigo em vez de deixar marcar num dia que ninguém abriu.
+   ══════════════════════════════════════════════════════════════════════════ */
+var API_URL  = 'https://lavou-backend-production.up.railway.app';
+var ABERTOS  = {};        /* 'YYYY-MM-DD' -> true, só dias fechados que abriram */
+var _absPed  = {};        /* mês já perguntado */
+function _isoL(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function diaAberto(d){
+  var w = d.getDay();
+  if(w!==0 && w!==1) return true;      /* terça a sábado: como sempre */
+  return ABERTOS[_isoL(d)] === true;
+}
+function carregarAbertos(ano, mes, cb){
+  var chave = ano+'-'+String(mes+1).padStart(2,'0');
+  if(_absPed[chave]) return;
+  _absPed[chave] = true;
+  var de  = _isoL(new Date(ano, mes, 1));
+  var ate = _isoL(new Date(ano, mes+1, 0));
+  fetch(API_URL+'/agenda/abertos?de='+de+'&ate='+ate)
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      var mudou = false;
+      (j && j.abertos || []).forEach(function(x){ if(!ABERTOS[x]){ ABERTOS[x]=true; mudou=true; } });
+      if(mudou && cb) cb();
+    })
+    .catch(function(e){
+      _absPed[chave] = false;   /* deixa tentar de novo depois */
+      console.warn('[agenda] nao consegui saber os dias abertos:', e && e.message);
+    });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ███  SENHA DE ACESSO DA EQUIPE  ███
+   ───────────────────────────────────────────────────────────────────
+   Troque o texto abaixo pela senha que você quer dar para a equipe.
+   Todas as pessoas usam a mesma senha para abrir a agenda.
+   ─────────────────────────────────────────────────────────────────── */
+var SENHA_EQUIPE = 'lailla2026';   // ← TROQUE pela senha que quiser
+
+function tentarLogin(){
+  var p = document.getElementById('lock-pass').value;
+  if(p === SENHA_EQUIPE){
+    try { sessionStorage.setItem('lailla_logado', '1'); } catch(e){}
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('app-content').style.display = 'flex';
+  } else {
+    document.getElementById('lock-erro').textContent = 'Senha incorreta. Tente de novo.';
+    document.getElementById('lock-pass').value = '';
+    document.getElementById('lock-pass').focus();
+  }
+}
+// ═══ SEM SENHA (dona, 08/08): "tire a senha, não precisa mais de senha" ═══
+// A agenda abre direto. A tela de senha e o tentarLogin() ficam no arquivo —
+// não são apagados de propósito: o dia em que a senha voltar, é só desfazer
+// estas quatro linhas, e nada mais precisa ser reescrito.
+//
+// ⚠️ O QUE ISSO SIGNIFICA: quem tiver o endereço abre a agenda e vê nome,
+// telefone e serviço de todas as clientes do dia — e pode marcar e cancelar.
+// A dona decidiu assim; fica registrado aqui pra ninguém achar que foi
+// esquecimento.
+(function(){
+  try { sessionStorage.setItem('lailla_logado','1'); } catch(e){}
+  var ls=document.getElementById('lock-screen'); if(ls) ls.style.display='none';
+  var ac=document.getElementById('app-content'); if(ac) ac.style.display='flex';
+})();
+
+// O token é guardado com segurança no próprio navegador (localStorage).
+// Você cola ele uma única vez na tela do app — nunca precisa editar este arquivo.
+var FB_TOKEN = '';
+try { FB_TOKEN = localStorage.getItem('lailla_fb_token') || ''; } catch(e) {}
+// ⚠️ FALA COM O BANCO MESMO SEM TOKEN (07/08).
+// Antes, sem token salvo neste navegador, a tela nem tentava — ficava em modo
+// local, vazia. Isso impedia ela de rodar embutida no app do gestor, que é
+// outro domínio e não tem esse token guardado.
+// Agora ela sempre tenta; QUEM DECIDE são as regras do banco. Com token, vai
+// autenticada; sem token, vai anônima e o banco responde o que quiser.
+// Isto NÃO abre nada: a chave secreta continua fora do arquivo, e no dia em que
+// as regras forem fechadas o acesso anônimo passa a levar 401 — que a tela já
+// trata com "Sem permissão para salvar. Não foi salvo."
+var FB_ON    = true;
+
+// monta a URL REST de um caminho. Ex: fbPath('agenda/2026-07-15') ->
+//   https://paineldolavou-default-rtdb.firebaseio.com/agenda/2026-07-15.json?auth=TOKEN
+function fbPath(path){
+  // leva o ?auth= só quando existe token; sem ele, vai anônimo
+  return FB_URL + '/' + path + '.json' + (FB_TOKEN ? ('?auth=' + encodeURIComponent(FB_TOKEN)) : '');
+}
+// data no formato AAAA-MM-DD (chave do dia no Firebase)
+function fbDateKey(d){ return d.getFullYear() + '-' + z(d.getMonth()+1) + '-' + z(d.getDate()); }
+
+// converte hora visual "07:00" -> chave Firebase "07h00" (URL limpa, sem encode)
+function horaKey(h){ return h.replace(':','h'); }
+function horaFromKey(k){ return k.replace('h',':'); }
+
+// GET de uma data inteira -> objeto { "07h00": {...}, "07h45": {...} } ou null
+function fbGetDia(dateKey){
+  return fetch(fbPath('agenda/' + dateKey))
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .catch(function(){ return null; });
+}
+// PUT do horário inteiro (sobrescreve aquele slot daquele dia)
+function fbPutSlot(dateKey, hora, obj){
+  return fetch(fbPath('agenda/' + dateKey + '/' + horaKey(hora)), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(obj)
+  }).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);  // 401, 500, etc -> falha real
+    return r;
+  });
+}
+
+// capacidade de prog/expr para uma data (AAAA-MM-DD): sábado=2/2, ter-sex=1/1
+function capDoDia(dateKey){
+  var p = dateKey.split('-');
+  var dt = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+  var sab = dt.getDay()===6;
+  return { prog: sab ? 2 : 1, expr: sab ? 2 : 1, total: sab ? 4 : 2, sabado: sab };
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  ★ O QUE A TELA NÃO CONTROLA NÃO PODE SE PERDER (24/10) ★
+//
+//  Esta tela remontava cada cliente do ZERO, com 8 campos (nome, tel,
+//  servico, profissional, grupo, valor, sinalPago, status). Todo o resto do
+//  registro era APAGADO do banco a cada gravação. Medido em 24/10: as 16
+//  cadeiras do dia perderam `sinalValor` (quanto a cliente já pagou de
+//  sinal — sem ele O PDV COBRA O VALOR CHEIO de quem já pagou), `obs` (a
+//  observação que a equipe lê na ficha, escrita pela Lailla), `em`,
+//  `origem`, `confirmacaoCliente`, `movidaDe`, `sinalObs`, `anuncioId`,
+//  `ctwaClid`, `entrada`, `sinalDispensadoPor` e `avaliacao`. 41 dias no
+//  banco têm essa assinatura — são os dias que alguém abriu e salvou aqui.
+//
+//  Agora a gravação é MERGE: os 8 campos continuam vindo da tela (é ela que
+//  manda neles), e TODO o resto vem do registro que o banco já tinha.
+//
+//  O casamento é por fim8 do telefone + nome, não por telefone só: mãe e
+//  filha dividem o mesmo número, e as duas podem estar no mesmo horário.
+//  Cada registro do banco é consumido UMA vez só, pra duas pessoas nunca
+//  trocarem de campo entre si.
+// ═══════════════════════════════════════════════════════════════════
+
+// os 8 campos que a TELA manda. Todo o resto do registro é do banco.
+var CAMPOS_DA_TELA = ['nome','tel','servico','profissional','grupo','valor','sinalPago','status'];
+
+// os registros crus que o banco tem, por horário: { "07h00": [ {...}, {...} ] }
+// Alimentado no carregamento do dia E na releitura que acontece antes de gravar
+// (assim o sinal que o PDV registrou depois de a tela abrir também é preservado).
+var _extrasFB = {};
+
+// últimos 8 dígitos do telefone: o banco, o site e a tela escrevem o mesmo
+// número em formatos diferentes (com 55, com DDD, com parêntese)
+function _fim8(tel){
+  var t = String(tel==null?'':tel).replace(/\D/g,'');
+  return t.length > 8 ? t.slice(-8) : t;
+}
+function _nomeNorm(n){ return String(n==null?'':n).trim().toUpperCase().replace(/\s+/g,' '); }
+function _chaveMerge(tel, nome){ return _fim8(tel) + '|' + _nomeNorm(nome); }
+
+// guarda os registros crus de um dia inteiro lido do banco
+function _registrarExtrasDoDia(dia){
+  if(!dia) return;                  // leitura falhou: mantém o que já tinha
+  var novo = {};
+  Object.keys(dia).forEach(function(horaK){
+    var slot = dia[horaK];
+    if(!slot || !slot.clientes) return;
+    var lista = [];
+    slot.clientes.forEach(function(c){ if(c) lista.push(c); });
+    if(lista.length) novo[horaK] = lista;
+  });
+  _extrasFB = novo;
+}
+
+// índice dos registros do banco daquele horário, agrupados pela chave de merge
+function _indiceBanco(lista){
+  var idx = {};
+  (lista||[]).forEach(function(c){
+    if(!c) return;
+    var k = _chaveMerge(c.tel, c.nome);
+    if(!idx[k]) idx[k] = [];
+    idx[k].push(c);
+  });
+  return idx;
+}
+
+// tira do índice o próximo registro que casa. Cada registro sai UMA vez só:
+// é isso que impede duas pessoas no mesmo telefone de trocarem de campos.
+function _consomeBanco(idx, tel, nome){
+  var fila = idx[_chaveMerge(tel, nome)];
+  if(!fila || !fila.length) return null;
+  return fila.shift();
+}
+
+// o cliente da tela ACRESCIDO dos campos que só o banco tem
+function _mesclaCliente(doBanco, daTela){
+  if(!doBanco) return daTela;           // cliente nova: nasce só com os 8
+  var out = {};
+  Object.keys(doBanco).forEach(function(k){
+    if(CAMPOS_DA_TELA.indexOf(k) > -1) return;      // estes mandam da tela
+    if(doBanco[k] === undefined) return;
+    out[k] = doBanco[k];
+  });
+  CAMPOS_DA_TELA.forEach(function(k){ out[k] = daTela[k]; });
+  return out;
+}
+
+// ─── MOVER A CLIENTE DE HORÁRIO não pode apagar o sinal dela ───
+// Quando a dona troca a hora de uma cliente, o registro do banco continua no
+// horário ANTIGO. Procurar só no horário novo faria o sinal se perder exatamente
+// no caso em que ela mexeu de propósito. Aqui ficam os registros de OUTROS
+// horários que ficaram ÓRFÃOS: a cliente não está mais na tela naquele horário.
+// Registro cuja cliente continua lá NÃO entra — o dono dele é ele mesmo.
+function _extrasOrfaos(horaAtual){
+  var orfaos = [];
+  Object.keys(_extrasFB).forEach(function(horaK){
+    var h = horaFromKey(horaK);
+    if(h === horaAtual) return;
+    _extrasFB[horaK].forEach(function(c){
+      if(!c) return;
+      var k = _chaveMerge(c.tel, c.nome);
+      var aindaLa = A.some(function(a){
+        return a.hora === h && a.st !== 'block' && a.st !== 'blocked-auto'
+            && _chaveMerge(a.tel, a.nome) === k;
+      });
+      if(!aindaLa) orfaos.push(c);
+    });
+  });
+  return orfaos;
+}
+
+// Monta a lista `clientes` de um horário: cada agendamento da tela casado com
+// o registro que o banco já tinha. `reais` são os agendamentos da tela,
+// `lista` é o que o banco tem naquele horário, `orfaos` são os registros de
+// outros horários cuja cliente saiu de lá (cliente movida de hora).
+function _mesclarClientesDoSlot(reais, lista, montarDaTela, orfaos){
+  var idx = _indiceBanco(lista);
+  var daTela = reais.map(montarDaTela);
+  var casados = daTela.map(function(t){ return _consomeBanco(idx, t.tel, t.nome); });
+  // ─── passada da cliente MOVIDA: casa com órfão de outro horário ───
+  // Só quando não há dúvida: aquela chave aparece UMA vez entre os órfãos e UMA
+  // vez entre as clientes da tela que ainda não casaram.
+  if(orfaos && orfaos.length){
+    var idxOrfao = _indiceBanco(orfaos);
+    var contaChaveTela = {};
+    daTela.forEach(function(t, i){
+      if(casados[i]) return;
+      var k = _chaveMerge(t.tel, t.nome);
+      contaChaveTela[k] = (contaChaveTela[k]||0) + 1;
+    });
+    daTela.forEach(function(t, i){
+      if(casados[i]) return;
+      var k = _chaveMerge(t.tel, t.nome);
+      if(contaChaveTela[k] !== 1) return;
+      if(!idxOrfao[k] || idxOrfao[k].length !== 1) return;
+      casados[i] = idxOrfao[k].shift();
+    });
+  }
+  // ─── segunda passada: o NOME mudou na tela (correção de grafia) ───
+  // Só casa quando não há nenhuma dúvida possível: aquele fim8 aparece UMA vez
+  // nos registros que sobraram do banco e UMA vez nas clientes que sobraram da
+  // tela. Com duas pessoas no mesmo telefone, ninguém casa aqui — fica pro nome.
+  var sobraBanco = [];
+  Object.keys(idx).forEach(function(k){ idx[k].forEach(function(c){ sobraBanco.push(c); }); });
+  if(sobraBanco.length){
+    var contaTela = {};
+    daTela.forEach(function(t, i){
+      if(casados[i]) return;
+      var f = _fim8(t.tel);
+      if(!f) return;
+      contaTela[f] = (contaTela[f]||0) + 1;
+    });
+    var contaBanco = {};
+    sobraBanco.forEach(function(c){
+      var f = _fim8(c.tel);
+      if(!f) return;
+      contaBanco[f] = (contaBanco[f]||0) + 1;
+    });
+    daTela.forEach(function(t, i){
+      if(casados[i]) return;
+      var f = _fim8(t.tel);
+      if(!f || contaTela[f] !== 1 || contaBanco[f] !== 1) return;
+      for(var j=0;j<sobraBanco.length;j++){
+        if(sobraBanco[j] && _fim8(sobraBanco[j].tel) === f){
+          casados[i] = sobraBanco[j];
+          sobraBanco[j] = null;
+          break;
+        }
+      }
+    });
+  }
+  return daTela.map(function(t, i){ return _mesclaCliente(casados[i], t); });
+}
+
+// Converte o estado atual (array A) de um horário -> objeto do Firebase
+// Formato DUPLO: campos simples e explícitos (n8n/IA) + detalhes ricos (site)
+function buildSlotObj(dateKey, hora){
+  // ─── A GRADE DO BACKEND MANDA (04/08) ───
+  // Antes esta função recalculava a capacidade com capDoDia() — a regra fixa
+  // antiga — e regravava o horário sem as marcas da grade. Consequência: marcar
+  // ou cancelar uma cliente na tela APAGAVA as regras daquele horário, e um
+  // horário `fora_da_grade` voltava a ser oferecido pra cliente nova.
+  //
+  // Agora, se o horário foi montado pela escala, a capacidade dele vem do banco
+  // e as marcas são preservadas. capDoDia() só vale pra horário que a grade não
+  // conhece (dia antigo ainda não convertido).
+  var raw = _diaFB[horaKey(hora)] || {};
+  var daGrade = raw.grade === true;
+  var capBanco = Number(raw.capacidade);
+  var cap = daGrade && isFinite(capBanco)
+    ? { prog: capBanco, expr: capBanco, total: capBanco }
+    : capDoDia(dateKey);
+  // só agendamentos REAIS (ignora bloqueios automáticos e a pausa do almoço)
+  var reais = A.filter(function(a){
+    return a.hora===hora && a.st!=='blocked-auto' && a.st!=='block';
+  });
+  // MERGE (24/10): os 8 campos abaixo vêm da tela; todo o resto do registro
+  // (sinalValor, obs, em, origem, confirmacaoCliente, …) vem do banco, intacto.
+  // Ver o bloco "O QUE A TELA NÃO CONTROLA NÃO PODE SE PERDER" acima.
+  var _doBanco = _extrasFB[horaKey(hora)] || raw.clientes || [];
+  var clientes = _mesclarClientesDoSlot(reais, _doBanco, function(a){
+    return {
+      nome: a.nome,
+      tel:  a.tel || '',
+      servico: a.svc || '',
+      profissional: (PROS[a.pro] ? PROS[a.pro].name : ''),
+      grupo: (PROS[a.pro] ? PROS[a.pro].type : ''),  // 'prog' ou 'expr'
+      valor: a.val || 0,
+      sinalPago: !!a.pago,
+      status: a.st || 'pendente'
+    };
+  }, _extrasOrfaos(hora));
+  var ocupados = clientes.length;
+  var capacidade = cap.total;
+  // conta ocupados por grupo (independente de quais profs, conta pelo type)
+  var progOcup = reais.filter(function(a){ return PROS[a.pro] && PROS[a.pro].type==='prog'; }).length;
+  var exprOcup = reais.filter(function(a){ return PROS[a.pro] && PROS[a.pro].type==='expr'; }).length;
+  // bloqueios MANUAIS (folga/feriado) também tornam a vaga indisponível para a IA
+  var progBloq = A.filter(function(a){ return PROS[a.pro] && PROS[a.pro].type==='prog' && a.hora===hora && a.st==='block'; }).length;
+  var exprBloq = A.filter(function(a){ return PROS[a.pro] && PROS[a.pro].type==='expr' && a.hora===hora && a.st==='block'; }).length;
+  var progIndisp = progOcup + progBloq;   // vagas de progressiva indisponíveis
+  var exprIndisp = exprOcup + exprBloq;   // vagas de express indisponíveis
+  var indispTotal = ocupados + progBloq + exprBloq;
+  // lista dos bloqueios manuais deste horário (para persistir e restaurar)
+  var bloqueios = A.filter(function(a){ return a.hora===hora && a.st==='block'; }).map(function(a){
+    return { grupo: (PROS[a.pro] ? PROS[a.pro].type : 'prog'), motivo: a.nome || '' };
+  });
+  var obj = {
+    // ─── campos diretos para a IA ler (sem precisar fazer conta) ───
+    hora: hora,
+    disponivel: indispTotal < capacidade,          // true = pode agendar
+    vagasLivres: capacidade - indispTotal,         // quantas vagas sobram no total
+    // ─── compatível com o formato simples ───
+    ocupados: indispTotal,
+    capacidade: capacidade,
+    clientes: clientes,
+    bloqueios: bloqueios,                          // bloqueios manuais (folga/feriado)
+    // ─── detalhamento por tipo de serviço ───
+    vagas: {
+      progressiva: { capacidade: cap.prog, ocupados: progIndisp, livres: cap.prog - progIndisp, disponivel: progIndisp < cap.prog },
+      express:     { capacidade: cap.expr, ocupados: exprIndisp, livres: cap.expr - exprIndisp, disponivel: exprIndisp < cap.expr }
+    }
+  };
+  // devolve as marcas que o backend pôs, pra elas não se perderem na regravação
+  if(daGrade) obj.grade = true;
+  if(raw.corrente) obj.corrente = raw.corrente;
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  ★ O DONO DO HORÁRIO NÃO PODE SE PERDER (dona, 11/08) ★
+  //
+  //  Cada horário da grade tem um `tipo`: "progressiva" ou "express". Quem
+  //  põe é o backend, quando monta o dia a partir de quem aceitou o turno.
+  //
+  //  Esta função devolvia `grade`, `corrente` e `fora_da_grade` — mas ESQUECIA
+  //  o `tipo`. Resultado: bastava marcar, cancelar ou bloquear UMA cliente pra
+  //  a tela regravar o dia inteiro sem ele. Sem `tipo`, ninguém sabe mais de
+  //  quem é o horário, e todos passam a oferecer os DOIS serviços.
+  //
+  //  Medido na sexta 14/08 (1 trio): o motor abriu 7 progressivas de 1h30 em
+  //  1h30 + 6 express 30min depois. Depois de uma gravação da tela virou
+  //  14 + 14 — mais que o dobro do que o salão faz.
+  //
+  //  Aqui o `tipo` volta, e as vagas passam a respeitar ele: horário de
+  //  progressiva não abre vaga de express, e vice-versa. A cliente que JÁ
+  //  está marcada no horário continua, sempre — mesmo se estiver no tipo
+  //  "errado". Ninguém some por causa de conserto.
+  // ═══════════════════════════════════════════════════════════════════
+  if(raw.tipo){
+    obj.tipo = raw.tipo;
+    var ehExpress = String(raw.tipo) === 'express';
+    var doDono    = ehExpress ? obj.vagas.express     : obj.vagas.progressiva;
+    var doOutro   = ehExpress ? obj.vagas.progressiva : obj.vagas.express;
+    // o outro tipo não oferece nada — mas se tiver cliente marcada nele, a
+    // capacidade acompanha o que já está lá, pra ela não virar "excedente"
+    doOutro.capacidade = doOutro.ocupados;
+    doOutro.livres = 0;
+    doOutro.disponivel = false;
+    // o dono do horário nunca oferece menos do que o banco já tinha
+    var capBancoDono = Number((raw.vagas && raw.vagas[ehExpress?'express':'progressiva'] || {}).capacidade);
+    if(isFinite(capBancoDono) && capBancoDono > doDono.capacidade) doDono.capacidade = capBancoDono;
+    doDono.livres = Math.max(0, doDono.capacidade - doDono.ocupados);
+    doDono.disponivel = doDono.livres > 0;
+    // o total do horário passa a ser o do dono + o que já está marcado no outro
+    obj.capacidade = doDono.capacidade + doOutro.capacidade;
+    obj.ocupados = doDono.ocupados + doOutro.ocupados;
+    obj.vagasLivres = Math.max(0, obj.capacidade - obj.ocupados);
+    obj.disponivel = obj.vagasLivres > 0;
+  }
+  if(raw.fora_da_grade === true){
+    // horário que saiu da grade: a cliente marcada fica, mas ele NUNCA volta a
+    // ser oferecido — nem depois de a tela regravar o dia.
+    obj.fora_da_grade = true;
+    obj.disponivel = false;
+    obj.vagasLivres = 0;
+    obj.vagas.progressiva.livres = 0; obj.vagas.progressiva.disponivel = false;
+    obj.vagas.express.livres = 0;     obj.vagas.express.disponivel = false;
+  }
+  return obj;
+}
+
+// Grava no Firebase TODOS os horários de uma data. Retorna Promise que só
+// resolve quando TODOS os slots gravaram; rejeita se qualquer um falhar.
+function fbSyncDia(d){
+  if(!FB_ON) return Promise.resolve();
+  var dateKey = fbDateKey(d);
+  var gravacoes = [];
+  SLOTS.forEach(function(hora){
+    if(ehAlmoco(hora)) return;
+    gravacoes.push(fbPutSlot(dateKey, hora, buildSlotObj(dateKey, hora)));
+  });
+  return Promise.all(gravacoes);
+}
+// Grava só um horário (mais leve). Retorna Promise.
+function fbSyncSlot(d, hora){
+  if(!FB_ON || ehAlmoco(hora)) return Promise.resolve();
+  return fbPutSlot(fbDateKey(d), hora, buildSlotObj(fbDateKey(d), hora));
+}
+
+// Monta o objeto de um DIA INTEIRO vazio (todos os horários livres), pronto para publicar
+function buildDiaVazio(dateKey){
+  var cap = dateKey ? capDoDia(dateKey) : { prog:1, expr:1, total:2 };
+  var dia = {};
+  SLOTS.forEach(function(hora){
+    if(hora===ALMOCO) return;
+    dia[horaKey(hora)] = {
+      hora: hora,
+      disponivel: true,
+      vagasLivres: cap.total,
+      ocupados: 0,
+      capacidade: cap.total,
+      clientes: [],
+      vagas: {
+        progressiva: { capacidade: cap.prog, ocupados: 0, livres: cap.prog, disponivel: true },
+        express:     { capacidade: cap.expr, ocupados: 0, livres: cap.expr, disponivel: true }
+      }
+    };
+  });
+  return dia;
+}
+
+// Inicializa os próximos N dias ÚTEIS (pula domingo e segunda) que ainda NÃO existem no banco.
+// IMPORTANTE: nunca sobrescreve dias que já têm dados (só cria os que faltam),
+// para não apagar agendamentos feitos pela IA ou por você.
+function fbInicializarDias(n){
+  // ─── DESLIGADA EM 04/08 ───
+  // Esta função criava no banco os próximos N dias úteis com a grade FIXA de
+  // 45 em 45 minutos. Era ela que fazia a agenda ter horários congelados —
+  // e ela rodava sozinha toda vez que esta tela conectava no banco.
+  //
+  // Agora quem cria o dia é o BACKEND, a partir de quem aceitou o turno no
+  // gestor. Dia sem escala não abre horário nenhum, de propósito.
+  //
+  // Se ela continuasse ligada, abrir esta tela RECRIARIA os dias congelados e
+  // desfaria a agenda por escala. Por isso está desligada, não removida: o
+  // código antigo fica aqui embaixo pra consulta.
+  return;
+  /* eslint-disable no-unreachable */
+  if(!FB_ON) return;
+  var hoje = new Date(); hoje.setHours(0,0,0,0);
+  var pendentes = [];
+  var d = new Date(hoje);
+  while(pendentes.length < n){
+    var dow = d.getDay();
+    if(dow!==0 && dow!==1){ pendentes.push(new Date(d)); } // pula dom(0) e seg(1)
+    d.setDate(d.getDate()+1);
+    if(pendentes.length > 200) break;
+  }
+  var total = pendentes.length;
+  var criados = 0, idx = 0;
+
+  // processa UM dia de cada vez (sequencial) — confiável, não sobrecarrega o Firebase
+  function proximo(){
+    if(idx >= total){
+      // terminou tudo
+      if(criados>0) toast(criados+' dia(s) liberados para a IA ✓','ok');
+      else toast('Agenda já estava completa ✓','ok');
+      return;
+    }
+    var dia = pendentes[idx];
+    var dateKey = fbDateKey(dia);
+    // mostra progresso a cada 10 dias
+    if(idx % 10 === 0){ atualizarProgressoFB(idx, total); }
+    // 1) checa se o dia já existe (shallow = leve)
+    fetch(fbPath('agenda/' + dateKey) + '&shallow=true')
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(existe){
+        if(existe){
+          idx++; proximo();  // já existe, pula pro próximo
+        } else {
+          // 2) não existe -> publica o dia vazio e SÓ DEPOIS vai pro próximo
+          fetch(fbPath('agenda/' + dateKey), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(buildDiaVazio(dateKey))
+          }).then(function(){ criados++; idx++; proximo(); })
+            .catch(function(){ idx++; proximo(); });
+        }
+      })
+      .catch(function(){ idx++; proximo(); });
+  }
+  atualizarProgressoFB(0, total);
+  proximo();
+}
+
+// mostra o progresso da publicação no indicador de status
+function atualizarProgressoFB(feito, total){
+  var el = document.getElementById('fb-status');
+  if(!el) return;
+  if(feito >= total){
+    el.className='fb-status fb-on'; el.textContent='● conectado';
+  } else {
+    el.className='fb-status fb-on';
+    el.textContent='● publicando agenda '+feito+'/'+total+'…';
+  }
+}
+
+// Lê uma data do Firebase e reconstrói o array A (substitui os agendamentos do dia exibido)
+var _loadSeq = 0;  // controle de corrida: ignora carregamentos antigos que chegam atrasados
+// snapshot de quem veio do Firebase no ultimo carregamento (hora|tel)
+var _snapFB = {};
+// O DIA CRU que veio do banco (04/08). A tela precisa dele pra REGRAVAR sem
+// destruir o que o backend montou: a capacidade daquele horário, a marca
+// `grade`, a corrente das etapas e o `fora_da_grade`. Sem isso, marcar uma
+// cliente na tela apagava as regras da grade daquele horário.
+var _diaFB = {};
+
+// DE QUE TIPO É ESTE HORÁRIO (04/08). O backend monta o dia com dois tipos de
+// linha: horário de PROGRESSIVA (usa a dupla) e horário de EXPRESS (só a
+// aplicadora, sempre 30min depois de uma progressiva). Um não aceita o outro.
+// Sem isto a tela deixava marcar progressiva numa linha que é só de express —
+// e como a tela grava DIRETO no Firebase, a trava do backend não a protegia.
+function tipoDoHorario(hora){
+  var raw = _diaFB[horaKey(hora)];
+  if(!raw || !raw.tipo) return null;         // dia antigo, sem tipo: aceita os dois
+  return raw.tipo;                            // 'progressiva' ou 'express'
+}
+// esta coluna aceita agendamento neste horário?
+function colunaAceita(tipoDaColuna, hora){
+  var t = tipoDoHorario(hora);
+  if(!t) return true;                         // sem tipo definido: como era antes
+  return t === 'express' ? (tipoDaColuna === 'expr') : (tipoDaColuna === 'prog');
+}
+// chave unica de um cliente no slot: usa telefone; se nao tiver, cai no nome
+function chaveCli(hora, tel, nome){
+  var t = String(tel||'').replace(/\D/g,'');
+  return hora + '|' + (t || ('n:' + String(nome||'').trim().toUpperCase()));
+}
+
+function fbCarregarDia(d, cb){
+  if(!FB_ON){ if(cb) cb(); return; }
+  var meuSeq = ++_loadSeq;              // marca esta requisição
+  var dateKeyPedido = fbDateKey(d);
+  fbGetDia(dateKeyPedido).then(function(dia){
+    // se outra troca de data começou depois desta, descarta este resultado (evita misturar dias)
+    if(meuSeq !== _loadSeq) return;
+    // também confere se o dia exibido ainda é o mesmo que foi pedido
+    if(fbDateKey(cur) !== dateKeyPedido) return;
+
+    A = [];  // limpa agendamentos em memória
+    NID = 1000;
+    _snapFB = {};  // marca quem veio do banco NESTE carregamento (hora|tel)
+    _diaFB = dia || {};   // guarda o dia cru pra não destruir a grade ao regravar
+    _extrasFB = {};       // e guarda os registros crus das clientes, pra regravar
+    _registrarExtrasDoDia(dia);  //   sem apagar sinalValor/obs/origem/… (24/10)
+    // A GRADE DO DIA vem do banco, não de uma lista fixa (04/08).
+    // Dia com 3 pessoas na escala desenha 7 linhas; com 5, desenha 14.
+    SLOTS = slotsDoDia(dia);
+    if(dia){
+      Object.keys(dia).forEach(function(horaK){
+        var hora = horaFromKey(horaK);
+        var slot = dia[horaK];
+        if(!slot) return;
+        // restaura os agendamentos de clientes
+        (slot.clientes || []).forEach(function(c){
+          var grupo = c.grupo || 'prog';
+          var pid = findFreePro(grupo, hora);
+          if(pid===null){
+            var ids = grupo==='prog' ? PROG_IDS : EXPR_IDS;
+            pid = ids[0];
+          }
+          A.push({
+            id: NID++, pro: pid, hora: hora,
+            nome: c.nome || '', tel: c.tel || '',
+            svc: c.servico || '', val: c.valor || 0,
+            obs: c.obs || '',
+
+            cor: 'c-lilas', st: c.status || 'pendente', pago: !!c.sinalPago
+          });
+          _snapFB[chaveCli(hora, c.tel, c.nome)] = true;
+        });
+        // restaura os bloqueios manuais (folga/feriado)
+        (slot.bloqueios || []).forEach(function(b){
+          var grupo = b.grupo || 'prog';
+          var pid = findFreePro(grupo, hora);
+          if(pid===null){
+            var ids2 = grupo==='prog' ? PROG_IDS : EXPR_IDS;
+            pid = ids2[0];
+          }
+          A.push({ id: NID++, pro: pid, hora: hora, nome: b.motivo || '', tel: '', svc: '', val: 0, cor: 'c-blk', st: 'block' });
+        });
+      });
+    }
+    // recalcula bloqueios cruzados de todos os horários
+    SLOTS.forEach(function(t){ syncBlocks(t); });
+    // IMPORTANTE: NÃO regravar aqui. Carregar é só leitura.
+    // (a gravação só acontece quando o usuário agenda/cancela/bloqueia)
+    if(cb) cb();
+  });
+}
+/* ════════════════ FIM DA CAMADA FIREBASE ════════════════ */
+
+// ─── Conexão: salvar/remover token e testar ───
+function fbSalvarToken(){
+  var t = document.getElementById('fb-token-input').value.trim();
+  if(!t){ toast('Cole o token primeiro','err'); return; }
+  // testa o token fazendo um GET simples no nó agenda
+  var testUrl = FB_URL + '/agenda.json?auth=' + encodeURIComponent(t) + '&shallow=true';
+  toast('Testando conexão…','warn');
+  fetch(testUrl).then(function(r){
+    if(r.ok){
+      try { localStorage.setItem('lailla_fb_token', t); } catch(e){}
+      FB_TOKEN = t; FB_ON = true;
+      atualizarStatusFB();
+      cm('fb-modal');
+      toast('Conectado ao banco com sucesso!','ok');
+      fbCarregarDia(cur, function(){ buildGrid(); kpi(); fbInicializarDias(60); });
+    } else if(r.status===401){
+      toast('Token inválido ou sem permissão (verifique as Regras)','err');
+    } else {
+      toast('Erro ao conectar (código '+r.status+')','err');
+    }
+  }).catch(function(){ toast('Falha de rede ao testar o token','err'); });
+}
+function fbDesconectar(){
+  if(!confirm('Desconectar do banco? O app volta ao modo local.'))return;
+  try { localStorage.removeItem('lailla_fb_token'); } catch(e){}
+  FB_TOKEN=''; FB_ON=false;
+  atualizarStatusFB();
+  cm('fb-modal');
+  toast('Desconectado','warn');
+}
+function atualizarStatusFB(){
+  var el = document.getElementById('fb-status');
+  if(!el) return;
+  if(FB_ON){ el.className='fb-status fb-on'; el.textContent='● conectado'; }
+  else { el.className='fb-status fb-off'; el.textContent='● local (clique p/ conectar)'; }
+}
+function abrirConexao(){
+  document.getElementById('fb-token-input').value = FB_TOKEN || '';
+  document.getElementById('fb-desconectar').style.display = FB_ON ? 'inline-flex' : 'none';
+  document.getElementById('fb-modal').classList.add('open');
+}
+
+function z(n){ return n<10?'0'+n:''+n }
+function fd(d){ return z(d.getDate())+'/'+z(d.getMonth()+1)+'/'+d.getFullYear() }
+function fm(v){ return 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) }
+var WD = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+var C_HEX = {'c-cyan':'#9D6FD6','c-green':'#9D6FD6','c-lilas':'#9D6FD6','c-pink':'#9D6FD6','c-amber':'#9D6FD6','c-blk':'#9D6FD6'};
+
+hdr(); buildGrid(); nowLine(); setInterval(nowLine, 30000); fillH(0);
+// indicador visual do status do banco
+atualizarStatusFB();
+// Inicialização: se Firebase ativo, carrega a data atual do banco; senão usa dados locais
+setTimeout(function(){
+  // ⚠️ as bolinhas da equipe são chamadas DAQUI, e não lá em cima junto do
+  // hdr(). O `var _equipeSeq` só é atribuído mais abaixo no arquivo: chamado
+  // no arranque, o `++_equipeSeq` virava NaN e a resposta era descartada por
+  // `meu !== _equipeSeq` (NaN nunca é igual a NaN) — as bolinhas nunca
+  // apareciam. Aqui dentro do setTimeout o arquivo já foi lido inteiro.
+  carregarEquipeDoDia(cur);
+  /* ⭐⭐ PERGUNTAR OS DIAS ABERTOS NO ARRANQUE (06/09 — e este era o buraco).
+     Eu tinha pendurado o `carregarAbertos` no `trocarData()` e no `renderCal()`,
+     e o arranque não passa por nenhum dos dois: a linha de boot chama `hdr()`
+     DIRETO. Resultado medido: abrir a agenda num domingo aberto nascia com
+     ABERTOS vazio, o dia vinha marcado como fechado, e o "Agendar cliente"
+     recusava — exatamente o que ela levou às 00h50. A régua estava certa; o
+     caminho de quem CHEGA na tela é que não passava por ela. */
+  carregarAbertos(cur.getFullYear(), cur.getMonth(), function(){
+    hdr(); renderClosedBanner(); buildGrid();
+  });
+  if(FB_ON){
+    fbCarregarDia(cur, function(){ buildGrid(); kpi(); fbInicializarDias(60); });
+  } else {
+    SLOTS.forEach(function(t){ syncBlocks(t); });
+    buildGrid(); kpi();
+  }
+}, 0);
+
+// ── EQUIPE REAL DO DIA (turnos/{data}/equipe) ──
+// Leitura NOVA e só de exibição: alimenta as bolinhas e o "N profissionais".
+// Não entra em nenhuma conta de vaga — se falhar, a agenda funciona igual.
+var _equipeDia = null, _equipeSeq = 0;
+var D1_CORES = ['#EF6C9A','#F59E0B','#8B5CF6','#0EA5E9','#14B8A6','#F472B6','#6366F1','#10B981','#EC4899','#3B82F6','#F97316','#A855F7'];
+function d1Cor(nome){
+  var h=0, s=String(nome||'');
+  for(var i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
+  return D1_CORES[h % D1_CORES.length];
+}
+// iniciais que NUNCA ficam ambíguas entre homônimas do mesmo dia
+function d1Iniciais(nome, todos){
+  var base=function(n){
+    var p=String(n||'').trim().split(/\s+/).filter(Boolean);
+    if(!p.length) return '?';
+    return (p.length>1 ? p[0].charAt(0)+p[1].charAt(0) : p[0].charAt(0)).toUpperCase();
+  };
+  var minha=base(nome);
+  var quantos=(todos||[]).filter(function(n){ return base(n)===minha; }).length;
+  if(quantos>1){
+    var p=String(nome||'').trim().split(/\s+/).filter(Boolean);
+    return (p.length>1 ? p[0].charAt(0)+p[1].slice(0,2) : p[0].slice(0,3)).toUpperCase();
+  }
+  return minha;
+}
+function renderEquipeDoDia(){
+  var avs=document.getElementById('d1-avs'), n=document.getElementById('d1-equipe-n');
+  if(!avs||!n) return;
+  var eq=_equipeDia;
+  if(!eq || !eq.length){
+    avs.innerHTML='';
+    n.textContent = (eq && eq.length===0) ? 'Ninguém escalado' : '—';
+    return;
+  }
+  // row-reverse no CSS: inverte a lista pra a 1ª ficar por cima, como no mockup
+  avs.innerHTML = eq.slice().reverse().map(function(nome){
+    return '<span class="d1-av" title="'+d1Txt(nome)+'" style="background:'+d1Cor(nome)+'">'+
+           d1Txt(d1Iniciais(nome, eq))+'</span>';
+  }).join('');
+  n.textContent = eq.length + (eq.length===1 ? ' profissional' : ' profissionais');
+}
+function carregarEquipeDoDia(d){
+  var meu=++_equipeSeq, chave=fbDateKey(d);
+  if(!FB_ON){ _equipeDia=null; renderEquipeDoDia(); return; }
+  fetch(fbPath('turnos/'+chave+'/equipe'))
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .catch(function(){ return null; })
+    .then(function(eq){
+      if(meu!==_equipeSeq) return;                 // uma troca de data mais nova venceu
+      if(fbDateKey(cur)!==chave) return;           // o dia exibido já mudou
+      _equipeDia = Array.isArray(eq) ? eq.filter(Boolean)
+                 : (eq && typeof eq==='object' ? Object.keys(eq).map(function(k){return eq[k];}).filter(Boolean) : null);
+      renderEquipeDoDia();
+    });
+}
+
+function hdr(){
+  // ⚠️ a lista de meses fica DENTRO da função de propósito. O `var MESES` do
+  // calendário só é atribuído lá embaixo no arquivo, e o hdr() roda ANTES disso
+  // no arranque: usar uma variável de fora dava TypeError e derrubava a linha
+  // `hdr(); buildGrid(); ...` inteira — a agenda nem chegava a ser desenhada.
+  var meses = ['janeiro','fevereiro','março','abril','maio','junho','julho',
+               'agosto','setembro','outubro','novembro','dezembro'];
+  // "Terça, 11 de agosto" — os dois ganchos antigos continuam existindo
+  // "terça-feira" pequeno em cima, "11 de agosto" grande embaixo
+  document.getElementById('lbl-w').textContent = WD[cur.getDay()].toLowerCase();
+  document.getElementById('lbl-d').textContent = cur.getDate() + ' de ' + meses[cur.getMonth()];
+  var box = document.querySelector('.date-box');
+  var dow = cur.getDay();
+  if(!diaAberto(cur)){ // dia sem expediente — quem decide e o backend, nao o calendario
+    box.classList.add('day-closed');
+  } else {
+    box.classList.remove('day-closed');
+  }
+  renderClosedBanner();
+  kpi();
+}
+// Banner sobre a grade quando o dia não tem expediente
+function renderClosedBanner(){
+  var dow = cur.getDay();
+  var wrap = document.querySelector('.cols-wrap');
+  var existing = document.getElementById('closed-banner');
+  if(!diaAberto(cur)){
+    if(!existing && wrap){
+      var b = document.createElement('div');
+      b.id='closed-banner'; b.className='closed-banner';
+      b.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Salão fechado neste dia — sem expediente às '+(dow===0?'domingos':'segundas-feiras');
+      wrap.insertBefore(b, wrap.firstChild);
+    }
+  } else if(existing){
+    existing.remove();
+  }
+}
+function kpi(){
+  var pr=A.filter(function(a){return PROS[a.pro]&&PROS[a.pro].type==='prog'&&a.st!=='block'&&a.st!=='blocked-auto'}).length;
+  var ex=A.filter(function(a){return PROS[a.pro]&&PROS[a.pro].type==='expr'&&a.st!=='block'&&a.st!=='blocked-auto'}).length;
+  var co=A.filter(function(a){return a.st==='confirmado'}).length;
+  var pe=A.filter(function(a){return a.st==='pendente'}).length;
+  var fa=A.reduce(function(s,a){return s+(a.val||0)},0);
+  document.getElementById('kp').textContent=pr;
+  document.getElementById('ke').textContent=ex;
+  document.getElementById('kc').textContent=co;
+  document.getElementById('kpe').textContent=pe;
+  document.getElementById('kf').textContent=fm(fa);
+}
+// ═══════════════════════════════════════════════════════════════════
+//  DESENHO DA AGENDA — layout D1 (07/08)
+//
+//  Antes: uma COLUNA por profissional, com a régua de horários à esquerda.
+//  Agora: DUAS agendas lado a lado (Progressiva | Express), o dia inteiro
+//  visível de relance, e o cartão sem nome de profissional.
+//
+//  ⚠️ SÓ MUDOU O DESENHO. Quem pode ser agendado, quantas vagas existem, o
+//  bloqueio cruzado, o dono do horário (colunaAceita) e a gravação continuam
+//  vindo das MESMAS funções de antes — activePros(), PROG_IDS/EXPR_IDS,
+//  colunaAceita(), syncBlocks(), findFreePro(), abrirMenuSlot(). Uma vaga
+//  livre aqui é exatamente uma célula livre do grid antigo: nem uma a mais,
+//  nem uma a menos.
+// ═══════════════════════════════════════════════════════════════════
+function buildGrid(){
+  refreshIds();  // atualiza PROG_IDS/EXPR_IDS conforme o dia exibido
+
+  // a régua de horários do layout antigo continua sendo montada (fica fora da
+  // vista): qualquer coisa que dependa de #tg segue achando o que espera.
+  var tg=document.getElementById('tg'); tg.innerHTML='';
+  var spacer=document.createElement('div'); spacer.className='tg-head-spacer'; tg.appendChild(spacer);
+  SLOTS.forEach(function(t){ var c=document.createElement('div'); c.className='tg-cell'; c.textContent=t; tg.appendChild(c); });
+
+  // contadores de coluna do layout antigo — gancho preservado
+  var progCols=0, exprCols=0;
+  activePros().forEach(function(p){ if(p.type==='prog') progCols++; else exprCols++; });
+  var sg=document.getElementById('sec-prog'), se=document.getElementById('sec-expr');
+  if(sg) sg.style.flex=progCols;
+  if(se) se.style.flex=exprCols;
+  document.getElementById('sp-cnt').textContent=progCols;
+  document.getElementById('se-cnt').textContent=exprCols;
+
+  var cb=document.getElementById('cols-body'); cb.innerHTML='';
+
+  // ─── DIA SEM ESCALA ───
+  if(!SLOTS.length){
+    d1Legenda({prog:0, expr:0, livres:0});
+    cb.innerHTML='<div class="d1-vazio">'+
+      '<div class="t">Nenhum horário aberto neste dia</div>'+
+      '<div class="s">A agenda de cada dia é montada a partir de quem aceitou o turno no painel da equipe.<br>Assim que a primeira profissional aceitar, os horários aparecem aqui sozinhos.</div>'+
+      '</div>';
+    if(typeof nowLine==='function') nowLine();
+    return;
+  }
+
+  var r = d1ListaDoDia();
+  cb.appendChild(r.lista);
+  d1AjustaColunas();
+  d1Legenda(r.conta);
+  if(typeof nowLine==='function') nowLine();
+}
+
+// ═══ QUANTAS VAGAS ESTE HORÁRIO TEM, DE VERDADE (07/08) ═══
+//
+// Vinha da lista PROS escrita dentro deste arquivo: no sábado ela dá 2 de
+// progressiva e 2 de express, então a tela oferecia 2 vagas em TODO horário —
+// 28 progressivas e 14 express num sábado que o salão faz 21 e 7.
+//
+// Quem manda é o backend. Ele monta `agenda/{data}` a partir de quem aceitou o
+// turno e grava a capacidade horário por horário: no sábado de 8 pessoas dá
+// 07:00 com 2 (as duas aplicadoras), 07:45 com 1 (só a que está no ritmo de 45
+// em 45), e a express 30min depois de cada horário de 2.
+//
+// É a MESMA fonte que a agenda da cliente usa (vagas.{tipo}.capacidade). Assim
+// as duas param de divergir: a tela nunca mais oferece o que não existe.
+//
+// Dia antigo, anterior à grade, não tem esse campo — aí cai na regra de antes.
+function d1CapacidadeDoHorario(tipo, hora){
+  var raw = (typeof _diaFB === 'object' && _diaFB) ? (_diaFB[horaKey(hora)] || {}) : {};
+  var v = raw.vagas || {};
+  var n = tipo === 'prog' ? v.progressiva && v.progressiva.capacidade
+                          : v.express && v.express.capacidade;
+  n = Number(n);
+  return isFinite(n) ? n : null;      // null = o banco não sabe, usa o de antes
+}
+
+// UMA das duas agendas. `tipo` é 'prog' ou 'expr'.
+// ═══════════════════════════════════════════════════════════════════
+//  A LISTA DO DIA — UMA agenda só, ordenada por horário (08/08)
+//
+//  Antes eram duas colunas, Progressiva e Express lado a lado. Agora é uma
+//  lista única na ordem do relógio, e o tipo se distingue SÓ pela cor:
+//  turquesa pra progressiva, rosa pra express.
+//
+//  ⚠️ SÓ O DESENHO MUDOU. Quantas vagas existem, quem pode ser agendada, o
+//  bloqueio cruzado, o dono do horário e a gravação continuam vindo das
+//  MESMAS funções: d1CapacidadeDoHorario() (que lê o banco), colunaAceita(),
+//  syncBlocks(), findFreePro() e abrirMenuSlot().
+// ═══════════════════════════════════════════════════════════════════
+function d1ListaDoDia(){
+  var lista = document.createElement('div');
+  lista.className = 'd1-lista';
+  var conta = { prog:0, expr:0, livres:0 };
+
+  SLOTS.forEach(function(t){
+    // pausa do almoço: uma linha neutra, uma vez só
+    if(ehAlmoco(t)){ lista.appendChild(mkLunchCard()); return; }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  ★ CLIENTE MARCADA APARECE SEMPRE (dona, 11/08) ★
+    //
+    //  Antes, o horário que pertencia ao OUTRO tipo era pulado inteiro — e
+    //  junto com ele sumia da tela a cliente que estava marcada nele. Na
+    //  sexta 14/08 isso escondeu QUATRO das oito: a Fabiana (express num
+    //  horário de progressiva), a "." , a Katia e a Gleicilene (progressiva
+    //  em horário de express). Elas nunca saíram do banco — a tela é que
+    //  não as desenhava. Palavras da dona: "você desapareceu com clientes
+    //  agendadas".
+    //
+    //  Agora são dois passos separados: primeiro TODA cliente marcada no
+    //  horário é desenhada, custe o que custar; só depois o tipo do horário
+    //  decide quantas vagas LIVRES podem ser oferecidas.
+    // ═══════════════════════════════════════════════════════════════
+
+    // ── passo 1: quem já está marcada, sempre ──
+    ['prog','expr'].forEach(function(tipo){
+      var ids = tipo==='prog' ? PROG_IDS : EXPR_IDS;
+      var meus = A.filter(function(a){ return ids.indexOf(a.pro)>-1 && a.hora===t; });
+      meus.filter(function(a){ return a.st!=='block' && a.st!=='blocked-auto'; })
+          .forEach(function(a){
+            if(tipo==='prog') conta.prog++; else conta.expr++;
+            lista.appendChild(mkCard(a));
+          });
+      meus.filter(function(a){ return a.st==='block'; })
+          .forEach(function(a){ lista.appendChild(mkCard(a)); });
+    });
+
+    // ── passo 2: vagas livres, só no tipo que o horário aceita ──
+    ['prog','expr'].forEach(function(tipo){
+      if(!colunaAceita(tipo, t)) return;
+      var ids = tipo==='prog' ? PROG_IDS : EXPR_IDS;
+      var doBanco = d1CapacidadeDoHorario(tipo, t);
+      var capT    = (doBanco === null) ? ids.length : doBanco;
+      if(capT <= 0) return;
+      var meus    = A.filter(function(a){ return ids.indexOf(a.pro)>-1 && a.hora===t; });
+      var reais   = meus.filter(function(a){ return a.st!=='block' && a.st!=='blocked-auto'; });
+      var manuais = meus.filter(function(a){ return a.st==='block'; });
+      var autos   = meus.filter(function(a){ return a.st==='blocked-auto'; });
+      // ⚠️ o "ocupado" do bloqueio cruzado não vira linha, mas CONTINUA
+      // descontado — é isso que impede oferecer vaga que não existe.
+      var livres = Math.max(0, capT - reais.length - manuais.length - autos.length);
+      conta.livres += livres;
+      for(var i=0;i<livres;i++) lista.appendChild(d1Livre(tipo, t));
+    });
+  });
+
+  return { lista: lista, conta: conta };
+}
+
+// ANEL DO TOPO: quanto da agenda do dia ja foi preenchido.
+// ⚠️ FONTE UNICA: recebe o MESMO objeto `conta` que desenha a legenda. Nao
+// recontar aqui — duas contas paralelas e como a tela e o backend divergirem.
+// Bloqueado NAO entra: a pergunta e "quanto do que da pra vender ja foi
+// vendido", e horario bloqueado nao esta a venda.
+function d1Anel(conta){
+  var arco=document.getElementById('lx-arco'), pct=document.getElementById('lx-pct'),
+      frase=document.getElementById('lx-frase'), sub=document.getElementById('lx-sub');
+  if(!arco||!pct||!frase||!sub) return;
+  var prog=Number(conta&&conta.prog)||0, expr=Number(conta&&conta.expr)||0,
+      livres=Number(conta&&conta.livres)||0;
+  var marcadas=prog+expr, abertos=marcadas+livres;
+  var p = abertos>0 ? Math.round(marcadas/abertos*100) : 0;
+  var C = 2*Math.PI*32.5;
+  arco.setAttribute('stroke-dasharray', C);
+  arco.setAttribute('stroke-dashoffset', C*(1-p/100));
+  pct.textContent = abertos>0 ? (p+'%') : '—';
+  frase.textContent = abertos>0 ? ('Agenda '+p+'% preenchida') : 'Sem horário aberto';
+  sub.textContent = abertos>0
+    ? (prog+' progressiva · '+expr+' express · '+livres+' livres')
+    : 'nenhum horário à venda hoje';
+}
+
+// LEGENDA: ● Progressiva N   ● Express N   ● N livres
+function d1Legenda(conta){
+  d1Anel(conta);                      // o anel do topo sai da MESMA conta
+  var el = document.getElementById('d1-legend');
+  if(!el) return;
+  el.innerHTML =
+    '<span class="d1-lchip"><span class="d1-ldot" style="background:var(--d1-prog)"></span>Progressiva'+
+      '<span class="d1-lnum d1-ios">'+conta.prog+'</span></span>'+
+    '<span class="d1-lchip"><span class="d1-ldot" style="background:var(--d1-exp)"></span>Express'+
+      '<span class="d1-lnum d1-ios">'+conta.expr+'</span></span>'+
+    '<span class="d1-lchip" style="color:var(--d1-free)">'+
+      '<span class="d1-ldot" style="background:var(--d1-muted2)"></span>'+
+      '<span class="d1-ios">'+conta.livres+'</span> livres</span>';
+}
+
+// ═══ QUANTAS LINHAS CADA COLUNA TEM ═══
+// O grid desce por coluna (grid-auto-flow:column), mas pra isso ele precisa
+// saber QUANTAS linhas existem — senão o navegador inventa uma coluna nova a
+// cada item. O número depende de quantos horários o dia tem, então sai daqui.
+// As larguras de corte são as MESMAS do CSS: 3 colunas acima de 1100px,
+// 2 entre 700 e 1100, 1 abaixo disso.
+function d1AjustaColunas(){
+  var lista = document.querySelector('#cols-body .d1-lista');
+  if(!lista) return;
+  var n = lista.children.length;
+  if(!n) return;
+  var largura = window.innerWidth || 1200;
+  var colunas = largura >= 1100 ? 3 : (largura >= 700 ? 2 : 1);
+  lista.style.gridTemplateRows = 'repeat(' + Math.ceil(n / colunas) + ', auto)';
+}
+// girar o celular ou redimensionar a janela muda o nº de colunas — e aí o
+// nº de linhas tem que ser refeito, senão sobra coluna vazia
+window.addEventListener('resize', function(){ try{ d1AjustaColunas(); }catch(e){} });
+
+// HORÁRIO LIVRE — cartão neutro, mesma altura do cheio, sem tracejado.
+// O horário sai na cor do tipo e o botão "Agendar" abre o MESMO menu de antes,
+// no mesmo profissional que o grid antigo usaria.
+function d1Livre(tipo, hora){
+  var d = document.createElement('div');
+  d.className = 'd1-free ' + (tipo==='prog' ? 'prog' : 'expr');
+  d.innerHTML =
+    '<span class="d1-hora d1-ios">'+hora+'</span>'+
+    '<span class="d1-freetxt">Livre · '+(tipo==='prog'?'Progressiva':'Express')+'</span>'+
+    '<button class="d1-btnag" type="button">'+
+      '<svg viewBox="0 0 14 14"><path d="M7 2v10M2 7h10"/></svg>Agendar</button>';
+  var abrir = function(e){
+    var pid = findFreePro(tipo, hora);
+    if(pid===null){ toast('Sem vaga livre nesse horário','warn'); return; }
+    abrirMenuSlot(e, pid, hora);
+  };
+  d.addEventListener('click', abrir);
+  return d;
+}
+// cartão da célula que pertence ao outro tipo de serviço
+function mkForaDoTipoCard(tipo){
+  var d=document.createElement('div');
+  d.className='appt c-fora';
+  d.innerHTML='<div class="fora-inner">'+(tipo==='express'?'só express':'só progressiva')+'</div>';
+  return d;
+}
+function mkLunchCard(){
+  var d=document.createElement('div');
+  d.className='d1-free travado';
+  d.innerHTML='<span class="d1-hora d1-ios">'+ALMOCO+'</span>'+
+              '<span class="d1-freetxt">Pausa pro almoço</span>';
+  return d;
+}
+// escapa o que veio do banco: nome de cliente não pode virar HTML
+function d1Txt(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function mkCard(a){
+  var d=document.createElement('div');
+  // vaga fechada pelo bloqueio cruzado: NÃO se desenha mais (dona, 07/08).
+  // A função devolve um nó vazio pra quem ainda chamar mkCard direto.
+  if(a.st==='blocked-auto'){
+    d.style.display='none';
+    return d;
+  }
+  // bloqueio manual (folga/feriado) — continua clicável pra desbloquear
+  if(a.st==='block'){
+    d.className='d1-free travado';
+    d.style.cursor='pointer';
+    d.innerHTML='<span class="d1-hora d1-ios">'+a.hora+'</span>'+
+                '<span class="d1-freetxt">Bloqueado'+(a.nome?' · '+d1Txt(a.nome):'')+'</span>';
+    (function(id){ d.addEventListener('click', function(){ desbloquear(id); }); })(a.id);
+    d.title='Clique para desbloquear';
+    return d;
+  }
+  // ─── CLIENTE AGENDADA ───
+  // Cartão na cor SÓLIDA do tipo, texto branco. Só horário, nome e
+  // procedimento — sem nome nem avatar de profissional. O check de
+  // confirmação fica à direita, centralizado na vertical.
+  var tipo  = (PROS[a.pro] && PROS[a.pro].type==='expr') ? 'expr' : 'prog';
+  var escuro= tipo==='expr' ? '#C0316F' : '#0E97A0';
+  var proc  = String(a.svc||'').split('(')[0].split('+')[0].split('-')[0].trim();
+  var conf  = a.st==='confirmado';
+  // ⚠️ UM CHECK SÓ, O VERDE (dona, 08/08). Antes saíam dois: o branco do
+  // mockup (confirmada/pendente) e o verde do sinal pago — redundante na
+  // tela. Ficou o verde: cheio quando o sinal está pago, vazado quando não.
+  var sinal =
+    '<span class="d1-sinal'+(a.pago?'':' vazio')+'" title="'+(a.pago?'sinal pago':'sem sinal')+'">'+
+      (a.pago?'<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>':'')+
+    '</span>';
+  var check = '';
+  d.className='d1-slot '+tipo;
+  d.title = (conf?'Confirmada':'Pendente') + (a.pago?' · sinal pago':' · sem sinal');
+  d.innerHTML=
+    '<div class="d1-slotmid">'+
+      '<div class="d1-linha1">'+
+        '<span class="d1-hora d1-ios">'+a.hora+'</span>'+
+        '<span class="d1-nome">'+d1Txt(a.nome)+'</span>'+
+      '</div>'+
+      '<div class="d1-proc">'+(d1Txt(proc)||'—')+'</div>'+
+      (a.obs ? '<div class="d1-obs" title="'+d1Txt(a.obs)+'">'+d1Txt(a.obs)+'</div>' : '')+
+    '</div>'+
+    '<span class="d1-marcas" title="'+(conf?'confirmada':'pendente')+'">'+sinal+check+'</span>';
+  d.addEventListener('click', function(e){ openView(a.id,e); });
+  return d;
+}
+function nowLine(){
+  // Linha do horário atual DESATIVADA (removida a pedido).
+  // A função só garante que nenhuma linha fique na tela.
+  var antiga = document.getElementById('nl-line');
+  if(antiga) antiga.remove();
+}
+function trocarData(){
+  carregarAbertos(cur.getFullYear(), cur.getMonth(), function(){ hdr(); renderClosedBanner(); });
+  hdr();
+  carregarEquipeDoDia(cur);   // só exibição: as bolinhas do dia
+  if(FB_ON){
+    A = [];               // limpa imediatamente pra não mostrar o dia anterior
+    buildGrid(); kpi();   // tela vazia enquanto carrega
+    fbCarregarDia(cur, function(){ buildGrid(); kpi(); });
+  } else {
+    SLOTS.forEach(function(t){ syncBlocks(t); });
+    buildGrid(); kpi();
+  }
+}
+function D(n){ cur.setDate(cur.getDate()+n); trocarData(); }
+function goToday(){ cur=new Date(); trocarData(); }
+
+// ════ CALENDÁRIO POPOVER ════
+var calCur = new Date(); // mês exibido no calendário
+var MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function toggleCal(e){
+  if(e) e.stopPropagation();
+  var pop = document.getElementById('cal-pop');
+  if(pop.classList.contains('open')){ closeCal(); return; }
+  calCur = new Date(cur.getFullYear(), cur.getMonth(), 1);
+  renderCal();
+  pop.classList.add('open');
+}
+function closeCal(){ document.getElementById('cal-pop').classList.remove('open'); }
+function calMonth(n){ calCur.setMonth(calCur.getMonth()+n); renderCal(); }
+function renderCal(){
+  carregarAbertos(calCur.getFullYear(), calCur.getMonth(), renderCal);
+  document.getElementById('cal-title').textContent = MESES[calCur.getMonth()]+' '+calCur.getFullYear();
+  var grid = document.getElementById('cal-grid'); grid.innerHTML='';
+  var ano=calCur.getFullYear(), mes=calCur.getMonth();
+  var primeiro = new Date(ano,mes,1).getDay();   // dia da semana do dia 1
+  var diasNoMes = new Date(ano,mes+1,0).getDate();
+  var hoje = new Date(); hoje.setHours(0,0,0,0);
+  // células vazias antes do dia 1
+  for(var i=0;i<primeiro;i++){ var e=document.createElement('div'); e.className='cal-day empty'; grid.appendChild(e); }
+  for(var dia=1;dia<=diasNoMes;dia++){
+    var dt = new Date(ano,mes,dia);
+    var dow = dt.getDay();
+    var btn = document.createElement('button');
+    btn.className='cal-day';
+    btn.textContent = dia;
+    var fechado = !diaAberto(dt);
+    if(fechado) btn.classList.add('closed');
+    if(dt.getTime()===hoje.getTime()) btn.classList.add('today');
+    if(dt.getFullYear()===cur.getFullYear() && dt.getMonth()===cur.getMonth() && dt.getDate()===cur.getDate()) btn.classList.add('selected');
+    if(!fechado){
+      (function(d){ btn.addEventListener('click', function(){ cur=new Date(d); trocarData(); closeCal(); }); })(dt);
+    }
+    grid.appendChild(btn);
+  }
+}
+// fecha calendário ao clicar fora
+document.addEventListener('click', function(e){
+  var pop = document.getElementById('cal-pop');
+  if(pop && pop.classList.contains('open') && !pop.contains(e.target) && !e.target.closest('.date-box')){
+    closeCal();
+  }
+});
+// IDs das profissionais por grupo
+// IDs ativos conforme o dia exibido (sábado = 4 profs; ter-sex = 2)
+function getPROG_IDS(){ return activeProgIds(); }
+function getEXPR_IDS(){ return activeExprIds(); }
+// compatibilidade: variáveis lidas em vários lugares (recalculadas quando o dia muda)
+var PROG_IDS = activeProgIds();
+var EXPR_IDS = activeExprIds();
+function refreshIds(){ PROG_IDS = activeProgIds(); EXPR_IDS = activeExprIds(); }
+
+// Conta agendamentos REAIS de clientes (ignora bloqueios automáticos E manuais)
+function countReal(ids, hora){
+  return A.filter(function(a){
+    return ids.indexOf(a.pro)>-1 && a.hora===hora && a.st!=='blocked-auto' && a.st!=='block';
+  }).length;
+}
+
+// Sincroniza os bloqueios automáticos de um horário:
+// nº de Progressiva preenchidas bloqueia o mesmo nº de vagas Express livres, e vice-versa.
+function syncBlocks(hora){
+  if(ehAlmoco(hora)) return;
+  // remove todos os bloqueios automáticos existentes nesse horário (recalcula do zero)
+  A = A.filter(function(a){ return !(a.st==='blocked-auto' && a.hora===hora); });
+
+  // BLOQUEIO CRUZADO — vale TODO DIA (dona, 04/08).
+  //
+  // Antes ele só rodava no sábado, e de terça a sexta progressiva e express eram
+  // tratadas como vagas INDEPENDENTES. Resultado: a tela oferecia DOIS horários
+  // às 10h de uma terça, e duas clientes de verdade foram marcadas no mesmo
+  // horário (Leticia e Pollyanna, 10h de 04/08).
+  //
+  // É a mesma pessoa atendendo: se a progressiva das 10h foi tomada, a express
+  // das 10h fecha junto. Terça a sexta -> 1 cliente por horário (1 coluna prog +
+  // 1 coluna expr, uma bloqueia a outra). Sábado -> 2 clientes por horário
+  // (2+2, cada uma preenchida bloqueia uma livre do outro grupo).
+  var nProg = countReal(PROG_IDS, hora);
+  var nExpr = countReal(EXPR_IDS, hora);
+
+  // Cada Progressiva preenchida bloqueia 1 vaga de Express livre
+  blockFreeSlots(EXPR_IDS, hora, nProg);
+  // Cada Express preenchido bloqueia 1 vaga de Progressiva livre
+  blockFreeSlots(PROG_IDS, hora, nExpr);
+}
+
+// Bloqueia até "qtd" vagas livres do grupo (ids) no horário
+function blockFreeSlots(ids, hora, qtd){
+  var bloqueadas = 0;
+  for(var i=0; i<ids.length && bloqueadas<qtd; i++){
+    var pid = ids[i];
+    // já tem agendamento real nesse profissional/horário? então não bloqueia (vaga ocupada)
+    var ocupada = A.some(function(a){ return a.pro===pid && a.hora===hora && a.st!=='blocked-auto'; });
+    if(ocupada) continue;
+    A.push({id:NID++, pro:pid, hora:hora, nome:'', tel:'', svc:'', val:0, cor:'c-blk', st:'blocked-auto'});
+    bloqueadas++;
+  }
+}
+// O dropdown de horário só mostra os que aceitam o serviço escolhido: um corte
+// não lista horário de progressiva, e vice-versa. (04/08)
+function fillH(){
+  var s=document.getElementById('fh');
+  var anterior = s.value;
+  var grupo = (typeof selGrupo==='function') ? selGrupo() : null;
+  s.innerHTML='';
+  SLOTS.forEach(function(t){
+    if(ehAlmoco(t)) return;
+    if(grupo && !colunaAceita(grupo, t)) return;
+    var o=document.createElement('option'); o.value=t; o.textContent=t; s.appendChild(o);
+  });
+  if(anterior && Array.prototype.some.call(s.options, function(o){return o.value===anterior;})) s.value = anterior;
+}
+
+// ─── MENU ao clicar num slot vazio: Agendar ou Bloquear ───
+function abrirMenuSlot(e, pid, hora){
+  if(e){ e.stopPropagation(); }
+  fecharMenuSlot();
+  var menu = document.createElement('div');
+  menu.className = 'slot-menu';
+  menu.id = 'slot-menu';
+  menu.innerHTML =
+    '<button onclick="fecharMenuSlot(); openNew('+pid+',\''+hora+'\')">'+
+      '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Agendar cliente</button>'+
+    '<button class="blk-opt" onclick="fecharMenuSlot(); bloquearHorario('+pid+',\''+hora+'\')">'+
+      '<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Bloquear horário</button>';
+  document.body.appendChild(menu);
+  // posiciona perto do clique, sem sair da tela
+  var x = e.clientX, y = e.clientY;
+  var mw = 190, mh = 100;
+  if(x + mw > window.innerWidth) x = window.innerWidth - mw - 10;
+  if(y + mh > window.innerHeight) y = window.innerHeight - mh - 10;
+  if(x < 8) x = 8;
+  if(y < 8) y = 8;
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+  // fecha ao clicar FORA do menu (registrado depois, e só reage a cliques fora)
+  setTimeout(function(){
+    document.addEventListener('click', onClickForaMenu, true);
+  }, 50);
+}
+function onClickForaMenu(ev){
+  var m = document.getElementById('slot-menu');
+  if(m && !m.contains(ev.target)){
+    fecharMenuSlot();
+  }
+}
+function fecharMenuSlot(){
+  var m = document.getElementById('slot-menu');
+  if(m) m.remove();
+  document.removeEventListener('click', onClickForaMenu, true);
+}
+// ─── Bloquear um horário manualmente ───
+function bloquearHorario(pid, hora){
+  var motivo = prompt('Motivo do bloqueio (opcional):\nex: Folga, Feriado, Compromisso', '');
+  if(motivo === null) return; // cancelou
+  A.push({ id:NID++, pro:pid, hora:hora, nome:motivo.trim(), tel:'', svc:'', val:0, cor:'c-blk', st:'block' });
+  syncBlocks(hora);
+  buildGrid(); kpi();
+  gravarComConfirmacao('Horário bloqueado ✓');
+}
+// ─── Desbloquear (remover bloqueio manual) ───
+function desbloquear(id){
+  if(!confirm('Desbloquear este horário?')) return;
+  var a = A.find(function(x){ return x.id===id; });
+  var hora = a ? a.hora : null;
+  A = A.filter(function(x){ return x.id!==id; });
+  if(hora) syncBlocks(hora);
+  buildGrid(); kpi();
+  gravarComConfirmacao('Horário liberado ✓');
+}
+
+// ─── Helper central: grava o dia e confirma/avisa. Reverte a tela se falhar. ───
+// okMsg: mensagem de sucesso. Se a gravação falhar, mostra aviso vermelho e recarrega
+// o dia do Firebase para a tela refletir o que REALMENTE está salvo (não engana o usuário).
+function gravarComConfirmacao(okMsg, horaMexida){
+  if(!FB_ON){ toast(okMsg || 'Salvo (modo local)','ok'); return; }
+  toast('Salvando…','warn');
+  // ANTI-SOBRESCRITA: rele o dia no Firebase. Quem esta la, nao esta na tela (A),
+  // e NAO veio no ultimo carregamento (_snapFB) = a IA agendou depois. Injeta no A
+  // pra o PUT nao apagar. Se ela ocupou a vaga do horario que voce mexeu, recusa.
+  fbGetDia(fbDateKey(cur)).then(function(dia){
+    // ═══ OS CAMPOS DO BANCO VÊM DESTA LEITURA, A MAIS NOVA QUE EXISTE (24/10) ═══
+    // O merge do buildSlotObj precisa do registro ATUAL de cada cliente, não do
+    // que foi lido quando a tela abriu: entre abrir e salvar, o PDV pode ter
+    // gravado o `sinalValor`, e a Lailla a `obs`. Se a leitura falhar (dia null),
+    // _registrarExtrasDoDia não mexe no que já estava guardado.
+    _registrarExtrasDoDia(dia);
+    // ═══════════════════════════════════════════════════════════════════
+    //  ★ A PAREDE DA CAPACIDADE (dona, 07/08) ★
+    //
+    //  "A tela tem que ler sempre a capacidade do banco, ela não pode
+    //   inventar nada."
+    //
+    //  O desenho já lê o banco (d1CapacidadeDoHorario). Mas desenho é REDE:
+    //  aba velha, cache do navegador, dois aparelhos, ou alguém mexendo na
+    //  lista de PROS aqui dentro — qualquer um desses volta a oferecer vaga
+    //  que não existe. Isto aqui é a PAREDE: mesmo que a tela desenhe errado,
+    //  a gravação NÃO PASSA.
+    //
+    //  Ela confere contra o dia RECÉM-LIDO do banco (não contra _diaFB, que
+    //  pode estar velho), horário por horário, tipo por tipo.
+    //
+    //  ⚠️ Só barra o que PIORA. Se um horário já está estourado no banco —
+    //  como 08/08 às 07:45, que tem 2 clientes numa vaga de 1 —, ela deixa
+    //  salvar, senão a dona ficaria sem conseguir mexer no dia. O que ela
+    //  impede é passar do teto, ou aumentar um estouro que já existia.
+    // ═══════════════════════════════════════════════════════════════════
+    var estouros = [];
+    if (dia) {
+      var porHoraTipo = {};
+      A.forEach(function(a){
+        if (a.st === 'block' || a.st === 'blocked-auto') return;
+        var tp = (PROS[a.pro] && PROS[a.pro].type === 'expr') ? 'express' : 'progressiva';
+        porHoraTipo[a.hora + '|' + tp] = (porHoraTipo[a.hora + '|' + tp] || 0) + 1;
+      });
+      Object.keys(porHoraTipo).forEach(function(chave){
+        var partes = chave.split('|'), hora = partes[0], tp = partes[1];
+        var slot = dia[horaKey(hora)];
+        var cap = slot && slot.vagas && slot.vagas[tp] ? Number(slot.vagas[tp].capacidade) : NaN;
+        if (!isFinite(cap)) return;                 // dia antigo, sem a grade: não barra
+        var querendo = porHoraTipo[chave];
+        if (querendo <= cap) return;                // cabe
+        var jaTinha = (slot.clientes || []).filter(function(c){
+          var g = (c && c.grupo === 'expr') ? 'express' : 'progressiva';
+          return c && c.nome && g === tp;
+        }).length;
+        if (querendo <= jaTinha) return;            // o estouro já existia; não piora
+        estouros.push(hora + ' ' + tp + ': ' + querendo + ' para ' + cap + ' vaga(s)');
+      });
+    }
+    if (estouros.length) {
+      console.error('[parede] gravação recusada — passa da capacidade do banco:', estouros.join(' · '));
+      toast('Esse horário não tem essa vaga: ' + estouros[0] + '. Recarreguei a agenda.', 'err');
+      fbCarregarDia(cur, function(){ buildGrid(); kpi(); });
+      return false;
+    }
+
+    var novos = [];
+    if(dia){
+      Object.keys(dia).forEach(function(horaK){
+        var hora = horaFromKey(horaK);
+        var slot = dia[horaK];
+        if(!slot || !slot.clientes) return;
+        slot.clientes.forEach(function(cli){
+          var k = chaveCli(hora, cli.tel, cli.nome);
+          if(_snapFB[k]) return;  // ja estava na tela quando carregou (ou foi cancelado de proposito)
+          var naTela = A.some(function(a){ return chaveCli(a.hora, a.tel, a.nome) === k; });
+          if(naTela) return;
+          novos.push({ hora: hora, cli: cli });
+        });
+      });
+    }
+    if(novos.length === 0) return true;  // nada novo, segue o save normal
+    // alguem novo apareceu. Se for no horario que voce mexeu, recusa.
+    var conflito = horaMexida && novos.some(function(n){ return n.hora === horaMexida; });
+    if(conflito){
+      var nomes = novos.filter(function(n){ return n.hora === horaMexida; }).map(function(n){ return n.cli.nome; }).join(', ');
+      toast('A IA agendou ' + nomes + ' as ' + horaMexida + '. Recarreguei a agenda - confira antes de salvar.', 'err');
+      fbCarregarDia(cur, function(){ buildGrid(); kpi(); });
+      return false;
+    }
+    // horario diferente: injeta no A pra nao apagar, e segue o save
+    novos.forEach(function(n){
+      var grupo = n.cli.grupo || 'prog';
+      var pid = findFreePro(grupo, n.hora);
+      if(pid===null){ var ids = grupo==='prog' ? PROG_IDS : EXPR_IDS; pid = ids[0]; }
+      A.push({ id: NID++, pro: pid, hora: n.hora, nome: n.cli.nome || '', tel: n.cli.tel || '',
+               svc: n.cli.servico || '', val: n.cli.valor || 0, cor: 'c-lilas',
+               st: n.cli.status || 'pendente', pago: !!n.cli.sinalPago });
+      _snapFB[chaveCli(n.hora, n.cli.tel, n.cli.nome)] = true;
+      syncBlocks(n.hora);
+    });
+    buildGrid(); kpi();
+    return true;
+  }).then(function(segue){
+    if(segue === false) return null;
+    return fbSyncDia(cur);
+  }).then(function(r){
+    if(r === null) return;
+    // ═══ O RETRATO TEM QUE SER ATUALIZADO DEPOIS DE GRAVAR (07/08) ═══
+    // _snapFB é o retrato de "quem o banco já tinha, que esta tela conhece". Ele
+    // existe pra distinguir cliente que a IA agendou DEPOIS que a tela carregou.
+    //
+    // O problema: quem a PRÓPRIA TELA acabou de gravar nunca entrava no retrato.
+    // Aí, no cancelamento seguinte, a trava relia o banco, achava a cliente, via
+    // que ela não estava em A nem no retrato, concluía "a IA agendou" e a trazia
+    // DE VOLTA. Efeitos medidos: (1) cancelar cliente marcada na mesma sessão não
+    // funcionava — ela reaparecia; (2) editar uma cliente recém-marcada podia
+    // DUPLICAR, porque a versão antiga era reinjetada junto com a nova.
+    //
+    // Conserto de classe, num lugar só: todo caminho de escrita (agendar, editar,
+    // cancelar, bloquear, confirmar) passa por aqui. Depois do PUT dar certo, o
+    // retrato passa a ser exatamente o que acabou de ir pro banco.
+    _snapFB = {};
+    A.forEach(function(a){
+      if(a.st==='block' || a.st==='blocked-auto') return;
+      _snapFB[chaveCli(a.hora, a.tel, a.nome)] = true;
+    });
+    toast(okMsg || 'Salvo ✓','ok');
+  }).catch(function(err){
+    console.error('Falha ao salvar no Firebase:', err);
+    var msg = 'Não foi possível salvar. Verifique a conexão e tente de novo.';
+    if((''+err).indexOf('401')>-1) msg = 'Sem permissão para salvar (token/regras). Não foi salvo.';
+    toast(msg, 'err');
+    // recarrega do banco para a tela mostrar o estado real (não o que falhou)
+    fbCarregarDia(cur, function(){ buildGrid(); kpi(); });
+  });
+}
+
+// Acha a primeira profissional LIVRE de um grupo num horário (sem agendamento e sem bloqueio)
+function findFreePro(grupo, hora){
+  var ids = grupo==='prog' ? activeProgIds() : activeExprIds();
+  for(var i=0;i<ids.length;i++){
+    var pid=ids[i];
+    var ocupada = A.some(function(a){ return a.pro===pid && a.hora===hora; });
+    if(!ocupada) return pid;
+  }
+  return null; // grupo lotado nesse horário
+}
+
+// grupo do serviço atualmente selecionado
+// quando a cliente troca o serviço, a lista de horários muda junto
+function aoTrocarServico(){ try { fillH(); } catch(e){} }
+function selGrupo(){
+  var o=document.getElementById('fs').selectedOptions[0];
+  return o ? o.dataset.g : 'prog';
+}
+
+function openNew(pid,hora){
+  if(!diaAberto(cur)){ toast('Salão fechado neste dia — ninguém confirmou','err'); return; }
+  eid=null;
+  pHora=hora;
+  document.getElementById('mt').textContent='Novo agendamento';
+  document.getElementById('fn').value=''; document.getElementById('ft').value=''; document.getElementById('fv').value='';
+  pagoState=false; document.getElementById('pago-toggle').classList.remove('on');
+  fillH();
+  if(pHora) document.getElementById('fh').value=pHora;
+  // se veio de uma coluna específica, pré-seleciona um serviço do grupo daquela coluna
+  if(pid!=null && PROS[pid]){
+    var fs=document.getElementById('fs');
+    var want = PROS[pid].type;
+    for(var i=0;i<fs.options.length;i++){ if(fs.options[i].dataset.g===want){ fs.selectedIndex=i; break; } }
+  }
+  onS();
+  document.getElementById('mf').classList.add('open');
+}
+function onS(){ var o=document.getElementById('fs').selectedOptions[0]; if(!o)return; if(o.dataset.v)document.getElementById('fv').value=o.dataset.v; }
+function togglePago(){ pagoState=!pagoState; document.getElementById('pago-toggle').classList.toggle('on',pagoState); }
+function save(){
+  // PAREDE (04/08): a tela grava DIRETO no Firebase, então a trava do backend
+  // não vale aqui. Este é o último portão antes de escrever.
+  var _hora = document.getElementById('fh').value;
+  var _grupo = selGrupo();                      // 'prog' ou 'expr', vem do SERVIÇO escolhido
+  if(!colunaAceita(_grupo, _hora)){
+    var _t = tipoDoHorario(_hora);
+    toast(_hora + ' é horário de ' + (_t==='express' ? 'EXPRESS' : 'PROGRESSIVA') + ' — escolha outro', 'err');
+    return;
+  }
+  var nome=document.getElementById('fn').value.trim(), tel=document.getElementById('ft').value.trim();
+  var hora=document.getElementById('fh').value, svc=document.getElementById('fs').value;
+  var grupo=selGrupo();
+  var val=parseFloat(document.getElementById('fv').value)||0;
+  if(!diaAberto(cur)){ toast('Salão fechado neste dia — ninguém confirmou','err'); return; }
+  if(ehAlmoco(hora)){ toast('Horário reservado para o almoço 🍽️','warn'); return; }
+  if(!nome){ toast('Informe o nome da cliente','err'); return; }
+
+  if(eid){
+    var a=A.find(function(x){return x.id===eid;});
+    var horaAntiga = a ? a.hora : null;
+    // ao editar, mantém a profissional se ainda for do grupo certo; senão realoca
+    var pid = a ? a.pro : null;
+    if(pid==null || PROS[pid].type!==grupo || (horaAntiga!==hora)){
+      // precisa de uma vaga livre no novo grupo/horário (ignorando o próprio)
+      pid = findFreeProEdit(grupo, hora, eid);
+      if(pid===null){ toast('Não há vaga de '+(grupo==='prog'?'Progressiva':'Express')+' nesse horário','err'); return; }
+    }
+    if(a){a.nome=nome;a.tel=tel;a.hora=hora;a.svc=svc;a.pro=pid;a.val=val;a.cor='c-lilas';a.st='pendente';a.pago=pagoState;}
+    if(horaAntiga && horaAntiga!==hora) syncBlocks(horaAntiga);
+    syncBlocks(hora);
+    toast('Salvo!','ok');
+  } else {
+    // escolhe automaticamente a profissional livre do grupo do serviço
+    var pid = findFreePro(grupo, hora);
+    if(pid===null){ toast('Não há vaga de '+(grupo==='prog'?'Progressiva':'Express')+' às '+hora,'err'); return; }
+    var nid=NID++;
+    A.push({id:nid,pro:pid,hora:hora,nome:nome,tel:tel,svc:svc,val:val,cor:'c-lilas',st:'pendente',pago:pagoState});
+    syncBlocks(hora);
+    if(grupo==='expr') toast('Express agendado — vaga de Progressiva bloqueada','ok');
+    else toast('Progressiva agendada — vaga de Express bloqueada','ok');
+  }
+  cm('mf'); buildGrid(); kpi();
+  gravarComConfirmacao(eid ? 'Salvo ✓' : 'Agendado ✓');
+}
+function findFreeProEdit(grupo, hora, selfId){
+  var ids = grupo==='prog' ? activeProgIds() : activeExprIds();
+  for(var i=0;i<ids.length;i++){
+    var pid=ids[i];
+    var ocupada = A.some(function(a){ return a.pro===pid && a.hora===hora && a.id!==selfId; });
+    if(!ocupada) return pid;
+  }
+  return null;
+}
+function openView(id,e){
+  if(e) e.stopPropagation();
+  var a=A.find(function(x){return x.id===id;}); if(!a)return;
+  vid=id;
+  document.getElementById('vbar').style.background=C_HEX[a.cor]||'#8B5CF6';
+  document.getElementById('vn').textContent=a.nome;
+  document.getElementById('vt').textContent=a.tel||'—';
+  document.getElementById('vd').textContent=fd(cur)+' às '+a.hora;
+  document.getElementById('vp').textContent=PROS[a.pro]?PROS[a.pro].name:'—';
+  document.getElementById('vs2').textContent=a.svc||'—';
+  document.getElementById('vv').textContent=fm(a.val);
+  document.getElementById('mv').classList.add('open');
+}
+function conf_(){ var a=A.find(function(x){return x.id===vid;}); if(a){a.st='confirmado';buildGrid();kpi();gravarComConfirmacao('Confirmada ✓');} cm('mv'); }
+function edit_(){
+  cm('mv'); var a=A.find(function(x){return x.id===vid;}); if(!a)return;
+  eid=a.id; pHora=a.hora;
+  document.getElementById('mt').textContent='Editar agendamento';
+  document.getElementById('fn').value=a.nome; document.getElementById('ft').value=a.tel;
+  document.getElementById('fs').value=a.svc;
+  document.getElementById('fv').value=a.val;
+  fillH(); document.getElementById('fh').value=a.hora;
+  pagoState=!!a.pago; document.getElementById('pago-toggle').classList.toggle('on',pagoState);
+  document.getElementById('mf').classList.add('open');
+}
+function del_(){
+  if(!confirm('Cancelar este agendamento?'))return;
+  var a=A.find(function(x){return x.id===vid;});
+  var hora=a?a.hora:null;
+  A=A.filter(function(x){return x.id!==vid;});
+  if(hora) syncBlocks(hora);
+  cm('mv'); buildGrid(); kpi();
+  gravarComConfirmacao('Cancelado ✓');
+}
+function remC(id,e){
+  if(e)e.stopPropagation();
+  if(!confirm('Remover?'))return;
+  var a=A.find(function(x){return x.id===id;});
+  var hora=a?a.hora:null;
+  A=A.filter(function(x){return x.id!==id;});
+  if(hora) syncBlocks(hora);
+  buildGrid(); kpi();
+  gravarComConfirmacao('Removido ✓');
+}
+function cm(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(function(o){ o.addEventListener('click',function(e){if(e.target===o)o.classList.remove('open');}); });
+function toast(msg,tp){ var t=document.getElementById('toast'); t.textContent=msg; t.className='toast '+(tp||'ok'); requestAnimationFrame(function(){t.classList.add('show');}); setTimeout(function(){t.classList.remove('show');},2800); }
+function mTel(el){ var v=el.value.replace(/\D/g,'').slice(0,11); if(v.length>6)v=v.replace(/^(\d{2})(\d{5})(\d{0,4})/,'($1) $2-$3'); else if(v.length>2)v=v.replace(/^(\d{2})(\d+)/,'($1) $2'); el.value=v; }
+</script>
+</body>
+</html>

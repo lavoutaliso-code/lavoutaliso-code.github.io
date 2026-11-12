@@ -1,0 +1,170 @@
+<!doctype html><html lang="pt-BR"><head>
+<meta name="robots" content="noindex,nofollow">
+<meta name="googlebot" content="noindex,nofollow">
+<script src="../ls-trava.js"></script>
+<script src="../ls-casca.js"></script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Conciliação · Nubank</title>
+<style>
+:root{
+  --sf:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif;
+  --ink:#14161A; --ink2:rgba(20,22,26,.78); --ink3:rgba(20,22,26,.55);
+  --linha:#E9E9EE; --ok:#12885C; --falta:#C0392B; --sobra:#B45309;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sf);color:var(--ink);background:#fff;
+  letter-spacing:-.01em;-webkit-text-size-adjust:100%}
+.capa{max-width:760px;margin:0 auto;padding:28px 20px 64px}
+h1{font-size:30px;font-weight:700;letter-spacing:-.04em;margin:0}
+.sub{font-size:15px;color:var(--ink3);margin:6px 0 0;line-height:1.5}
+.passo{margin-top:26px;border-top:1px solid var(--linha);padding-top:18px}
+.passo h2{font-size:12.5px;font-weight:590;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink3);margin:0 0 10px}
+textarea{width:100%;min-height:170px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:13px;line-height:1.5;padding:13px;border:1px solid var(--linha);border-radius:14px;
+  background:#FAFAFB;color:var(--ink);resize:vertical}
+textarea:focus{outline:2px solid #1E6DFF33;border-color:#1E6DFF66}
+.bt{appearance:none;border:0;border-radius:14px;background:var(--ink);color:#fff;
+  font:inherit;font-size:15px;font-weight:600;padding:13px 20px;cursor:pointer;margin-top:12px}
+.bt[disabled]{opacity:.4;cursor:default}
+.bt.vazio{background:#fff;color:var(--ink2);border:1px solid var(--linha);margin-left:8px}
+.dica{font-size:12px;color:var(--ink3);line-height:1.6;margin:9px 0 0}
+.placar{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.card{flex:1;min-width:150px;border:1px solid var(--linha);border-radius:16px;padding:13px 15px}
+.card em{font-style:normal;font-size:12px;color:var(--ink3);display:block}
+.card b{font-size:23px;font-weight:650;display:block;margin-top:3px;font-variant-numeric:tabular-nums}
+.card small{font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums}
+.card.ok b{color:var(--ok)} .card.falta b{color:var(--falta)} .card.sobra b{color:var(--sobra)}
+.lista{margin-top:8px}
+.l{display:flex;align-items:baseline;gap:11px;padding:10px 0;border-bottom:1px solid rgba(20,22,26,.06);font-size:15px}
+.l:last-child{border-bottom:0}
+.l .d{width:92px;flex:none;font-size:13px;color:var(--ink3);font-variant-numeric:tabular-nums}
+.l .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.l .v{width:104px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.l .tag{font-size:11.5px;color:var(--ink3)}
+.v.falta{color:var(--falta)} .v.sobra{color:var(--sobra)} .v.ok{color:var(--ok)}
+.bloco{margin-top:22px}
+.bloco h3{font-size:16px;font-weight:650;margin:0 0 2px}
+.bloco p{font-size:12.5px;color:var(--ink3);line-height:1.55;margin:0 0 6px}
+.nada{font-size:14px;color:var(--ink3);padding:12px 0}
+.aviso{margin-top:22px;background:#FAFAFB;border:1px solid var(--linha);border-radius:16px;
+  padding:14px 16px;font-size:12.5px;line-height:1.6;color:var(--ink2)}
+.aviso b{font-weight:650}
+@media (max-width:620px){ h1{font-size:25px} .l .d{width:74px} .l .v{width:92px} }
+</style></head><body>
+<div class="capa">
+  <h1>Conciliação</h1>
+  <p class="sub">O extrato do <b>banco</b> contra o que o painel acha que entrou.
+    Nenhuma das duas listas é confiável sozinha — só o cruzamento é.</p>
+
+  <div class="passo">
+    <h2>1 · cole o extrato do Nubank</h2>
+    <textarea id="txt" placeholder="Abra o Nubank → Área Pix / Extrato → selecione o período → compartilhar ou copiar, e cole aqui.
+Serve texto corrido, CSV exportado, ou copiado da tela."></textarea>
+    <div>
+      <button class="bt" id="ir">Conferir</button>
+      <button class="bt vazio" id="limpar">Limpar</button>
+    </div>
+    <p class="dica">Nada é enviado pra fora: a leitura acontece neste aparelho, e o
+      cruzamento usa o mesmo registro de sinais que o caixa já lê.</p>
+  </div>
+
+  <div id="saida"></div>
+</div>
+
+<!-- ⚠️ `INICIO` E `nuMes` PRECISAM EXISTIR ANTES do conciliacao.js rodar: ele os
+     usa pra saber qual mês do registro ler e o que é "dentro da janela". Esta
+     página é standalone de propósito — carregar o vivo.js inteiro aqui traria o
+     caixa inteiro junto, e com ele a chance de uma tela quebrar a outra. -->
+<script>
+  const INICIO = '2026-09-02';
+  const nuMes = () => new Date(Date.now()-3*3600e3).toISOString().slice(0,7);
+</script>
+<script src="conciliacao.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/</g,'&lt;');
+const rot = d => `${d.slice(8)}/${d.slice(5,7)}`;
+
+$('#limpar').onclick = () => { $('#txt').value=''; $('#saida').innerHTML=''; $('#txt').focus(); };
+
+$('#ir').onclick = async () => {
+  const bt = $('#ir'); bt.disabled = true; bt.textContent = 'conferindo…';
+  try{
+    const banco = ccLer($('#txt').value);
+    if(!banco.length){
+      $('#saida').innerHTML = `<div class="aviso"><b>Não consegui ler nenhuma transação nesse texto.</b>
+        Preciso de pelo menos uma data e um valor por lançamento. Cola um pedaço menor,
+        ou manda do jeito que saiu do app que eu ensino o leitor a entender esse formato.</div>`;
+      return;
+    }
+    const sinais = await ccSinais();
+    /* ⚠️ SÓ ENTRA NA CONTA O QUE ESTÁ NA FAIXA COLADA. Comparar o mês inteiro do
+       painel contra 3 dias de extrato acusaria o mês inteiro como buraco. */
+    const dias = banco.map(b=>b.dia).sort();
+    const de = dias[0], ate = dias[dias.length-1];
+    const naFaixa = sinais.filter(s => s.dia >= de && s.dia <= ate);
+    const R = ccCruzar(banco.filter(b=>!b.neg), naFaixa);
+    const soma = L => L.reduce((s,x)=>s+Number(x.v||0),0);
+    const linha = (d, h, nome, v, tag, cor) => `<div class="l">
+        <span class="d">${rot(d)}${h?` ${h}`:''}</span>
+        <span class="n">${esc(nome)}${tag?` <em class="tag">· ${esc(tag)}</em>`:''}</span>
+        <span class="v ${cor}">R$ ${ccBrl(v)}</span></div>`;
+
+    $('#saida').innerHTML = `
+      <div class="passo">
+        <h2>2 · o que eu li · ${rot(de)} a ${rot(ate)}</h2>
+        <div class="placar">
+          <div class="card ok"><em>bateu dos dois lados</em><b>${R.pares.length}</b>
+            <small>R$ ${ccBrl(soma(R.pares.map(p=>p.banco)))}</small></div>
+          <div class="card falta"><em>no banco, não no painel</em><b>${R.soBanco.length}</b>
+            <small>R$ ${ccBrl(soma(R.soBanco))}</small></div>
+          <div class="card sobra"><em>no painel, não no banco</em><b>${R.soPainel.length}</b>
+            <small>R$ ${ccBrl(soma(R.soPainel))}</small></div>
+        </div>
+      </div>
+
+      <div class="bloco">
+        <h3>Entrou na conta e o painel não conhece</h3>
+        <p>Dinheiro seu que está no banco e não está no caixa. É o que precisa ser lançado.</p>
+        ${R.soBanco.length ? `<div class="lista">${R.soBanco.map(b =>
+            linha(b.dia, b.hora, b.desc || '(sem descrição)', b.v, '', 'falta')).join('')}</div>`
+          : `<div class="nada">Nada. Tudo que entrou no banco está no painel.</div>`}
+      </div>
+
+      <div class="bloco">
+        <h3>O painel conta e o banco não tem</h3>
+        <p>O robô marcou o sinal como pago olhando uma imagem, e o dinheiro não aparece
+          no extrato. Ou a cliente não pagou, ou pagou em outra conta.</p>
+        ${R.soPainel.length ? `<div class="lista">${R.soPainel.map(s =>
+            linha(s.dia, s.hora, s.n, s.v, s.noSaldo ? 'está no saldo' : 'já estava fora do saldo',
+                  'sobra')).join('')}</div>`
+          : `<div class="nada">Nada. O painel não está contando dinheiro que o banco não tem.</div>`}
+      </div>
+
+      <div class="bloco">
+        <h3>Bateu</h3>
+        ${R.pares.length ? `<div class="lista">${R.pares.map(p =>
+            linha(p.banco.dia, p.banco.hora, p.sinal.n, p.banco.v,
+                  p.sinal.noSaldo ? '' : 'mas está FORA do saldo do painel',
+                  p.sinal.noSaldo ? 'ok' : 'sobra')).join('')}</div>`
+          : `<div class="nada">Nenhum par.</div>`}
+      </div>
+
+      <div class="aviso">
+        ⚠️ <b>O par é feito por valor + dia, nunca por nome.</b> O banco mostra quem
+        PAGOU e o painel quem vai ser ATENDIDA — em 29/09 o seu extrato dizia
+        "Katia da Anunciação" e a agenda, "Katia Cristina Pimenta Santos". Mãe paga
+        pela filha, marido pela esposa, e o nome nunca bate.<br><br>
+        ⚠️ Linha marcada <b>"mas está FORA do saldo do painel"</b> é dinheiro que
+        entrou de verdade e que o caixa não está somando — quase sempre porque o
+        sinal ficou sem atendimento marcado.
+      </div>`;
+  }catch(e){
+    $('#saida').innerHTML = `<div class="aviso"><b>Falhou:</b> ${esc(e.message||e)}</div>`;
+  }finally{ bt.disabled = false; bt.textContent = 'Conferir'; }
+};
+</script>
+</body></html>

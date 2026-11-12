@@ -1,0 +1,160 @@
+/* ══════════════════════════════════════════════════════════════════════
+   LS-TEMA — o rebranding aprovado, vestido POR CIMA da tela que funciona.
+
+   ⚠️⚠️ ESTE ARQUIVO NÃO SUBSTITUI NADA. Ele entra DEPOIS do `vp.css` e do
+   `laila-caixa.css` e vence por ordem. Nenhum dos 20 scripts foi tocado —
+   é por isso que «Fechar caixa de hoje», «Contas a pagar» e o extrato dos
+   potes continuam funcionando: o comportamento é o mesmo de antes, só a
+   roupa mudou. Mexer nos scripts seria refazer a tela, não vesti-la.
+
+   O que foi aprovado, e de onde cada número veio:
+     · papel #FFFFFF · tinta #0D0D10 · fraca #6E6E76 · borda #E9E9EE
+       superfície #F4F4F6 — amostrados com Pillow na `menu.html` no ar
+     · o card do saldo é um BLOCO de cor cheia #FF2D87 (opção C → R4)
+     · a coluna da agenda inteira em #F4F4F6 (opção F1 cheia)
+     · o rosa fica em 3 lugares: o bloco, o anel da meta e a aba ativa
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  --ls-papel:#FFFFFF; --ls-tinta:#0D0D10; --ls-fraca:#6E6E76; --ls-fraca2:#9A9AA2;
+  --ls-borda:#E9E9EE; --ls-sup:#F4F4F6; --ls-pink:#FF2D87; --ls-pinkT:#D1016B;
+  --ls-trilho:#EDEDF1; --ls-verde:#22C55E;
+}
+
+/* ── 1 · sai a foto, sai o vidro, entra o papel ────────────────────── */
+.foto{display:none!important}
+html,body{background:var(--ls-papel)!important}
+body{color:var(--ls-tinta)!important;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif!important}
+.painel{
+  background:var(--ls-papel)!important;border:0!important;border-radius:0!important;
+  box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.vid,.vid2{
+  background:var(--ls-papel)!important;border:1px solid var(--ls-borda)!important;
+  box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+
+/* ── 2 · o cabeçalho ───────────────────────────────────────────────── */
+.tit .a{color:var(--ls-fraca)!important}
+.tit .b{color:var(--ls-tinta)!important}
+/* o lockup entra no lugar da palavra «Painel» — o `ls-tema.js` escreve */
+.lsLock{display:inline-flex;align-items:baseline;line-height:1;font-size:22px}
+.lsLock b{font:700 1em -apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;
+  letter-spacing:-.045em;color:var(--ls-tinta)}
+.lsLock i{font:600 .46em -apple-system,BlinkMacSystemFont,sans-serif;font-style:normal;
+  letter-spacing:.28em;margin-left:.36em;text-indent:.28em;color:var(--ls-pink)}
+
+.hjPer,.hjPerSel{color:var(--ls-tinta)!important}
+.hjPerIco{color:var(--ls-fraca2)!important}
+.hoje{border-radius:99px!important}
+.hjL em,.hjRot{color:var(--ls-fraca)!important}
+.hjL b,.hjC b{color:var(--ls-tinta)!important}
+.hjFio{background:var(--ls-borda)!important}
+
+/* ── 3 · o BLOCO de cor: o card do saldo ──────────────────────────── */
+.over{background:var(--ls-pink)!important;border:0!important;box-shadow:none!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  border-radius:26px!important;color:#fff!important}
+.over .olho{color:rgba(255,255,255,.74)!important}
+.over .per{background:transparent!important;border:1px solid rgba(255,255,255,.42)!important;
+  color:#fff!important}
+.over .saldo .v,.over .saldo .v *{color:#fff!important}
+.over .saldo .s,.over .sVer{color:rgba(255,255,255,.8)!important}
+.over .cif{color:rgba(255,255,255,.66)!important}
+.over .fina{color:#fff!important}
+/* tudo que era linha de vidro dentro do bloco vira fio branco */
+.over [style*="border-top"],.over hr{border-color:rgba(255,255,255,.32)!important}
+
+/* ── 4 · a bandeja de cartões (o `ls-tema.js` troca as bolinhas) ──── */
+.lsCartoes{display:flex;gap:10px;margin-top:14px}
+.lsConta{flex:1;min-width:0;text-align:center}
+.lsConta svg.lsKt{display:block;margin:0 auto 7px;
+  filter:drop-shadow(0 3px 8px rgba(120,0,55,.36))}
+.lsConta .lsN{display:block;font-size:11px;color:rgba(255,255,255,.78);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lsConta .lsV{display:block;font:600 14px -apple-system,BlinkMacSystemFont,sans-serif;
+  letter-spacing:-.025em;color:#fff;margin-top:1px}
+.lsConta .lsV i{font-style:normal;font-size:.56em;font-weight:600;
+  color:rgba(255,255,255,.66);margin-right:.16em;vertical-align:.16em}
+
+/* ── 5 · os anéis dos potes, dentro do bloco rosa ─────────────────── */
+.aroBt{background:transparent!important;border:0!important;box-shadow:none!important}
+.aroBt .dica,.aroBt .mais{color:rgba(255,255,255,.6)!important}
+.palcoA .fina,.palcoA b,.palcoA em{color:#fff!important}
+.palcoA .num{color:#fff!important}
+
+/* ── 6 · a coluna do meio ─────────────────────────────────────────── */
+.mtopo .cx{background:var(--ls-sup)!important;border:0!important;color:var(--ls-tinta)!important}
+.mtopo .cx svg{stroke:var(--ls-tinta)!important}
+.mtopo .t,.mazul .ct b{color:var(--ls-tinta)!important}
+.mazul .ct em,.meta .r{color:var(--ls-fraca)!important}
+.entrou.meta .aro,.meta{color:var(--ls-tinta)!important}
+
+/* ── 7 · a coluna da direita: a agenda, na superfície cheia ───────── */
+.dir{background:var(--ls-sup)!important;border:1px solid #E4E4E9!important}
+.dircab .t{color:var(--ls-tinta)!important}
+
+/* ── 8 · a faixa de baixo ─────────────────────────────────────────── */
+.cb{background:var(--ls-papel)!important;border:1px solid var(--ls-borda)!important;
+  box-shadow:none!important}
+
+/* ── 9 · a barra de abas ──────────────────────────────────────────── */
+.nav,.barra,.abas{background:var(--ls-papel)!important;border:1px solid var(--ls-borda)!important;
+  box-shadow:none!important;backdrop-filter:none!important}
+
+/* ⚠️ O ARCO É ROSA; O TRILHO, NUNCA. Pintar `circle[stroke]` inteiro deixa
+   o círculo de fundo rosa junto e todo anel aparece 100% cheio, sempre —
+   foi o defeito de uma cópia em 18/09. O trilho é o PRIMEIRO circle. */
+
+/* ══ A AGENDA DO DIA ══════════════════════════════════════════════════
+   A coluna inteira em #F4F4F6 (opção F1 cheia) e o cartão branco como
+   figura. ⚠️ Medido: cartão branco sobre painel branco é 1,00:1 — não
+   dava pra ver que era cartão. Sobre o #F4F4F6 dá 1,10:1, e quem desenha
+   a aresta é o fio de 1px. */
+.lsAg{display:flex;flex-direction:column;height:100%;color:var(--ls-tinta)}
+.lsAgCab{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.lsAgCab b{font:600 20px -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:-.025em;
+  color:var(--ls-tinta)}
+.lsAgCab em{display:block;font-style:normal;font-size:12px;color:var(--ls-fraca);margin-top:3px}
+.lsAgCab em b{font-size:12px;font-weight:700;letter-spacing:0}
+.lsAgAnel{position:relative;width:62px;height:62px;flex:none}
+.lsAgAnel em{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  margin:0;font:600 13px -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:-.03em;
+  color:var(--ls-tinta);font-style:normal}
+.lsAgLista{display:flex;flex-direction:column;gap:6px;flex:0 0 auto;overflow:hidden;margin-top:12px}
+.lsAgSlot{flex:none;overflow:hidden}
+.lsAgCard{width:425px;background:#fff;border-radius:18px;overflow:hidden;display:flex;
+  border:1px solid #E4E4E9;box-shadow:0 1px 3px rgba(29,29,29,.10);
+  transform:scale(.7624);transform-origin:top left}   /* 324 ÷ 425 */
+.lsAgFaixa{flex:none;width:8px;background:#FCB5D5}
+.lsAgCard.espera .lsAgFaixa{background:#DCDCE3}
+.lsAgCorpo{flex:1;padding:18px 20px 20px;position:relative}
+.lsAgCarimbo{position:absolute;top:18px;right:20px;background:#FCB5D5;color:#7A2846;
+  border-radius:999px;padding:5px 10px 4px;line-height:1;
+  font:600 10px -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:.22em;
+  text-transform:uppercase}
+.lsAgTit{font:400 21px/1.22 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;
+  letter-spacing:-.012em;color:#1D1D1D;padding-right:86px}
+.lsAgCard.ok .lsAgTit{text-decoration:line-through;text-decoration-thickness:1.5px;
+  text-decoration-skip-ink:none}
+.lsAgCard.espera .lsAgTit{color:#55555C}
+.lsAgHora{margin-top:6px;font:400 17px -apple-system,BlinkMacSystemFont,sans-serif;
+  color:#717171;letter-spacing:-.01em}
+.lsAgVazio{padding:26px 0;text-align:center;color:var(--ls-fraca2);font-size:13px}
+.lsAgPe{margin-top:auto;padding-top:11px;display:flex;align-items:baseline;
+  justify-content:space-between;font-size:12.5px;color:var(--ls-fraca)}
+.lsAgPe b{font:600 15px -apple-system,BlinkMacSystemFont,sans-serif;color:var(--ls-verde);
+  letter-spacing:-.02em}
+
+/* ══ A BARRA DE ABAS ══════════════════════════════════════════════════
+   ⚠️ O seletor que eu tinha posto (`.nav,.barra,.abas`) não existe nesta
+   tela — a barra é `#lt-tabbar` e cada aba é `.lt-tab`. Regra que não
+   casa com nada não dá erro: só deixa a barra de vidro escuro no meio da
+   tela branca, e eu só vi no print. */
+#lt-tabbar{background:var(--ls-papel)!important;border:1px solid var(--ls-borda)!important;
+  box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+#lt-tabbar .lt-tab{color:var(--ls-fraca)!important}
+#lt-tabbar .lt-tab svg{color:var(--ls-fraca)!important;stroke:currentColor!important}
+#lt-tabbar .lt-tab:hover{color:var(--ls-tinta)!important}
+/* a aba ativa é um dos três lugares onde o rosa aparece */
+#lt-tabbar .lt-tab.on{background:var(--ls-pink)!important;color:#fff!important;
+  box-shadow:none!important}
+#lt-tabbar .lt-tab.on svg{color:#fff!important}
