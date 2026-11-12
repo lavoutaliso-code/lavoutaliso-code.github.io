@@ -97,7 +97,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Ari
   #abrir{display:flex}
 }
 </style>
-</head>
+<style>
+/* ══ A LATERAL RECOLHIDA ═══════════════════════════════════════════════
+   Ela, 12/11: *«a barra lateral só abre se clicar nos três pontos, fora
+   isso o sistema fica maior e ocupa toda a tela»*. A lateral deixa de
+   empurrar o conteúdo: ela sai da largura (width:0) e volta FLUTUANDO
+   por cima quando aberta — assim o sistema ganha os 276px inteiros, não
+   só «quase». */
+#lado{transition:width .18s ease}
+body.lsRecolhe #lado{width:0;overflow:hidden;border:0}
+body.lsRecolhe.lsAberta #lado{position:fixed;left:0;top:0;z-index:60;width:276px;
+  overflow:visible;box-shadow:0 0 0 1px #E9E9EE, 0 24px 60px -24px rgba(9,55,84,.34)}
+#lsPontos{position:fixed;left:14px;top:14px;z-index:70;width:40px;height:40px;
+  border-radius:12px;border:1px solid #E9E9EE;background:#fff;cursor:pointer;
+  display:none;align-items:center;justify-content:center;gap:4px;padding:0}
+body.lsRecolhe #lsPontos{display:flex}
+body.lsRecolhe.lsAberta #lsPontos{left:290px}
+#lsPontos i{width:4px;height:4px;border-radius:50%;background:#0D0D10;display:block}
+#lsVeu{position:fixed;inset:0;z-index:55;background:rgba(13,13,16,.18);display:none}
+body.lsRecolhe.lsAberta #lsVeu{display:block}
+</style></head>
 <body>
 
 <button id="abrir" onclick="document.body.classList.toggle('menu')" aria-label="Menu">
@@ -228,5 +247,22 @@ addEventListener('hashchange', () => {
   if(TODOS.find(x => x.k === k && x.u)) ir(k);
 });
 </script>
-</body>
+<button id="lsPontos" title="abrir o menu"><i></i><i></i><i></i></button>
+<div id="lsVeu"></div>
+<script>
+/* ⚠️ RECOLHIDA POR PADRÃO, e o estado fica guardado: se ela abrir e
+   recarregar, continua como ela deixou. */
+(function(){
+  const b=document.body; b.classList.add('lsRecolhe');
+  try{ if(localStorage.getItem('ls_menu')==='aberto') b.classList.add('lsAberta'); }catch(e){}
+  const liga=()=>{ b.classList.toggle('lsAberta');
+    try{ localStorage.setItem('ls_menu', b.classList.contains('lsAberta')?'aberto':'fechado'); }catch(e){} };
+  document.getElementById('lsPontos').onclick=liga;
+  document.getElementById('lsVeu').onclick=liga;
+  /* escolher uma tela fecha o menu — senão ele fica por cima do que ela abriu */
+  document.getElementById('menu').addEventListener('click',e=>{
+    if(e.target.closest('button,a')) b.classList.remove('lsAberta');
+  });
+})();
+</script></body>
 </html>
