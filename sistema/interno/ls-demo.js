@@ -93,6 +93,56 @@ window.LS_LANC = function(nome, total){
   return base;
 };
 
+/* ══ OS LANÇAMENTOS DE CADA CONTA ═══════════════════════════════════
+   Clicar num cartão abria a conta com R$ 0,00 enquanto o próprio cartão
+   mostrava R$ 4.820,61 — dois números de dinheiro na mesma tela dizendo
+   coisas diferentes. Aqui cada conta ganha movimento com a cara dela:
+   Pix no Nubank, link de pagamento no Asaas, cartão liquidado no
+   Sicredi, espécie no Dinheiro e venda a liquidar no Processando.
+   ⚠️ A conta FECHA: o que não couber nas linhas escritas vira uma linha
+   de acumulado, e a soma aparece embaixo da lista para conferir. */
+const LANC_CONTA = {
+  'Nubank': [
+    ['12 nov', 'Progressiva · Angelica — Pix recebido',        948.90],
+    ['12 nov', 'Manutenção · Miriam — Pix recebido',           249.90],
+    ['12 nov', 'Fornecedor de insumos',                       -640.00],
+    ['11 nov', 'Progressiva · Débora — Pix recebido',          279.90],
+    ['11 nov', 'Pagamento semanal da equipe',                 -980.00],
+  ],
+  'Asaas': [
+    ['12 nov', 'Link de pagamento · Fernanda — 3×',            279.90],
+    ['12 nov', 'Link de pagamento · Roberta — à vista',        249.90],
+    ['11 nov', 'Taxa da maquininha',                           -38.47],
+    ['11 nov', 'Link de pagamento · Estefânia — 2×',           349.90],
+  ],
+  'Sicredi': [
+    ['12 nov', 'Cartão de crédito liquidado · 4 vendas',      1159.60],
+    ['11 nov', 'Cartão de débito liquidado · 2 vendas',        529.80],
+    ['11 nov', 'Tarifa de conta',                              -29.90],
+    ['10 nov', 'Cartão de crédito liquidado · 3 vendas',       839.70],
+  ],
+  'Dinheiro': [
+    ['12 nov', 'Pagamento em espécie · 2 clientes',            529.80],
+    ['12 nov', 'Troco e pequenas despesas',                    -84.30],
+    ['11 nov', 'Pagamento em espécie · 3 clientes',            779.70],
+  ],
+  'Processando': [
+    ['12 nov', 'Venda no crédito · cai em 30 dias',            559.80],
+    ['11 nov', 'Venda no crédito · cai em 30 dias',            399.90],
+  ],
+};
+
+window.LS_LANC_CONTA = function(nome, total){
+  const chave = Object.keys(LANC_CONTA).find(k => k.toLowerCase() === String(nome).trim().toLowerCase());
+  if (!chave) return null;
+  const base = LANC_CONTA[chave].map(l => l.slice());
+  const soma = base.reduce((a,l) => a + l[2], 0);
+  const resto = +(total - soma).toFixed(2);
+  if (Math.abs(resto) >= 0.01)
+    base.push([base[base.length-1][0], 'Acumulado dos dias anteriores', resto]);
+  return base;
+};
+
 /* ⚠️ A DEMO SÓ ENTRA EM TELA ZERADA. É esta função que impede a demo de
    cobrir dinheiro de verdade: se o saldo não é 0,00, não mexo em nada. */
 function telaZerada(){

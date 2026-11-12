@@ -66,7 +66,14 @@ body{color:var(--ls-tinta)!important;
 
 /* ── 4 · a bandeja de cartões (o `ls-tema.js` troca as bolinhas) ──── */
 .lsCartoes{display:flex;gap:10px;margin-top:14px}
-.lsConta{flex:1;min-width:0;text-align:center}
+/* virou <button> para voltar a ser clicável: zera o visual de botão e
+   avisa a mão que dá para tocar */
+.lsConta{flex:1;min-width:0;text-align:center;background:none;border:0;padding:0;
+  font:inherit;color:inherit;cursor:pointer;display:block;
+  transition:transform .12s ease}
+.lsConta:hover{transform:translateY(-2px)}
+.lsConta:active{transform:translateY(0)}
+.lsConta:focus-visible{outline:2px solid #fff;outline-offset:3px;border-radius:10px}
 .lsConta svg.lsKt{display:block;margin:0 auto 7px;
   filter:drop-shadow(0 3px 8px rgba(120,0,55,.36))}
 .lsConta .lsN{display:block;font-size:11px;color:rgba(255,255,255,.78);

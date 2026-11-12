@@ -125,11 +125,17 @@ window.bolinhas = function(){
     const chave = CHAVE[nome.toLowerCase()] ||
                   (/dinheiro/i.test(nome) ? 'dinheiro' : 'processando');
     const marca = MARCA[chave] ? chave : null;
-    return `<div class="lsConta" title="${nome}">
+    /* ⚠️ ELE ERA UM `div`. Ao trocar a bolinha pelo desenho do cartão eu
+       perdi o `<button onclick="abrirOnde(k)">` do original — o cartão
+       ficou bonito e mudo, e ela avisou: *«clicar nos cartões não
+       funciona»*. O clique é do sistema, não meu: chama a mesma função
+       que a bolinha chamava. */
+    return `<button type="button" class="lsConta" title="${nome}"
+      onclick="abrirOnde('${o.k}')">
       ${marca ? cartao(chave, marca) : cartaoGenerico(chave)}
       <span class="lsN">${nome}</span>
       <span class="lsV"><i>R$</i>${fmt(o.v != null ? o.v : o.valor)}</span>
-    </div>`;
+    </button>`;
   }).join('')}</div>`;
 };
 
@@ -419,12 +425,57 @@ function extratoDemo(){
   g.dataset.lsDemo = nome;
 }
 
+/* ══ 6b · O EXTRATO DE CADA CONTA, na demo ═══════════════════════════
+   Ela, 12/11: *«clicar nos cartões não funciona»*. O clique voltou (o
+   cartão virou `<button>` de novo), e aí apareceu o defeito de baixo:
+   a gaveta abria com **R$ 0,00** enquanto o cartão mostrava R$ 4.820,61.
+
+   ⚠️ Isso é o que a lei do financeiro proíbe: dois números de dinheiro
+   na mesma tela contando histórias diferentes. Então a conta FECHA — os
+   lançamentos somam exatamente o saldo do cartão, e a soma aparece
+   escrita embaixo da lista, para dar para conferir sem calculadora.
+   ⚠️ Só preenche o que está vazio: se houver movimento de verdade na
+   conta, a demo não encosta. */
+function extratoContaDemo(){
+  const g = document.getElementById('gaveta');
+  if (!g || !g.querySelector('.gcab') || !g.querySelector('.exSaldo')) return;
+  const nome = (g.querySelector('.gcab b')||{}).textContent || '';
+  if (!nome || g.dataset.lsConta === nome) return;
+  if (!g.querySelector('.exNada')) return;              /* tem dado real: não toco */
+  const D = window.LS_DEMO; if (!D || !D.contas) return;
+  const conta = D.contas.find(c => c[0].toLowerCase() === nome.trim().toLowerCase());
+  if (!conta) return;
+  const total = conta[1];
+  const linhas = window.LS_LANC_CONTA && window.LS_LANC_CONTA(nome, total);
+  if (!linhas || !linhas.length) return;
+  const brlS = v => v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const saldo = g.querySelector('.exSaldo b');
+  if (saldo) saldo.textContent = 'R$ ' + brlS(total);
+  const nota = g.querySelector('.exSaldo span');
+  if (nota) nota.textContent = linhas.length + ' lançamentos · salão de demonstração';
+  const cab = g.querySelector('.egCab span');
+  if (cab) cab.innerHTML = linhas.length + ' lançamentos'
+    + '<em class="egCabSub"> · do mais novo pro mais antigo</em>';
+  g.querySelector('.exNada').outerHTML =
+    `<div class="lsExt">${linhas.map(([d,t,v]) => `
+      <div class="lsExtL"><span class="lsExtD">${d}</span><span class="lsExtT">${t}</span>
+        <b class="${v<0?'neg':'pos'}">${v<0?'−':'+'} ${brlS(Math.abs(v))}</b></div>`).join('')}
+      <div class="lsExtS"><span>soma dos lançamentos</span><b>R$ ${brlS(total)}</b></div></div>`;
+  g.dataset.lsConta = nome;
+}
+
 function aplicar(){
   const raiz = document.querySelector('.painel') || document.body;
-  lockup(raiz); limparTexto(raiz); afinarAneis(raiz); medirAltura();
+  /* ⚠️ `limparTexto` rodava só no PAINEL — e a gaveta do extrato mora
+     FORA dele. Por isso ela abria uma categoria e lia «sobrou no pote»,
+     o termo que a gente já tinha trocado na tela de trás: *«botões de
+     categoria abrem extrato velho»*. Os termos valem no documento todo;
+     o lockup e os anéis é que são só do painel. */
+  lockup(raiz); afinarAneis(raiz); medirAltura();
+  limparTexto(document.body);
   repintar(document.body);     /* o body, não o painel: a barra de abas e os
                                   dois botões flutuantes moram fora dele */
-  encaixarAgenda(); esticar(); extratoDemo();
+  encaixarAgenda(); esticar(); extratoDemo(); extratoContaDemo();
 }
 /* ⚠️⚠️ EMBRULHAR O `pinta` NÃO FUNCIONA, e o print mostrou: o lockup
    aparecia e sumia. O `function pinta(){}` mora num <script> que roda
