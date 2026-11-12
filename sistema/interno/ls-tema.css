@@ -207,15 +207,20 @@ html.embutido #lt-tabbar{display:none!important}
    layout, aparece por cima enquanto rola e some depois. Por isso o
    problema não existe parado e aparece só no movimento — e por isso
    `overflow:auto` sozinho não resolve.
-   A cura é reservar a pista: `scrollbar-gutter:stable` guarda o espaço
-   mesmo quando a barra está escondida, e a margem extra garante que o
-   número alinhado à direita nunca encoste nela. */
+   ⚠️⚠️ E O `scrollbar-gutter:stable` NÃO RESOLVE ISSO. Eu tentei e ela
+   viu de novo: *«o defeito de rolagem da tela do extrato continua»*. O
+   motivo é que `scrollbar-gutter` só vale para barra CLÁSSICA (a que
+   ocupa largura); com barra sobreposta ela não reserva nada. E eu medi
+   num Chromium headless, que usa barra clássica — por isso a minha régua
+   dizia «13px de folga» numa tela que, no Mac dela, continuava tapada.
+   A cura que funciona nos dois casos é MARGEM DE VERDADE: 14px de
+   `padding-right` no próprio rolador, maior que os ~11px da barra. */
 .gaveta, .gvLista, .lsExt, .lsAgLista, .fila, .saRolo,
 .gaveta *[style*="overflow"], .cdLista{
   scrollbar-gutter:stable;
 }
-.gaveta{padding-right:4px}
-.lsExt{padding-right:6px}
+.gaveta{padding-right:14px}
+.gvLista,.lsExt,.lsAgLista,.fila,.saRolo{padding-right:14px}
 /* a barra, quando aparece, fica discreta e FORA do texto */
 .gaveta::-webkit-scrollbar, .gvLista::-webkit-scrollbar,
 .lsExt::-webkit-scrollbar, .lsAgLista::-webkit-scrollbar{width:8px}
