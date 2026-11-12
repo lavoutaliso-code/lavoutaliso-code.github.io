@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="pt-BR"><head>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#EFEFEF">
+<title>Cadastro de procedimento</title>
+<link rel="stylesheet" href="base.css">
+<link rel="stylesheet" href="premium.css">
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   A CALCULADORA DA PRECIFICAÇÃO — a oficial.
+   Toda vez que se falar «calculadora da precificação», é este arquivo.
+   O DESENHO é o mesmo aprovado no slide da aula 05 (aula-logica-do-consumo/
+   aula5.html): visor no topo, card do procedimento, campos na mesma grade,
+   chave com o bico sobre o valor, boca de impressora e a fita com o resultado.
+   A casca é a do PLANO PRÁTICO do app (app.html #plano) — quem dá topo e
+   rodapé é a tela que embute este arquivo no iframe.
+   ══════════════════════════════════════════════════════════════════════════ */
+:root{--estampa:url(midia/estampa.svg)}
+#plano .top{height:58px;background:var(--estampa) center/300px auto;margin-bottom:2px;
+  border-bottom-left-radius:22px;border-bottom-right-radius:22px;box-shadow:0 6px 16px rgba(184,87,122,.10)}
+:root{
+  --tinta:#1D1D1D; --rosa:#FCB5D5; --rosaP:#B8577A; --vinho:#7A2846;
+  --fundo:#EFEFEF; --cartao:#FFFFFF; --t2:#717171; --t3:#8E8E93; --preto:#0B0B0B;
+  --verde:#3E6B3A; --vermelho:#B5452F;
+  --disp:Inter,-apple-system,sans-serif; --ui:Poppins,-apple-system,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:Poppins,var(--ui);background:#EFEFEF;color:var(--tinta);font-weight:400;
+  display:flex;flex-direction:column;
+  -webkit-font-smoothing:antialiased}
+/* ⚠️ Ela, 12/11: *«a versão desktop dela não pode ser essa. Tem que ser
+   centralizada, bonitinho, igual uma calculadora. Desse jeito tá gigante»*.
+   Este arquivo nasceu para o app do Clube, que é celular — sem teto de
+   largura, no desktop ele esticava a tela inteira e cada linha virava um
+   campo perdido num trilho de 1.400px. Calculadora tem largura: 560px,
+   centralizada. No celular nada muda (a tela já é menor que o teto). */
+.app{display:flex;flex-direction:column;gap:14px;padding:0 var(--pad,18px) 30px;
+  max-width:560px;margin:0 auto;width:100%}
+
+.maqNota{font-size:11.6px;line-height:1.45;color:var(--t2);padding:2px 8px 4px;text-align:center}
+.capa-ex{margin-top:14px}
+.capa-ex .k{font-size:9.6px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;
+  color:var(--rosaP)}
+.capa-ex h2{font-family:var(--disp);font-weight:800;letter-spacing:-.065em;font-size:30px;
+  line-height:.94;margin-top:4px}
+.capa-ex p{font-size:12.6px;color:var(--t2);line-height:1.45;margin-top:8px}
+
+/* ===== a máquina ===== */
+.maquina{background:linear-gradient(180deg,#FFFFFF 0%,#F4F4F6 100%);
+  border:1px solid rgba(0,0,0,.06);border-radius:26px 26px 6px 6px;
+  padding:13px;display:flex;flex-direction:column;gap:7px;
+  box-shadow:0 2px 4px rgba(29,29,29,.05), 0 30px 54px -38px rgba(29,29,29,.45)}
+.maqTopo{padding:1px 6px 0}
+.maqMarca{font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);font-size:8px}
+.lcd{background:var(--preto);border-radius:17px;padding:13px 15px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px}
+.lcd .nome{font-family:var(--disp);font-weight:800;letter-spacing:-.055em;line-height:.96;
+  color:var(--rosa);font-size:19px}
+.lcd .ind{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:0 0 auto}
+.lcd .ind em{font-style:normal;font-weight:600;letter-spacing:.14em;color:#6E6E6E;font-size:7.5px}
+.lcd .ind s{text-decoration:none;display:flex;gap:3px}
+.lcd .ind s u{text-decoration:none;display:block;width:14px;height:2px;border-radius:2px;
+  background:#FCB5D5;opacity:.45}
+.lcd .ind s u:nth-child(2){opacity:.3} .lcd .ind s u:nth-child(3){opacity:.18}
+
+.procNome{background:#F7F7F7;border-radius:13px;padding:8px 12px;text-align:center}
+.procNome .et{display:block;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--t3);font-size:8px;margin-bottom:3px}
+.procNome .cx{background:#FFFFFF;border-radius:10px;padding:7px 12px}
+.procNome input{width:100%;border:0;background:transparent;outline:none;text-align:center;
+  font-family:var(--disp);font-weight:800;letter-spacing:-.055em;color:var(--tinta);
+  font-size:19px;cursor:text}
+.procNome input:focus{color:var(--rosaP)}
+
+.lin{display:grid;grid-template-columns:1fr 92px 46px;gap:8px;align-items:center;
+  background:#F7F7F7;border-radius:13px;padding:9px 12px}
+.lin .perg{font-weight:500;color:var(--tinta);font-size:12.4px;line-height:1.22}
+.lin .perg i{display:block;font-style:normal;font-weight:400;color:var(--t3);font-size:.76em;margin-top:1px}
+.lin .digit{display:flex;align-items:center;gap:4px;background:#FFFFFF;border-radius:10px;padding:7px 9px}
+.lin .digit span{font-weight:600;color:var(--t3);font-size:10px}
+.lin .digit input{flex:1 1 auto;min-width:40px;border:0;background:transparent;outline:none;
+  font-family:var(--disp);font-weight:800;letter-spacing:-.045em;color:var(--tinta);
+  font-size:16px;text-align:right;font-variant-numeric:tabular-nums;cursor:text}
+.lin .digit input:focus{color:var(--rosaP)}
+.lin .equiv{text-align:right;font-family:var(--disp);font-weight:800;letter-spacing:-.045em;
+  color:var(--rosaP);font-size:13px;font-variant-numeric:tabular-nums}
+.lin.preco{background:#FFF3F8;border:1.6px solid var(--rosa)}
+.lin.preco .perg{font-weight:600}
+.lin.resultado{background:var(--rosa)}
+.lin.resultado .perg{font-weight:700;display:flex;align-items:center;gap:7px}
+.lin.resultado .igual{font-family:var(--disp);font-weight:800;color:var(--vinho);font-size:16px}
+.lin.resultado .digit{background:transparent;justify-content:flex-end;padding-right:0}
+.lin.resultado .equiv{color:var(--vinho)}
+.chaveD{display:block;height:14px;padding:0 12px}
+.chaveD svg{width:100%;height:100%;display:block;overflow:visible}
+.kitKick{font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--rosaP);
+  font-size:8.5px;padding:0 6px}
+
+/* a boca de impressora — mockups-fim-de-dia-pdv15/impressora.css */
+.fenda{position:relative;z-index:3;width:calc(100% - 22px);margin:-3px auto 0;height:10px;
+  background:linear-gradient(180deg,#1E1E22 0%,#3A3A40 100%);border-radius:0 0 4px 4px;
+  box-shadow:0 3px 10px -2px rgba(0,0,0,.22), inset 0 2px 4px rgba(0,0,0,.45)}
+.dobrinha{position:relative;z-index:1;width:calc(100% - 34px);margin:0 auto;height:13px;
+  background:linear-gradient(180deg,#e8e8e8 0%,#f5f5f5 40%,#fff 100%);border-radius:0 0 12px 12px;
+  box-shadow:0 4px 10px rgba(0,0,0,.08);
+  transform:perspective(200px) rotateX(-12deg);transform-origin:top center}
+.fitaRes{background:#FFFEFA;width:calc(100% - 34px);position:relative;z-index:0;
+  margin:-2px auto 0;padding:0 16px;filter:drop-shadow(0 12px 22px rgba(29,29,29,.18))}
+.fitaRes .den{display:block;width:100%;height:7px}
+.fitaRes .in{padding:11px 0 13px;text-align:center}
+.fitaRes .q{font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--t3);font-size:8.5px}
+.fitaRes .n{font-family:var(--disp);font-weight:800;letter-spacing:-.055em;font-size:30px;
+  font-variant-numeric:tabular-nums;margin-top:3px;color:var(--tinta)}
+.fitaRes .n em{font-style:normal;font-size:.5em;color:var(--rosaP);margin-left:8px}
+.fitaRes .ok{font-size:10.5px;color:var(--t2);margin-top:4px}
+.fitaRes .ok b{font-weight:700;color:var(--tinta)}
+.fitaRes.estourou .n{color:var(--vermelho)}
+.fitaRes.estourou .ok b{color:var(--vermelho)}
+
+.lsCadastrar{display:block;width:100%;height:54px;margin-top:16px;border:0;border-radius:16px;
+  background:var(--pink,#FF2D87);color:#fff;cursor:pointer;font-family:inherit;
+  font-size:16px;font-weight:600;letter-spacing:-.015em}
+.lsCadastrar:active{transform:translateY(1px)}
+/* ===== os potes ===== */
+.bloco{background:#FFFFFF;border-radius:24px;padding:15px 13px 13px}
+.bloco .tt{font-family:var(--disp);font-weight:800;letter-spacing:-.055em;font-size:17px;line-height:1}
+.bloco .ss{font-size:11.4px;color:var(--t2);line-height:1.4;margin-top:5px}
+.bloco .ss b{color:var(--tinta);font-weight:600}
+.prat{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:12px}
+.prat .p{display:flex;flex-direction:column;align-items:center;text-align:center}
+.prat .p .jar{width:100%;max-width:74px}
+.prat .p .vl{font-family:var(--disp);font-weight:800;letter-spacing:-.04em;font-size:12px;
+  font-variant-numeric:tabular-nums;margin-top:5px;white-space:nowrap}
+.prat .p .pc{font-size:9px;color:var(--t3)}
+
+/* ===== dia 1 × dia 30 ===== */
+.dias{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.dias .d{border-radius:17px;padding:11px;text-align:center}
+.dias .d.um{background:#F7F7F7}
+.dias .d.trinta{background:#DCEFD8}
+.dias .d .k{font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:8px;color:var(--t3)}
+.dias .d .n{font-family:var(--disp);font-weight:800;letter-spacing:-.055em;font-size:21px;
+  font-variant-numeric:tabular-nums;margin-top:3px}
+.dias .d.trinta .n{color:var(--verde)}
+.dias .d .q{font-size:9.6px;color:var(--t2);margin-top:3px;line-height:1.3}
+
+/* ══ LS·NOVO — as duas peças que ela pediu ══════════════════════════════
+   Ambas usam a régua da própria calculadora: o rosa #B8577A dos valores,
+   o cinza dos campos e o mesmo raio. Nada de cor nova. */
+/* ⚠️ O × ESTAVA POR CIMA DO «10,0%». Ele era `position:absolute` sem
+   ninguém ter aberto espaço — e caía em cima da coluna da porcentagem.
+   A linha ganha 30px de pista à direita e o × mora nela. */
+.lin{position:relative;padding-right:30px}
+.lsX{position:absolute;right:0;top:50%;transform:translateY(-50%);
+  width:24px;height:24px;border:0;border-radius:99px;background:#EFEFEF;
+  color:#8E8E93;font-family:inherit;font-size:14px;line-height:1;cursor:pointer;padding:0}
+.lsX:active{transform:translateY(-50%) scale(.92)}
+.lin.lsOff{opacity:.5}
+.lin.lsOff .perg{text-decoration:line-through}
+.lin.lsOff .lsX{background:#E6F7EC;color:#157A41}
+.lsNova{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:#B8577A;background:#FFF0F6;border-radius:5px;
+  padding:2px 6px;margin-left:5px;vertical-align:1px}
+.lsMais{width:100%;height:42px;margin-top:4px;border:1.5px dashed #D8D8DE;border-radius:12px;
+  background:none;color:#717171;font-family:inherit;font-size:13.5px;font-weight:600;
+  cursor:pointer}
+.lsMais:active{background:#F7F7F8}
+
+/* ══ DESKTOP: A CALCULADORA NA LATERAL, A MARCA NA OUTRA ════════════════
+   Ela, 12/11: *«a calculadora versão desktop pode ficar menor ainda, pra
+   não precisar rolar a tela. Pode ficar na lateral e na outra lateral a
+   logo do laila salon grande, com uma frase de efeito. Clean premium e
+   minimalista»*.
+
+   Duas exigências que brigam: a tela tem 8 linhas de campo e a altura é
+   finita. Então a coluna da calculadora ENCOLHE de verdade — não é zoom:
+   cada linha perde 12px de altura, os vãos caem pela metade e o visor
+   fica raso. Medido: 1.067px → cabe sem rolar.
+
+   A coluna da marca não compete com a calculadora: fundo igual, sem
+   caixa, sem borda, sem sombra. Só a logo grande, uma frase e um fio. */
+.lsPalco{flex:1 1 auto;min-height:0}
+
+/* ══ A CALCULADORA RESPEITA A MARGEM DO SITE ════════════════════════════
+   Ela, 12/11: *«a calculadora continua gigante, respeite as bordas do
+   site»*. Medido: o conjunto ocupava 654px dos 674 disponíveis — 97% da
+   altura, encostando em cima e embaixo. «Caber» não era o suficiente;
+   ela precisa de margem, como toda outra tela do sistema tem.
+
+   ⚠️ Apertar mais o conteúdo (padding, corpo do tipo) já tinha chegado
+   no limite — abaixo disso os campos ficam desconfortáveis de tocar.
+   Então o que muda é a ESCALA do conjunto, e ela é MEDIDA: o script lá
+   embaixo compara a altura real do conteúdo com o espaço real da janela
+   e calcula o fator. Nunca passa de 1 (não amplia) e recalcula quando a
+   janela muda de tamanho ou quando uma categoria nova entra na conta.
+
+   ⚠️ `transform:scale` NÃO encolhe o espaço que o elemento ocupa no
+   desenho da página — por isso o palco leva `overflow:hidden`: a caixa
+   continua do tamanho velho, mas não gera rolagem. */
+.lsEscala{transform:scale(var(--z,1));transform-origin:center center;
+  transition:transform .12s ease}
+
+@media (min-width:980px){
+  /* ⭐ Ela, 12/11: *«coloca a calculadora no CENTRO da tela, diminui um
+     pouco e deixa [a marca] no canto inferior direito, mais em evidência
+     a calculadora»*. Deixou de ser duas colunas: a calculadora é o objeto
+     central da tela, e a marca virou assinatura de rodapé. */
+  .lsPalco{position:relative;display:flex;align-items:center;justify-content:center;
+    overflow:hidden;padding:0 clamp(28px,4vw,72px)}
+  .lsPitch{position:absolute;right:clamp(28px,4vw,72px);bottom:26px;z-index:1;
+    display:flex;flex-direction:column;align-items:flex-end;text-align:right;max-width:290px}
+  .lsPitch img{width:150px;height:auto;display:block;opacity:.9}
+  .lsPitch .fio{display:none}
+  .lsPitch p{margin-top:10px;font-size:13px;line-height:1.38;letter-spacing:-.012em;
+    color:var(--t2);font-weight:400}
+  .lsPitch p b{font-weight:650;color:var(--tinta)}
+  .lsPitch small{display:none}
+  .scroll{min-width:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .app{max-width:390px;padding-left:0;padding-right:0;padding-bottom:0;gap:0}
+
+  /* ── o encolhimento, linha a linha ── */
+  .maquina{padding:10px;gap:5px;border-radius:22px 22px 5px 5px}
+  .lcd{padding:9px 13px;border-radius:14px}
+  .lcd .nome{font-size:17px}
+  .maqNota{padding:1px 6px 2px;font-size:11px}
+  .lin{padding:5px 28px 5px 10px;border-radius:11px;gap:6px;
+    grid-template-columns:1fr 76px 58px}
+  .lin .perg{font-size:12px;line-height:1.18}
+  .lin .digit{padding:5px 8px;border-radius:9px}
+  .lsCadastrar{height:46px;margin-top:10px;font-size:15px;border-radius:14px}
+  .fitaRes .in{padding-top:9px;padding-bottom:9px}
+  .fitaRes .n{font-size:30px}
+  .dobrinha{height:7px}
+  /* a frase de efeito já está na coluna da marca — aqui ela seria eco */
+  .maqNota{display:none}
+  .procNome{padding:5px 6px 6px}
+  .procNome .cx{padding:7px 10px}
+  .procNome input{font-size:17px}
+  .kitKick{font-size:8.6px;padding:1px 6px 0}
+  .chaveD{height:11px}
+}
+@media (min-width:980px) and (max-height:900px){
+  /* ⚠️ Janela baixa aperta MAIS, em vez de devolver a rolagem. Medido na
+     tela de 1440×900: o conteúdo saía em 765px contra 674 úteis (a barra
+     da marca come 46). Cada corte abaixo foi medido, não estimado. */
+  .maquina{gap:4px;padding:8px}
+  .lcd{padding:6px 12px} .lcd .nome{font-size:15.5px}
+  .procNome{padding:3px 5px 4px} .procNome .cx{padding:5px 10px}
+  .procNome input{font-size:16px}
+  .lin{padding:2px 28px 2px 10px;grid-template-columns:1fr 74px 56px} .lin .digit{padding:3px 7px}
+  .lin .digit input{font-size:14px}
+  .lin .perg{font-size:11.6px}
+  .kitKick{font-size:8.2px} .chaveD{height:9px}
+  .fitaRes .in{padding-top:7px;padding-bottom:7px} .fitaRes .n{font-size:26px}
+  .fitaRes .q{font-size:8.6px} .fitaRes .ok{font-size:10.4px}
+  .lsCadastrar{height:42px;margin-top:8px;font-size:14.5px}
+}
+/* no celular nada muda: a coluna da marca sai e a calculadora volta a rolar */
+@media (max-width:979px){ .lsPitch{display:none} }
+</style>
+</head>
+<body>
+
+<div class="lsPalco">
+<aside class="lsPitch">
+  <img src="marca-clara.png" alt="laila salon">
+  <div class="fio"></div>
+  <p>Muito mais que um sistema:<br><b>sua gestão financeira mais completa.</b></p>
+  <small>cada procedimento cadastrado aqui passa a se dividir sozinho, a cada cliente que pagar.</small>
+</aside>
+<div class="scroll"><div class="app lsEscala">
+
+
+<div>
+  <div class="maquina">
+    
+    <div class="maqNota">Digite o preço e os custos. <b>O lucro líquido não se digita: é o que resta.</b></div>
+    <div class="lcd">
+      <div class="nome">Cadastro de<br>procedimento</div>
+      <div class="ind"><em>ON</em><s><u></u><u></u><u></u></s></div>
+    </div>
+    <div class="procNome">
+      <span class="et">procedimento</span>
+      <div class="cx"><input id="c_nome" type="text" value="Progressiva"></div>
+    </div>
+    <div class="lin preco">
+      <div class="perg">Preço do procedimento</div>
+      <div class="digit"><span>R$</span><input id="c_preco" type="text" inputmode="decimal" value="300"></div>
+      <div class="equiv" style="color:var(--tinta)">100%</div>
+    </div>
+    <div class="kitKick">o que sai dessa receita</div>
+    <div id="campos"></div>
+    <div class="lin">
+      <div class="perg">Custo-hora da sua cadeira<i>o que a cadeira custa por hora</i></div>
+      <div class="digit"><span>R$</span><input id="c_hora" type="text" inputmode="decimal" value="17,19"></div>
+      <div class="equiv"></div>
+    </div>
+    <div class="lin">
+      <div class="perg">Horas que esse procedimento ocupa a cadeira</div>
+      <div class="digit"><input id="c_horas" type="text" inputmode="decimal" value="3" style="text-align:center"><span>h</span></div>
+      <div class="equiv"></div>
+    </div>
+    <div class="chaveD" id="chaveOper"></div>
+    <div class="lin resultado">
+      <div class="perg"><span class="igual">=</span>Custo operacional</div>
+      <div class="digit"><span>R$</span><input id="c_oper" type="text" value="—" readonly tabindex="-1" style="pointer-events:none"></div>
+      <div class="equiv" data-pc="oper">—</div>
+    </div>
+  </div>
+  <div class="fenda"></div>
+  <div class="dobrinha"></div>
+  <div class="fitaRes" id="fitaRes"></div>
+</div>
+
+<!-- LS·NOVO 5 — o fecho que ela pediu: terminou de preencher, cadastra. -->
+<button class="lsCadastrar" id="btCadastrar">Cadastrar procedimento</button>
+
+</div></div></div>
+
+<script>
+const d2 = v => v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const d0 = v => v.toLocaleString('pt-BR',{maximumFractionDigits:0});
+const d1 = v => v.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const RS  = v => 'R$ ' + d2(v);
+const RS0 = v => 'R$ ' + d0(v);
+
+const r2 = v => Math.round(v*100)/100;
+/* leitor de dinheiro pt-BR: «17,19» e «17.19» viram 17.19; «1.200,50» vira 1200.5 */
+function leNum(t){
+  t = String(t).trim().replace(/[^\d.,-]/g,'');
+  if(!t) return 0;
+  const ult = Math.max(t.lastIndexOf(','), t.lastIndexOf('.'));
+  if(ult < 0) return +t || 0;
+  const dec = t.length - ult - 1;
+  if(dec >= 1 && dec <= 2) return (+(t.slice(0,ult).replace(/[.,]/g,'') + '.' + t.slice(ult+1))) || 0;
+  return +t.replace(/[.,]/g,'') || 0;
+}
+const paraCampo = v => (Math.abs(v-Math.round(v))<0.005 ? d0(v) : d2(v));
+
+const REF = {
+  vidro:'#EDF4FC', contorno:'#A6A6BA', tampaTopo:'#DAD7D6', tampaFrente:'#C6C2C4',
+  fenda:'#8C8A9C', nota:'#94CAAF', notaEsc:'#85ACA4', destaque:'#EDE4AD',
+  cifrao:'#CDC18A', moeda:'#FBC244', moedaSombra:'#E0A82E', risco:'#F7AC3C'
+};
+const CORPO  = `M 98 70 C 60 72 26 104 26 150 L 26 352 C 26 376 42 392 64 392
+  L 236 392 C 258 392 274 376 274 352 L 274 150 C 274 104 240 72 202 70 Z`;
+const DENTRO = `M 100 76 C 64 78 32 108 32 152 L 32 350 C 32 371 46 386 65 386
+  L 235 386 C 254 386 268 371 268 350 L 268 152 C 268 108 236 78 200 76 Z`;
+const nt = (y,w,ang,c) => {
+  const x = 150 - w/2;
+  return `<path d="M ${x} ${y} q ${w*0.26} -11 ${w*0.5} -3 q ${w*0.26} 8 ${w*0.5} -4
+    l 3 28 q ${-w*0.26} 12 ${-w*0.5} 4 q ${-w*0.26} -8 ${-w*0.5} 3 z"
+    fill="${c}" transform="rotate(${ang} 150 ${y+14})"/>`;
+};
+const md = (cx,cy,r=17) => `
+  <ellipse cx="${cx}" cy="${cy}" rx="${r}" ry="${r*0.34}" fill="${REF.moedaSombra}"/>
+  <ellipse cx="${cx}" cy="${cy-4}" rx="${r}" ry="${r*0.34}" fill="${REF.moeda}"/>`;
+/* ⚠️ regra dela: «todos os potes têm moeda. Nenhum pote tem só nota.»
+   Por isso cada faixa de 40px da pilha leva notas E moedas — inclusive a faixa
+   mais baixa, que é a única visível quando o pote está quase vazio. */
+const PILHA = `
+  ${nt(352,196,-2,REF.notaEsc)} ${nt(340,228,1.5,REF.nota)}
+  ${md(66,386,18)} ${md(150,388,18)} ${md(234,386,18)}
+  ${md(104,380,16)} ${md(196,382,16)} ${md(66,376,18)} ${md(234,376,18)}
+  ${nt(312,214,2,REF.notaEsc)} ${nt(300,238,-1.5,REF.nota)}
+  ${md(92,344,17)} ${md(150,348,17)} ${md(212,344,17)} ${md(122,338,15)} ${md(182,338,15)}
+  ${nt(272,232,-2.5,REF.notaEsc)} ${nt(260,204,2,REF.nota)}
+  ${md(74,306,17)} ${md(150,308,18)} ${md(226,306,17)} ${md(112,300,15)}
+  ${nt(232,210,1.5,REF.notaEsc)} ${nt(220,236,-2,REF.nota)}
+  ${md(96,266,17)} ${md(166,268,17)} ${md(226,264,15)} ${md(60,262,15)}
+  ${nt(192,234,-1,REF.notaEsc)} ${nt(180,206,2.5,REF.nota)}
+  ${md(84,226,17)} ${md(150,228,17)} ${md(216,226,17)}
+  ${nt(152,212,2,REF.notaEsc)} ${nt(140,232,-1.5,REF.nota)}
+  ${md(110,186,17)} ${md(190,188,17)} ${md(150,182,15)}
+  ${nt(112,228,-2,REF.notaEsc)} ${nt(100,208,1,REF.nota)}
+  ${md(128,146,16)} ${md(186,148,16)}`;
+const DESTAQUE = `
+  <g transform="translate(0 -2) rotate(-1.5 150 196)">
+    <path d="M 74 150 h152 v92 h-152 z" fill="${REF.destaque}"/>
+    <text x="150" y="214" text-anchor="middle" font-family="-apple-system,'SF Pro Display',sans-serif"
+      font-size="64" font-weight="700" fill="${REF.cifrao}" letter-spacing="-2">R$</text></g>`;
+
+
+let _id = 0;
+/* nível 0..1 · `etq` é a etiqueta colada no vidro · `caindo` liga a moeda do topo */
+function pote(o){
+  const {nivel=0, etq='', caindo=false, vazio=''} = o||{};
+  const n = Math.max(0, Math.min(1, nivel));
+  const id = 'j'+(_id++);
+  const desloca = (1-n)*300;
+  return `<svg class="jar" data-jar viewBox="0 -76 300 496" preserveAspectRatio="xMidYMax meet">
+    <defs><clipPath id="c${id}"><path d="${DENTRO}"/></clipPath></defs>
+    ${caindo ? `
+      <g fill="${REF.risco}">
+        <rect x="112" y="-74" width="9" height="30" rx="4.5"/>
+        <rect x="136" y="-62" width="9" height="22" rx="4.5"/>
+        <rect x="160" y="-76" width="9" height="34" rx="4.5"/></g>
+      <circle cx="150" cy="-14" r="30" fill="${REF.moedaSombra}"/>
+      <circle cx="150" cy="-17" r="27" fill="${REF.moeda}"/>
+      <circle cx="150" cy="-17" r="20" fill="none" stroke="${REF.moedaSombra}" stroke-width="3" opacity=".55"/>
+      <text x="150" y="-6" text-anchor="middle" font-family="-apple-system,'SF Pro Display',sans-serif"
+        font-size="25" font-weight="700" fill="${REF.moedaSombra}" letter-spacing="-1">R$</text>` : ''}
+    <path d="${CORPO}" fill="${REF.vidro}"/>
+    <g clip-path="url(#c${id})"><g class="pilha" transform="translate(0 ${desloca.toFixed(1)})">
+      ${PILHA}${(n>=.82 && !etq) ? DESTAQUE : ''}</g></g>
+    <path d="M 60 152 C 60 120 78 100 102 94 l 5 12 c -17 6 -29 21 -29 44 l 0 150 l -18 0 z"
+      fill="#FFFFFF" opacity=".34"/>
+    <path d="${CORPO}" fill="none" stroke="${REF.contorno}" stroke-width="9" stroke-linejoin="round"/>
+    <path d="M 84 36 h132 a12 12 0 0 1 12 12 v16 a12 12 0 0 1 -12 12 h-132
+      a12 12 0 0 1 -12 -12 v-16 a12 12 0 0 1 12 -12 z" fill="${REF.tampaFrente}"/>
+    <path d="M 84 36 h132 a12 12 0 0 1 12 12 v4 h-156 v-4 a12 12 0 0 1 12 -12 z" fill="${REF.tampaTopo}"/>
+    <rect x="133" y="44" width="34" height="9" rx="4.5" fill="${REF.fenda}"/>
+    ${etq ? `
+      <g transform="rotate(-1.4 150 118)">
+        <path d="M 52 92 h196 v52 h-196 z" fill="#FDFAEF" stroke="#DFD7C0" stroke-width="3"/>
+        <text x="150" y="126" text-anchor="middle" font-family="-apple-system,'SF Pro Display',sans-serif"
+          font-size="${etq.length>12?25:29}" font-weight="700" fill="#5E5A4E"
+          letter-spacing="-.6">${etq}</text></g>` : ''}
+    ${vazio ? `
+      <g transform="rotate(-1.4 150 250)">
+        <text x="150" y="262" text-anchor="middle" font-family="-apple-system,'SF Pro Display',sans-serif"
+          font-size="30" font-weight="700" fill="#C08274" letter-spacing="-.8">${vazio}</text></g>` : ''}
+  </svg>`;
+}
+
+/* ===================== o procedimento ===================== */
+const PROC = {nome:'Progressiva', preco:300, produto:30, equipe:120,
+              hora:17.19, horas:3, imposto:18, mkt:15, invest:30};
+/* ⚠️⚠️ ESTE ARQUIVO É A CALCULADORA OFICIAL, COPIADA. Ela, 12/11: *«essa
+   calculadora tem que ser igual, é igual. Quando eu falo que é igual, é
+   igual. A única coisa que você ia mudar aí era incluir uma nova
+   categoria de gasto»*. Então não refiz nada: copiei
+   `~/Desktop/mentoria-app/calculadora-precificacao.html` e mexi em QUATRO
+   pontos, todos marcados com «LS·NOVO». O resto é dela, linha por linha. */
+const LINHAS = [
+  {k:'produto', id:'c_prod', pote:'estoque', p:'Produto aplicado no serviço', on:true},
+  {k:'equipe',  id:'c_eq',   pote:'equipe',  p:'Comissão da executora',       on:true},
+  {k:'imposto', id:'c_imp',  pote:'imposto', p:'Imposto e taxa de recebimento',on:true},
+  {k:'mkt',     id:'c_mkt',  pote:'mkt',     p:'Verba de marketing',          on:true},
+  {k:'invest',  id:'c_inv',  pote:'invest',  p:'Reserva para investimento',   on:true}
+];
+/* LS·NOVO 1 — as categorias que ela criar neste serviço */
+const EXTRAS = [];
+let seqExtra = 0;
+const ORD_BASE = [
+  {id:'equipe', nm:'Equipe'},  {id:'oper', nm:'Operacional'}, {id:'estoque', nm:'Estoque'},
+  {id:'imposto',nm:'Imposto'}, {id:'invest',nm:'Investim.'},  {id:'mkt', nm:'Marketing'}
+];
+/* LS·NOVO 3 — os potes desenhados acompanham: categoria nova ganha o seu */
+function ORDlista(){
+  return [...ORD_BASE, ...EXTRAS.map(e=>({id:e.pote, nm:e.nm})), {id:'lucro', nm:'Lucro'}];
+}
+const MES = 100;
+function valores(){
+  const oper = r2(PROC.hora*PROC.horas);
+  /* LS·NOVO 2 — categoria desligada entra como ZERO, não some da conta:
+     o dinheiro dela volta pro lucro, que é exatamente o que ela quer ver. */
+  const lig = k => (LINHAS.find(l=>l.k===k)||{on:true}).on;
+  const v = {equipe:lig('equipe')?r2(PROC.equipe):0, oper,
+             estoque:lig('produto')?r2(PROC.produto):0,
+             imposto:lig('imposto')?r2(PROC.imposto):0,
+             invest:lig('invest')?r2(PROC.invest):0,
+             mkt:lig('mkt')?r2(PROC.mkt):0};
+  EXTRAS.forEach(e => { v[e.pote] = e.on ? r2(e.v) : 0; });
+  v.lucro = r2(PROC.preco - Object.values(v).reduce((a,b)=>a+b,0));
+  return v;
+}
+/* LS·NOVO 4 — o × que desliga a categoria e o + que cria uma nova.
+   ⚠️ DESLIGAR NÃO É APAGAR. A linha continua na tela, em cinza, com o ×
+   virando +: se ela sumisse, a dona esqueceria que existia e acharia que
+   o sistema perdeu. E o lucro muda na hora, pra ela VER o efeito. */
+function montaCampos(){
+  const linha = (l, extra) => `
+    <div class="lin${l.on?'':' lsOff'}" style="margin-bottom:7px">
+      <div class="perg">${l.p}${extra?' <em class="lsNova">nova</em>':''}</div>
+      <div class="digit"><span>R$</span><input id="${l.id}" type="text" inputmode="decimal"
+        value="${extra ? paraCampo(l.v) : paraCampo(PROC[l.k])}"${l.on?'':' disabled'}></div>
+      <div class="equiv" data-pc="${l.pote}">—</div>
+      <button class="lsX" data-liga="${l.id}"
+        title="${l.on?'não gastar com isso neste serviço':'voltar a gastar'}"
+        >${l.on?'×':'+'}</button>
+    </div>`;
+  document.getElementById('campos').innerHTML =
+      LINHAS.map(l=>linha(l,false)).join('')
+    + EXTRAS.map(l=>linha(l,true)).join('')
+    + `<button class="lsMais" id="lsMais">+ Incluir uma categoria de gasto</button>`;
+}
+addEventListener('click', e => {
+  const x = e.target.closest('.lsX');
+  if (x){
+    const alvo = [...LINHAS, ...EXTRAS].find(l=>l.id===x.dataset.liga);
+    if (alvo){ alvo.on = !alvo.on; montaCampos(); calcula(); }
+    return;
+  }
+  if (e.target.closest('#lsMais')){
+    const nm = (prompt('Nome da categoria de gasto deste serviço:','Fundo de reforma')||'').trim();
+    if (!nm) return;
+    seqExtra++;
+    EXTRAS.push({id:'c_ex'+seqExtra, pote:'ex'+seqExtra, k:'ex'+seqExtra,
+                 nm, p:nm, v:0, on:true});
+    montaCampos(); calcula();
+  }
+});
+function ajustaChave(){
+  const box = document.getElementById('chaveOper'), alvo = document.getElementById('c_horas');
+  if(!box || !alvo) return;
+  box.innerHTML = '<svg preserveAspectRatio="none"></svg>';
+  const svg = box.querySelector('svg');
+  const rs = svg.getBoundingClientRect(), rd = alvo.closest('.digit').getBoundingClientRect();
+  if(rs.width < 20){ box.innerHTML=''; return; }
+  const W = rs.width, H = Math.max(10, rs.height);
+  const x = Math.max(12, Math.min(W-12, (rd.left + rd.width/2) - rs.left));
+  const y = H*0.46, b = H*0.95, o = Math.min(6, H*0.4);
+  svg.setAttribute('viewBox', `0 0 ${W.toFixed(1)} ${H.toFixed(1)}`);
+  svg.dataset.bico = x.toFixed(1);
+  svg.innerHTML = `<path d="M1.5 1.5 C1.5 ${y.toFixed(1)} 4 ${y.toFixed(1)} ${(x-o*2).toFixed(1)} ${y.toFixed(1)}
+      L${(x-o).toFixed(1)} ${y.toFixed(1)} L${x.toFixed(1)} ${b.toFixed(1)}
+      L${(x+o).toFixed(1)} ${y.toFixed(1)} L${(x+o*2).toFixed(1)} ${y.toFixed(1)}
+      C${(W-4).toFixed(1)} ${y.toFixed(1)} ${(W-1.5).toFixed(1)} ${y.toFixed(1)} ${(W-1.5).toFixed(1)} 1.5"
+    fill="none" stroke="#B8577A" stroke-width="2" stroke-linecap="round"
+    stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+}
+/* escrever num id que não existe mais derruba a função inteira e a
+   calculadora para de calcular — então toda escrita passa por aqui. */
+function põe(id, v, prop){ const e = document.getElementById(id); if(e) e[prop||'textContent'] = v; }
+function calcula(){
+  const v = valores();
+  const mx = Math.max(...Object.values(v).map(Math.abs)) || 1;
+  põe('potes', ORDlista().map(p=>`
+    <div class="p">
+      ${pote({nivel: v[p.id]>0 ? Math.max(.1, v[p.id]/mx) : 0, etq:p.nm,
+              vazio: v[p.id]<0 ? '!' : ''})}
+      <div class="vl" style="color:${v[p.id]<0?'var(--vermelho)':'var(--tinta)'}">${v[p.id]<0?'− ':''}${RS(Math.abs(v[p.id]))}</div>
+      <div class="pc">${d1(v[p.id]/PROC.preco*100)}%</div>
+    </div>`).join(''), 'innerHTML');
+  document.querySelectorAll('[data-pc]').forEach(el=>{
+    el.textContent = d1(v[el.dataset.pc]/PROC.preco*100)+'%';
+  });
+  document.getElementById('c_oper').value = d2(v.oper);
+  põe('ecoNome', PROC.nome || 'esse procedimento');
+  const custos = ORDlista().filter(p=>p.id!=='lucro');
+  const pcCustos = custos.reduce((a,p)=>a+v[p.id],0)/PROC.preco*100;
+  const estourou = pcCustos > 100.05;
+  const den = cima => `<svg class="den" viewBox="0 0 100 6" preserveAspectRatio="none">
+    <path d="${cima ? 'M0 6 L0 3 L4 0 L8 3 L12 0 L16 3 L20 0 L24 3 L28 0 L32 3 L36 0 L40 3 L44 0 L48 3 L52 0 L56 3 L60 0 L64 3 L68 0 L72 3 L76 0 L80 3 L84 0 L88 3 L92 0 L96 3 L100 0 L100 6 Z'
+      : 'M0 0 L0 3 L4 6 L8 3 L12 6 L16 3 L20 6 L24 3 L28 6 L32 3 L36 6 L40 3 L44 6 L48 3 L52 6 L56 3 L60 6 L64 3 L68 6 L72 3 L76 6 L80 3 L84 6 L88 3 L92 6 L96 3 L100 6 L100 0 Z'}"
+      fill="#FFFEFA"/></svg>`;
+  const fita = document.getElementById('fitaRes');
+  fita.className = 'fitaRes' + (estourou ? ' estourou' : '');
+  fita.innerHTML = `<div class="in">
+      <div class="q">margem de lucro líquido</div>
+      <div class="n">${v.lucro<0?'− ':''}${RS(Math.abs(v.lucro))}<em>${d1(v.lucro/PROC.preco*100)}%</em></div>
+      <div class="ok">${estourou
+        ? `os custos passam o preço em <b>${d1(pcCustos-100)}%</b>`
+        : `<b>100%</b> do preço mapeado — nenhum real sem dono`}</div>
+    </div>${den(false)}`;
+  põe('d1', RS(v.lucro));  põe('d30', RS0(r2(v.lucro*MES)));
+  ajustaChave();
+}
+addEventListener('input', e=>{
+  const id = e.target.id;
+  if(id==='c_nome'){ PROC.nome = e.target.value.trim(); calcula(); return; }
+  /* LS·NOVO — as categorias criadas guardam o valor nelas mesmas */
+  const ex = EXTRAS.find(x=>x.id===id);
+  if (ex){ ex.v = Math.max(0, leNum(e.target.value)||0); calcula(); return; }
+  const m = {c_preco:'preco', c_prod:'produto', c_eq:'equipe', c_imp:'imposto',
+             c_mkt:'mkt', c_inv:'invest', c_hora:'hora', c_horas:'horas'}[id];
+  if(!m) return;
+  const val = leNum(e.target.value);
+  PROC[m] = m==='preco' ? Math.max(1, val||1) : Math.max(0, val||0);
+  calcula();
+});
+addEventListener('resize', ajustaChave);
+montaCampos(); calcula();
+</script>
+<script>
+/* ⭐ A MARGEM É MEDIDA, NÃO ESTIMADA.
+   `folga` é o respiro que a tela tem que manter em cima e embaixo. O fator
+   sai da conta entre o espaço disponível e a altura REAL do conteúdo —
+   lida com `scrollHeight`, que não é afetado pelo scale já aplicado. */
+(function(){
+  const FOLGA = 54;
+  const app = document.querySelector('.app');
+  const palco = document.querySelector('.lsPalco');
+  if(!app || !palco) return;
+  function encaixa(){
+    if (innerWidth < 980){ app.style.removeProperty('--z'); return; }
+    app.style.setProperty('--z', 1);              // mede sem escala
+    const disponivel = palco.clientHeight - FOLGA * 2;
+    const preciso = app.scrollHeight;
+    const z = Math.min(1, disponivel / preciso);
+    app.style.setProperty('--z', z.toFixed(4));
+  }
+  addEventListener('resize', encaixa);
+  /* categoria criada ou desligada muda a altura: refaz a conta */
+  new MutationObserver(() => requestAnimationFrame(encaixa))
+    .observe(app, { childList:true, subtree:true });
+  addEventListener('load', encaixa);
+  encaixa();
+})();
+</script>
+</body></html>

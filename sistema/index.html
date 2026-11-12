@@ -115,6 +115,40 @@ body.lsRecolhe #lsPontos{display:flex}
 body.lsRecolhe.lsAberta #lsPontos{left:290px}
 #lsPontos i{width:4px;height:4px;border-radius:50%;background:#0D0D10;display:block}
 #lsVeu{position:fixed;inset:0;z-index:55;background:rgba(13,13,16,.18);display:none}
+
+/* ══ A MARCA FIXA, EM TODA TELA ═════════════════════════════════════════
+   Ela, 12/11: *«todas as telas têm que ter aquela logo do laila salon
+   fixa»*. Cada tela é um iframe — colar a logo dentro de cada uma seria
+   repetir o trabalho 20 vezes e esquecer na 21ª. A barra mora na CASCA,
+   por fora dos iframes: toda tela que abrir nasce com a marca em cima.
+
+   ⚠️ A barra come 46px de altura, e ela acabou de pedir o sistema MAIOR.
+   Compensa: os três pontos saíram da lateral esquerda e vieram para a
+   barra, então o `#palco` devolve os 58px de recuo — o sistema fica mais
+   largo do que estava, e perde só a faixa da marca. */
+#lsTopo{position:fixed;top:0;left:0;right:0;height:46px;z-index:66;background:#fff;
+  border-bottom:1px solid #ECECF1;display:none;align-items:center;gap:14px;padding:0 16px}
+body.lsRecolhe #lsTopo{display:flex}
+#lsTopo .lsLogoTopo{height:19px;width:auto;display:block}
+#lsTopo .lsTela{margin-left:auto;font-size:12.5px;color:#8A8A94;letter-spacing:-.01em}
+/* ⚠️ `padding-top` no #palco NÃO empurra as telas: os iframes são
+   `position:absolute; inset:0`, e um absoluto se ancora no PADDING BOX
+   do pai — ou seja, ele começa debaixo do padding, não depois dele.
+   O resultado era a barra da marca tapando os 46px de cima de TODA
+   tela do sistema. Quem desloca um absoluto é `top`, não padding.
+   (Achado por um clique que não chegou no botão: o Playwright disse
+   «#lsTopo intercepts pointer events».) */
+body.lsRecolhe #palco{padding-left:0}
+/* ⚠️ E `top:46px` sozinho não bastava: o `#palco iframe` declara
+   `height:100%` explícito, que vence o `bottom:0` do inset. O iframe
+   descia 46px e continuava com 100% de altura — vazava 46px para fora da
+   janela e comia o rodapé de toda tela (foi o botão «Cadastrar
+   procedimento» saindo pela borda de baixo que mostrou isso). */
+body.lsRecolhe #palco iframe{top:46px;height:calc(100% - 46px)}
+body.lsRecolhe #lsPontos{position:static;width:34px;height:34px;border-radius:10px}
+body.lsRecolhe.lsAberta #lsPontos{left:auto}
+body.lsRecolhe #lado{top:46px}
+body.lsRecolhe.lsAberta #lado{top:46px;height:calc(100% - 46px)}
 body.lsRecolhe.lsAberta #lsVeu{display:block}
 </style></head>
 <body>
@@ -135,6 +169,12 @@ body.lsRecolhe.lsAberta #lsVeu{display:block}
   <div id="menu"></div>
   <div id="pe"><b id="pe-salao">Salão demonstração</b>os dados deste sistema ficam separados</div>
 </nav>
+
+<div id="lsTopo">
+  <button id="lsPontos" title="abrir o menu"><i></i><i></i><i></i></button>
+    <img class="lsLogoTopo" src="marca-clara.png" alt="laila salon">
+  <span class="lsTela" id="lsTela"></span>
+</div>
 
 <main id="palco"><div id="carregando">abrindo…</div></main>
 
@@ -158,6 +198,8 @@ const SETORES = [
   {r:'Financeiro', itens:[
     {k:'caixa',    r:'Caixa do dia', u:'interno/caixa.html',
      i:'<path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'},
+    {k:'servicos', r:'Serviços',     u:'interno/servicos.html',
+     i:'<path d="M6.5 3.5l11 11"/><path d="M17.5 3.5l-11 11"/><circle cx="5" cy="18" r="2.4"/><circle cx="19" cy="18" r="2.4"/>'},
     {k:'concilia', r:'Conciliação',  u:'interno/conciliacao.html',
      i:'<path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'},
     {k:'metas',    r:'Metas',        u:'interno/metas.html',
@@ -235,6 +277,7 @@ function ir(k){
   document.body.classList.remove('menu');
   if(location.hash.slice(1) !== k) history.replaceState(null, '', '#' + k);
   document.title = it.r + ' · Laila Salon';
+  const nome = document.getElementById('lsTela'); if(nome) nome.textContent = it.r;
 }
 
 document.getElementById('pe-salao').textContent =
@@ -247,7 +290,6 @@ addEventListener('hashchange', () => {
   if(TODOS.find(x => x.k === k && x.u)) ir(k);
 });
 </script>
-<button id="lsPontos" title="abrir o menu"><i></i><i></i><i></i></button>
 <div id="lsVeu"></div>
 <script>
 /* ⚠️ RECOLHIDA POR PADRÃO, e o estado fica guardado: se ela abrir e

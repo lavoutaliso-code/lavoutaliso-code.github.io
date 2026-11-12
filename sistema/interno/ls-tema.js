@@ -192,11 +192,20 @@ function encaixarAgenda(){
   });
 }
 
-/* ══ 4 · O LOCKUP no lugar da palavra «Painel» ════════════════════════ */
+/* ══ 4 · A LOGO no lugar da palavra «Painel» ══════════════════════════
+   ⚠️ Ela, 12/11: *«a logo não é essa. Esse laila de um jeito e SALON de
+   outro. É aquela logo que é tudo a mesma fonte, que muda só a cor — o
+   laila de uma cor e o salon de outra. Tem essa logo salva já.»*
+
+   E tinha: `vsl-anamnese/assets/logo-lailasalon.png`, 393×79. Amostrado
+   com Pillow: «laila» #000002, «salon» #C2005E. Eu estava MONTANDO um
+   lockup com a fonte do sistema (peso 700 + versalete espaçado) em vez
+   de usar o arquivo — o mesmo erro de «refazer em vez de copiar».
+   A logo agora é o PNG, e ela aparece em TODA tela do sistema. */
 function lockup(raiz){
   const a = raiz.querySelector('.tit .a');
-  if (a && !a.querySelector('.lsLock'))
-    a.innerHTML = '<span class="lsLock"><b>laila</b><i>SALON</i></span>';
+  if (a && !a.querySelector('.lsLogo'))
+    a.innerHTML = '<img class="lsLogo" src="marca-clara.png" alt="laila salon">';
 }
 
 /* ══ 5 · O GANCHO ════════════════════════════════════════════════════

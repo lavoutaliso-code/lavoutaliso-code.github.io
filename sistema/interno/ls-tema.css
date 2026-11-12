@@ -35,12 +35,13 @@ body{color:var(--ls-tinta)!important;
 /* ── 2 · o cabeçalho ───────────────────────────────────────────────── */
 .tit .a{color:var(--ls-fraca)!important}
 .tit .b{color:var(--ls-tinta)!important}
-/* o lockup entra no lugar da palavra «Painel» — o `ls-tema.js` escreve */
-.lsLock{display:inline-flex;align-items:baseline;line-height:1;font-size:22px}
-.lsLock b{font:700 1em -apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;
-  letter-spacing:-.045em;color:var(--ls-tinta)}
-.lsLock i{font:600 .46em -apple-system,BlinkMacSystemFont,sans-serif;font-style:normal;
-  letter-spacing:.28em;margin-left:.36em;text-indent:.28em;color:var(--ls-pink)}
+/* a logo entra no lugar da palavra «Painel» — o `ls-tema.js` escreve.
+   Proporção medida do arquivo: 393×79 = 4,975:1. A altura manda; a
+   largura vem sozinha, senão a logo distorce. */
+.lsLogo{display:block;height:23px;width:auto;image-rendering:auto}
+/* a logo acompanha o sistema inteiro: onde houver barra de título, ela está */
+.lsMarca{display:flex;align-items:center;gap:12px;flex:none}
+.lsMarca .lsLogo{height:21px}
 
 .hjPer,.hjPerSel{color:var(--ls-tinta)!important}
 .hjPerIco{color:var(--ls-fraca2)!important}
@@ -133,8 +134,11 @@ body{color:var(--ls-tinta)!important;
   text-transform:uppercase}
 .lsAgTit{font:400 21px/1.22 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;
   letter-spacing:-.012em;color:#1D1D1D;padding-right:86px}
-.lsAgCard.ok .lsAgTit{text-decoration:line-through;text-decoration-thickness:1.5px;
-  text-decoration-skip-ink:none}
+/* ⚠️ O risco veio do estado «feito» do cartão original. Aqui o estado é
+   «CHEGOU» — a cliente acabou de entrar no salão, não foi atendida nem
+   desmarcada. Nome riscado lê como cancelamento: sai. Quem distingue é o
+   selo rosa e a barra lateral, que já estão no cartão. */
+.lsAgCard.ok .lsAgTit{text-decoration:none;color:#1D1D1D}
 .lsAgCard.espera .lsAgTit{color:#55555C}
 .lsAgHora{margin-top:6px;font:400 17px -apple-system,BlinkMacSystemFont,sans-serif;
   color:#717171;letter-spacing:-.01em}
@@ -219,8 +223,31 @@ html.embutido #lt-tabbar{display:none!important}
 .gaveta *[style*="overflow"], .cdLista{
   scrollbar-gutter:stable;
 }
-.gaveta{padding-right:14px}
-.gvLista,.lsExt,.lsAgLista,.fila,.saRolo{padding-right:14px}
+/* ══ O ROLAR FICA NA FAIXA BRANCA, FORA DO CARD CINZA ═══════════════════
+   Ela, 12/11, pela 3ª vez: *«o rolar tela do extrato continua em cima dos
+   números. Coloca o rolar tela por fora do card cinza, para não tampar os
+   números»*. Minhas duas tentativas anteriores (scrollbar-gutter e depois
+   padding) falharam pela MESMA razão, e eu só achei medindo:
+
+   o Mac dela usa **barra flutuante** (overlay). Ela não ocupa espaço no
+   layout — é pintada POR CIMA, encostada na borda do elemento que rola.
+   Padding não a empurra; `scrollbar-gutter:stable` não vale para overlay.
+   E o Chromium sem cabeça usa barra CLÁSSICA — por isso minha medição
+   dizia que estava tudo certo enquanto a tela dela dizia que não.
+
+   ⭐ Declarar `::-webkit-scrollbar` tira o modo overlay: o Chrome passa a
+   desenhar barra clássica, que RESERVA a própria largura. Aí ela deixa de
+   ser uma camada por cima e vira uma coluna ao lado — na faixa branca. */
+.gaveta{padding-right:16px}
+.gaveta::-webkit-scrollbar{width:11px;background:transparent}
+.gaveta::-webkit-scrollbar-track{background:transparent}
+.gaveta::-webkit-scrollbar-thumb{
+  background:#D5D5DC;border-radius:11px;border:3px solid #fff;background-clip:padding-box}
+.gaveta::-webkit-scrollbar-thumb:hover{background:#B9B9C3;background-clip:padding-box;
+  border:3px solid #fff}
+/* as listas por dentro NÃO rolam sozinhas — quem rola é a gaveta branca,
+   senão nasce uma segunda barra justamente em cima do card cinza. */
+.gvLista,.lsExt,.lsAgLista,.fila,.saRolo{padding-right:0;overflow-y:visible;max-height:none}
 /* a barra, quando aparece, fica discreta e FORA do texto */
 .gaveta::-webkit-scrollbar, .gvLista::-webkit-scrollbar,
 .lsExt::-webkit-scrollbar, .lsAgLista::-webkit-scrollbar{width:8px}

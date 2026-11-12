@@ -1,0 +1,225 @@
+<!doctype html><html lang="pt-BR"><head>
+<meta name="robots" content="noindex,nofollow"><meta charset="utf-8">
+<title>Serviços · Laila Salon</title>
+<style>
+/* ══ M3 · A NOTA FISCAL É A COMANDA DA AULA 03, INTEIRA ═══════════════
+   Ela, 12/11: *«a nota que a gente usou tem círculo, tem marca-texto, é
+   bem profissional. Não tá desse jeito»* — e estava certa: eu tinha
+   copiado a `.cp` mas deixado de fora as DUAS peças que fazem ela ser
+   aquela nota.
+     · `.it.oculta` — o MARCA-TEXTO rosa, desenhado em SVG dentro do
+       background (não é um retângulo: é uma mancha de caneta, com as
+       bordas irregulares). Na aula ele marca o custo que ninguém conta.
+     · `.circ.g` + `.anel` — o CÍRCULO à mão em volta do número final.
+   As duas foram copiadas de `aula3.html`, linhas 92–98 e 128–158.
+
+   ⛔ E saíram, a pedido dela: «salão com 3 cadeiras», «1 horário de
+   1h30» e os potes desenhados. Fica o nome do procedimento, a divisão,
+   e o lucro líquido circulado. Clean, preto, fonte do iPhone.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  --sfd:-apple-system,'SF Pro Display',BlinkMacSystemFont,system-ui,sans-serif;
+  --papel:#FAF9F4; --tinta:#26251F; --t2:#6E6C63; --t3:#A3A098;
+  --rosa:#FCB5D5; --vinho:#7A2846; --verde:#3E6B3A; --pink:#FF2D87;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#EFEFEF;padding:0 0 56px;color:var(--tinta);
+  font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;
+  -webkit-font-smoothing:antialiased}
+.lsCab{margin:30px 26px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;
+  margin-bottom:26px}
+.lsCab .tt{font-family:var(--sfd);font-size:27px;font-weight:800;letter-spacing:-.035em}
+.lsCab .ss{font-size:13.5px;color:var(--t2);margin-top:4px}
+.lsBt{flex:none;display:flex;align-items:center;gap:8px;height:44px;padding:0 20px 0 16px;
+  border:0;border-radius:14px;background:var(--pink);color:#fff;cursor:pointer;
+  font-family:inherit;font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+.lsBt i{font-style:normal;font-size:19px;line-height:1;margin-top:-1px}
+.lsEsteira{padding-left:26px;padding-right:26px;display:flex;gap:24px;overflow-x:auto;padding:0 0 18px;align-items:flex-start}
+.lsEsteira > *{flex:none}
+.lsNovo{width:300px;background:#FAFAF7;border:1.5px dashed #D8D8DE;border-radius:14px;
+  padding:60px 24px;text-align:center}
+.lsNovo .sinal{width:44px;height:44px;margin:0 auto 12px;border-radius:50%;background:var(--pink);
+  color:#fff;font-size:24px;line-height:44px}
+.lsNovo .cv{font-size:15px;font-weight:700;letter-spacing:-.02em}
+.lsNovo .cd{font-size:12px;color:var(--t2);margin-top:5px;line-height:1.5}
+/* ===== a comanda — estreita e alta ===== */
+.cp{background:transparent;position:relative;padding:0;
+  display:flex;flex-direction:column;
+  width:300px;min-height:0}
+.cp .den{display:block;width:100%;height:8px}
+.cp .in{background:#FFFEFA;padding:18px 22px;flex:1 1 auto;display:flex;flex-direction:column;
+  justify-content:center}
+.cp h4{font-family:var(--sfd);font-size:21px;font-weight:700;letter-spacing:-.025em;
+  text-align:center;line-height:1.05}
+.cp .cab{font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--t3);text-align:center;font-weight:700;line-height:1.3}
+.cp .tr{border-top:1.6px dashed #D9D5C7;margin:10px 0}
+.cp .it{display:flex;align-items:baseline;gap:4px;font-size:15px;
+  padding:5px 0;color:var(--t2)}
+.cp .it .nm{white-space:nowrap}
+.cp .it .pt{flex:1 1 auto;border-bottom:1.4px dotted #CFCBBE;transform:translateY(-3px)}
+.cp .it .vl{font-weight:700;color:var(--tinta);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cp .it.oculta{margin:0 -6px;padding-left:6px;padding-right:6px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'><path d='M1,4.5 C20,1.5 40,6 60,2.8 C78,0.6 92,5 99,2.6 L99,16.4 C80,19.2 60,14 40,18.2 C22,20 10,16 1,18.4 Z' fill='%23FCB5D5'/></svg>");
+  background-size:100% 100%;background-repeat:no-repeat}
+.cp .it.oculta .nm,.cp .it.oculta .vl{color:var(--vinho)}
+.cp .it.oculta .pt{border-bottom-color:#D98FB6}
+.cp .it.cego{color:#BDB9AC} .cp .it.cego .vl{color:#BDB9AC;font-weight:600}
+.cp .it.cego .pt{border-bottom-color:#E6E2D5}
+.cp .tot{text-align:center;padding-top:10px}
+.cp .tot .q{display:block;font-size:11px;font-weight:700;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--t3);margin-bottom:3px}
+.cp .tot .r{font-family:var(--sfd);font-weight:700;letter-spacing:-.045em;
+  font-size:44px;font-variant-numeric:tabular-nums;display:block}
+.cp.ok .tot .r{color:var(--verde)} .cp.mau .tot .r{color:var(--vinho)}
+.cp .pe{font-size:11px;color:var(--t3);text-align:center;margin-top:4px}
+.circ{position:relative;display:inline-block;padding:.26em .85em .3em;margin:.12em .1em}
+.circ > .anel{position:absolute;inset:-6% -2%;width:104%;height:112%;overflow:visible;pointer-events:none}
+.circ > .anel path{fill:none;stroke:var(--vinho);stroke-width:2.6;stroke-linecap:round;
+  vector-effect:non-scaling-stroke;opacity:.92}
+.circ.g > .anel path{stroke:var(--tinta)}
+.circ > span{position:relative}
+
+/* ══ A GAVETA DO CADASTRO ═══════════════════════════════════════════════
+   Ela, 12/11: *«ficou faltando você me mostrar ONDE vai ficar o botão de
+   cadastro de procedimento na tela inicial, que eu não localizei»*.
+   Ele não existia na navegação — a calculadora era só um mockup solto.
+   Agora: Financeiro → Serviços → «Cadastrar procedimento», e a
+   calculadora abre POR CIMA, sem tirar a esteira da tela. */
+#lsVeuS{position:fixed;inset:0;z-index:60;background:#EFEFEF;
+  display:none;opacity:0;transition:opacity .18s ease}
+#lsVeuS.on{display:block;opacity:1}
+#lsGav{position:fixed;z-index:61;inset:0;display:none;align-items:stretch;justify-content:center;
+  padding:0;pointer-events:none}
+#lsGav.on{display:flex}
+/* ⚠️ A gaveta nasceu com 600px, quando a calculadora era uma coluna só.
+   Agora ela tem a marca de um lado e os campos do outro — em 600px a
+   coluna da marca sumia (o corte do media query é 980px). */
+/* ⚠️ Como gaveta flutuante, a esteira vazava por trás e o conjunto ficava
+   sujo — o oposto do «clean premium» que ela pediu. A calculadora é uma
+   TELA: ocupa o palco inteiro, sem raio, sem sombra, sem nada atrás. */
+#lsGavCx{position:relative;width:100%;max-width:none;height:100%;
+  background:#EFEFEF;overflow:hidden;pointer-events:auto;
+  transform:translateY(8px);transition:transform .2s ease}
+#lsGav.on #lsGavCx{transform:none}
+#lsGavCx iframe{width:100%;height:100%;border:0;display:block}
+/* ⚠️⚠️ Ela, 12/11: *«um defeito grosseiro, GRAVE: não tem botão de fechar
+   nessa página da calculadora, se eu quiser voltar»*. Tinha — um «← Serviços»
+   branco, discreto, no canto superior esquerdo. Contraste do fundo do botão
+   contra a tela: 1,15:1. Eu tinha MEDIDO esse número e seguido em frente:
+   um botão que some no fundo é um botão que não existe.
+   Agora são DOIS, e nenhum depende de a pessoa procurar:
+     · a barra do topo (que toda tela já tem) ganha o × de fechar, à direita;
+     · e o «← Serviços» ganha corpo, contorno e peso. */
+#lsFecha{position:absolute;left:clamp(28px,4vw,64px);top:16px;z-index:3;height:40px;border:0;
+  padding:0 20px 0 15px;border-radius:99px;background:#1D1D22;cursor:pointer;color:#fff;
+  font-family:inherit;font-size:14px;font-weight:600;letter-spacing:-.01em;
+  display:inline-flex;align-items:center;gap:9px;
+  box-shadow:0 2px 6px rgba(16,24,40,.18), 0 14px 28px -16px rgba(16,24,40,.6)}
+#lsFecha:hover{background:#000}
+#lsFecha b{font-size:16px;line-height:1;font-weight:400}
+/* o × da barra, no canto oposto — o lugar onde todo mundo procura fechar */
+#lsFechaX{position:fixed;right:16px;top:-40px;z-index:80;width:34px;height:34px;border:0;
+  border-radius:50%;background:#EFEFEF;cursor:pointer;color:#3A3A44;font-size:19px;line-height:1;
+  display:none;align-items:center;justify-content:center;padding:0}
+#lsFechaX:hover{background:#E2E2E8;color:#000}
+</style>
+</head>
+<body>
+
+<div class="lsCab">
+  <div><div class="tt">Serviços</div>
+    <div class="ss">a cada registro, é assim que o dinheiro desse procedimento se divide</div></div>
+  <button class="lsBt"><i>+</i> Cadastrar procedimento</button>
+</div>
+<div class="lsEsteira" id="esteira"></div>
+<script>
+const DC = `M0 6 L0 3 L4 0 L8 3 L12 0 L16 3 L20 0 L24 3 L28 0 L32 3 L36 0 L40 3 L44 0 L48 3 L52 0 L56 3 L60 0 L64 3 L68 0 L72 3 L76 0 L80 3 L84 0 L88 3 L92 0 L96 3 L100 0 L100 6 Z`, DB = `M0 0 L0 3 L4 6 L8 3 L12 6 L16 3 L20 6 L24 3 L28 6 L32 3 L36 6 L40 3 L44 6 L48 3 L52 6 L56 3 L60 6 L64 3 L68 6 L72 3 L76 6 L80 3 L84 6 L88 3 L92 6 L96 3 L100 6 L100 0 Z`, ANEL = `M10,50 C10,20 70,7 152,8 C236,9 291,23 291,50 C291,77 236,92 152,92 C66,92 10,79 10,50 C10,32 45,17 112,12`;
+const brl = v => v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+/* ⚠️ A divisão é a medida do salão: 120,96 + 43 + 39,04 + 17 = 220,00.
+   Progressiva 279,90 → 59,90 · Manutenção 249,90 → 29,90. Fecha.
+   ⭐ O marca-texto (`oculta`) vai nas duas que a dona de salão esquece —
+   investimento e marketing. É a mesma função que ele tem na aula. */
+const S = [
+ {nm:'PROGRESSIVA', preco:279.90, itens:[
+   ['− Comissão + bônus',120.96,0],['− Produto',43.00,0],
+   ['− Investimento',39.04,1],['− Marketing',17.00,1]]},
+ {nm:'MANUTENÇÃO', preco:249.90, itens:[
+   ['− Comissão + bônus',120.96,0],['− Produto',43.00,0],
+   ['− Investimento',39.04,1],['− Marketing',17.00,1]]},
+];
+document.getElementById('esteira').innerHTML = S.map(s => {
+  const lucro = +(s.preco - s.itens.reduce((a,i)=>a+i[1],0)).toFixed(2);
+  const normais = s.itens.filter(i=>!i[2]), ocultas = s.itens.filter(i=>i[2]);
+  const linha = ([n,v],o) => `<div class="it${o?' oculta':''}"><span class="nm">${n}</span>
+      <span class="pt"></span><span class="vl">${brl(v)}</span></div>`;
+  return `<div class="cp">
+    <svg class="den" viewBox="0 0 100 6" preserveAspectRatio="none"><path d="${DC}" fill="#FFFEFA"/></svg>
+    <div class="in">
+      <h4>${s.nm}</h4>
+      <div class="tr"></div>
+      <div class="it"><span class="nm">Preço</span><span class="pt"></span>
+        <span class="vl">${brl(s.preco)}</span></div>
+      ${normais.map(i=>linha(i,0)).join('')}
+      <div class="tr"></div>
+      ${ocultas.map(i=>linha(i,1)).join('')}
+      <div class="tr"></div>
+      <div class="tot"><span class="q">lucro líquido</span>
+        <span class="circ g" style="display:block;margin-top:2px">
+          <svg class="anel" viewBox="0 0 300 100" preserveAspectRatio="none"><path d="${ANEL}"/></svg>
+          <span class="r" style="color:var(--tinta)">${brl(lucro)}</span></span></div>
+      <div class="pe">${(lucro/s.preco*100).toFixed(1).replace('.',',')}% do que a cliente pagou</div>
+    </div>
+    <svg class="den" viewBox="0 0 100 6" preserveAspectRatio="none"><path d="${DB}" fill="#FFFEFA"/></svg>
+  </div>`;
+}).join('') + `<div class="lsNovo">
+   <div class="sinal">+</div><div class="cv">Cadastrar procedimento</div>
+   <div class="cd">a esteira cresce a cada procedimento que você cadastrar</div></div>`;
+</script><div id="lsVeuS" onclick="fecharCadastro()"></div>
+<div id="lsGav"><div id="lsGavCx">
+  <button id="lsFecha" onclick="fecharCadastro()"><b>←</b> Voltar para Serviços</button>
+  <iframe id="lsGavFr" title="Cadastro de procedimento"></iframe>
+</div></div>
+<script>
+/* o iframe nasce no 1º clique: carregar a calculadora antes de alguém
+   querer cadastrar é pagar por uma tela que ninguém pediu */
+/* ⭐ Ela: *«todo topo tem que ter o que está sendo falado»*. A barra da
+   marca mora na CASCA, fora deste iframe — então a tela avisa a casca
+   qual é o nome dela, e a casca escreve. Se a tela estiver aberta
+   sozinha (fora do sistema), nada quebra: o `try` segura. */
+function topo(nome, fechavel){
+  try{
+    const pai = parent.document;
+    const alvo = pai.getElementById('lsTela'); if(alvo) alvo.textContent = nome;
+    let x = pai.getElementById('lsFechaX');
+    if(!x){ x = pai.createElement ? null : null; }
+    if(!x){ x = pai.createElement('button'); x.id = 'lsFechaX'; x.textContent = '×';
+      x.title = 'fechar'; pai.getElementById('lsTopo').appendChild(x);
+      x.onclick = () => fecharCadastro(); }
+    x.style.cssText = fechavel
+      ? 'position:static;display:inline-flex;align-items:center;justify-content:center;'
+      + 'width:34px;height:34px;border:0;border-radius:50%;background:#EFEFEF;color:#3A3A44;'
+      + 'font-size:19px;line-height:1;cursor:pointer;padding:0;margin-left:14px'
+      : 'display:none';
+  }catch(e){}
+}
+function abrirCadastro(){
+  const f = document.getElementById('lsGavFr');
+  if(!f.src) f.src = 'cadastro-procedimento.html';
+  document.getElementById('lsVeuS').classList.add('on');
+  document.getElementById('lsGav').classList.add('on');
+  topo('Financeiro · Cadastro de procedimento', true);
+}
+function fecharCadastro(){
+  document.getElementById('lsVeuS').classList.remove('on');
+  document.getElementById('lsGav').classList.remove('on');
+  topo('Financeiro · Serviços', false);
+}
+topo('Financeiro · Serviços', false);
+addEventListener('keydown', e => e.key === 'Escape' && fecharCadastro());
+document.querySelector('.lsBt').onclick = abrirCadastro;
+document.addEventListener('click', e => {
+  if(e.target.closest('.lsNovo')) abrirCadastro();
+});
+</script>
+</body></html>
