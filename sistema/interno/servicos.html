@@ -123,6 +123,27 @@ body{background:#EFEFEF;padding:0 0 56px;color:var(--tinta);
   border-radius:50%;background:#EFEFEF;cursor:pointer;color:#3A3A44;font-size:19px;line-height:1;
   display:none;align-items:center;justify-content:center;padding:0}
 #lsFechaX:hover{background:#E2E2E8;color:#000}
+
+/* ══ O CELULAR ═════════════════════════════════════════════════════════
+   ⚠️ Visto no print da sequência: o título e o botão disputavam a mesma
+   linha em 390px, e o subtítulo quebrava em cinco linhas minúsculas ao
+   lado. Empilhado, cada um tem a largura inteira — e o botão vira alvo
+   de dedo em vez de alvo de mouse. */
+@media (max-width:760px){
+  .lsCab{flex-direction:column;align-items:stretch;gap:14px;margin:18px 18px 0}
+  .lsCab .tt{font-size:24px}
+  .lsCab .ss{font-size:13px}
+  .lsBt{width:100%;height:48px;justify-content:center;font-size:15px}
+  .lsEsteira{padding-left:18px;padding-right:18px;gap:16px;
+    scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+  .lsEsteira > *{scroll-snap-align:center}
+  .cp{width:min(300px,82vw)}
+  .lsNovo{width:min(300px,82vw);padding:44px 20px}
+  /* ⚠️ o «Voltar para Serviços» não pode cair em cima do título da
+     calculadora: no celular ele vira uma barra própria, acima dela */
+  #lsFecha{position:fixed;left:12px;top:60px;height:36px;padding:0 15px 0 11px;font-size:13px}
+  #lsGavCx{padding-top:0}
+}
 </style>
 <script src="../ls-conta.js"></script></head>
 <body>

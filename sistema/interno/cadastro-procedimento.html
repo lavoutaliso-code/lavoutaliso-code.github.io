@@ -258,6 +258,22 @@ body{font-family:Poppins,var(--ui);background:#EFEFEF;color:var(--tinta);font-we
 }
 /* no celular nada muda: a coluna da marca sai e a calculadora volta a rolar */
 @media (max-width:979px){ .lsPitch{display:none} }
+
+/* ══ O CELULAR ═════════════════════════════════════════════════════════
+   ⚠️ O print mostrou o título atrás do botão «Voltar». A coluna da marca
+   já sai abaixo de 980px; o que faltava era o espaço no topo para o
+   botão que a tela de Serviços desenha por cima desta. */
+@media (max-width:760px){
+  .lsPalco{padding:0 14px}
+  .scroll{padding-top:50px}
+  .app{max-width:none}
+  .maquina{padding:12px}
+  .lin{padding:7px 30px 7px 12px}
+  .lin .perg{font-size:13px}
+  .lin .digit input{font-size:16px}   /* 16px impede o iPhone de dar zoom */
+  .lsCadastrar{height:52px;font-size:16px}
+  .lsEscala{transform:none!important}  /* no celular a página rola */
+}
 </style>
 <script src="../ls-conta.js"></script></head>
 <body>
