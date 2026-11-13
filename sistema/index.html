@@ -124,6 +124,16 @@ body.lsRecolhe.lsAberta #lsPontos{left:290px}
    alinhadas por um container de largura fixa. Sem gracinha. */
 #lsPontos{flex-direction:column;align-items:center;justify-content:center;gap:4px!important}
 #lsPontos i{width:16px;height:1.7px;border-radius:2px;background:#0D0D10;display:block}
+/* ══ A TELA TRAVADA ════════════════════════════════════════════════════
+   ⚠️ Não é «desabilitado e pronto»: botão apagado sem explicação parece
+   defeito. O cadeado diz que está fechado DE PROPÓSITO, e o `title`
+   diz até quando. O item não some da lista porque ela precisa ver que
+   a tela existe — só ainda não passou pelo rebranding. */
+.item.travada{opacity:1;color:#A9A9B4;cursor:not-allowed}
+.item.travada svg:not(.cad){opacity:.5}
+.item.travada .cad{margin-left:auto;color:#C2C2CC;flex:none}
+.item.travada:hover{background:transparent}
+
 #lsVeu{position:fixed;inset:0;z-index:55;background:rgba(13,13,16,.18);display:none}
 
 /* ══ A MARCA FIXA, EM TODA TELA ═════════════════════════════════════════
@@ -136,8 +146,13 @@ body.lsRecolhe.lsAberta #lsPontos{left:290px}
    Compensa: os três pontos saíram da lateral esquerda e vieram para a
    barra, então o `#palco` devolve os 58px de recuo — o sistema fica mais
    largo do que estava, e perde só a faixa da marca. */
+/* ⚠️ Ela, 12/11: *«não deixa essa barra separando a tela do topo não,
+   faz ele ser topo infinito»*. A barra era branca e a tela abaixo dela
+   também é branca — o que separava as duas era UM fio de 1px. Tirado o
+   fio, o branco corre do topo até o conteúdo sem costura, e a barra
+   deixa de parecer uma peça colada em cima da tela. */
 #lsTopo{position:fixed;top:0;left:0;right:0;height:46px;z-index:66;background:#fff;
-  border-bottom:1px solid #ECECF1;display:none;align-items:center;gap:14px;padding:0 16px}
+  border-bottom:0;display:none;align-items:center;gap:14px;padding:0 16px}
 body.lsRecolhe #lsTopo{display:flex}
 #lsTopo .lsLogoTopo{height:19px;width:auto;display:block}
 /* o setor fica colado na marca, separado por um fio — é a mesma
@@ -150,8 +165,58 @@ body.lsRecolhe #lsTopo{display:flex}
   background:#FF2D87;color:#fff;cursor:pointer;font-family:inherit;
   font:600 13.5px -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:-.01em}
 #lsCadastrar:hover{background:#F01A77}
+/* ══ AS AÇÕES DO CAIXA, na pílula escura da referência ════════════════
+   «Caixa em dinheiro» e «Estorno» viviam flutuando por cima da tela, um
+   verde e um laranja — duas cores que não existem em mais nenhum canto
+   da marca. Agrupadas aqui, viram a mesma peça da referência (pílula
+   #0A080B, item em branco) sem cobrir uma linha sequer do painel. */
+/* ⚠️ Ela, 12/11: *«seguir o padrão do botão cadastrar novo procedimento
+   pra todos os botões da tela, e cores sempre vivas»*. Estes dois eram
+   transparentes dentro de uma pílula escura — dois botões «vazios» num
+   grupo. Agora seguem a régua medida do `#lsCadastrar` (raio 11px, 34px
+   de altura, 600/13,5px) em TINTA sólida: mesma forma da ação principal,
+   cor diferente porque o papel é outro.
+   ⚠️ E isto mora AQUI, na casca: o `ls-premium.css` carrega dentro do
+   iframe do caixa e nunca alcançaria a barra — foi o que fez a primeira
+   tentativa não pegar. */
+#lsAcoes{display:flex;align-items:center;gap:8px;margin-left:auto;padding:0;background:none}
+#lsAcoes button{height:34px;padding:0 16px;border:0;border-radius:11px;background:#0D0D10;
+  color:#fff;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:600;
+  letter-spacing:-.01em;white-space:nowrap;transition:background .14s ease}
+#lsAcoes button:hover{background:#000}
+#lsAcoes .fio{display:none}
+#lsCadastrar{margin-left:12px}
 #lsTopo .lsTela{margin-left:-3px;font-size:13.5px;color:#8A8A94;letter-spacing:-.015em}
-#lsTopo .lsTela::before{content:'· ';color:#C9C9D2}
+/* o ponto só existe quando há nome de sub-tela depois dele —
+   senão a barra mostrava «Financeiro ·» com o ponto no vazio */
+#lsTopo .lsTela:not(:empty)::before{content:'· ';color:#C9C9D2}
+
+/* ══ A BARRA NO CELULAR ════════════════════════════════════════════════
+   ⚠️ Em 390px os três botões não cabem de jeito nenhum: só «Caixa em
+   dinheiro» + «Estorno» + «+ Cadastrar procedimento» passam de 420px de
+   texto. A regra da referência é clara — no telefone, o que é
+   secundário vira ícone ou sai. Aqui as duas ações do caixa saem da
+   barra (continuam no menu, pelo mesmo caminho) e fica a ação
+   principal, encolhida para o «+». */
+@media (max-width:760px){
+  /* ⚠️ O `#abrir` é o botão de menu ANTIGO, que a casca mostrava abaixo
+     de 1024px. Com a barra nova ele virou um retângulo escuro solto
+     logo abaixo dela — dois hambúrgueres na mesma tela, um deles
+     meio escondido. Quem abre o menu agora é o da barra. */
+  #abrir{display:none!important}
+  #lsTopo{height:52px;padding:0 12px;gap:10px}
+  #lsAcoes{display:none}
+  #lsSetor{font-size:12.5px}
+  #lsSetor::before{height:14px}
+  #lsTopo .lsLogoTopo{height:17px}
+  #lsCadastrar{margin-left:auto;width:38px;height:38px;padding:0;border-radius:12px;
+    font-size:0;display:flex;align-items:center;justify-content:center}
+  #lsCadastrar::after{content:'+';font-size:22px;font-weight:400;line-height:1}
+  body.lsRecolhe #palco{padding-top:52px}
+  body.lsRecolhe #palco iframe{top:52px;height:calc(100% - 52px)}
+  body.lsRecolhe #lado{top:52px}
+  body.lsRecolhe.lsAberta #lado{top:52px;height:calc(100% - 52px);width:min(86vw,300px)}
+}
 /* ⚠️ `padding-top` no #palco NÃO empurra as telas: os iframes são
    `position:absolute; inset:0`, e um absoluto se ancora no PADDING BOX
    do pai — ou seja, ele começa debaixo do padding, não depois dele.
@@ -181,8 +246,17 @@ body.lsRecolhe.lsAberta #lsVeu{display:block}
 <div id="veu" onclick="document.body.classList.remove('menu')"></div>
 
 <nav id="lado">
-  <div class="marca"><img src="marca-clara.png" alt="lailasalon"></div>
-  <div id="busca"><label class="cx">
+  <!-- ⚠️ Ela, 12/11: *«na barra de menu aparece uma sequência de duas
+       logos, nada bonito»*. E aparecia mesmo: a lateral tinha a logo e,
+       a 16px dela, a barra fixa tinha a mesma logo de novo — a mesma
+       marca duas vezes na mesma faixa horizontal. A barra fixa é quem
+       fica; aqui sobra o espaço, que o menu usa para respirar. -->
+
+  <!-- ⚠️ A logo saía daqui (a barra fixa já tem a dela) e a faixa de
+       88px ficou vazia — um buraco branco no alto do menu, que é pior
+       que a repetição que eu tinha ido consertar. A faixa saiu junto; a
+       busca encosta no topo, com o respiro que já tinha. -->
+  <div id="busca" style="padding-top:18px"><label class="cx">
     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
       stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
     <input id="q" type="search" placeholder="Buscar tela…" oninput="pintar(this.value)">
@@ -196,11 +270,25 @@ body.lsRecolhe.lsAberta #lsVeu{display:block}
     <img class="lsLogoTopo" src="marca-clara.png" alt="laila salon">
   <span id="lsSetor"></span>
   <span class="lsTela" id="lsTela"></span>
+  <span id="lsAcoes" hidden>
+    <button onclick="noCaixa('abrirCaixaDinheiro')">Caixa em dinheiro</button>
+    <span class="fio"></span>
+    <button onclick="noCaixa('estornoAbrir')">Estorno</button>
+  </span>
   <button id="lsCadastrar" onclick="cadastrarProcedimento()">+ Cadastrar procedimento</button>
 </div>
 
 <main id="palco"><div id="carregando">abrindo…</div></main>
 
+<script src="ls-conta.js"></script>
+<script>
+/* ⚠️ A PORTA, antes de qualquer tela montar. Se não há conta ou o prazo
+   acabou, a pessoa vai para `entrar.html` — e o `replace` é de propósito:
+   com `href` o botão «voltar» traria ela de volta para dentro. */
+if (!window.LS_CONTA || !LS_CONTA.exigirEntrada()) {
+  document.documentElement.style.visibility = 'hidden';
+}
+</script>
 <script src="ls-trava.js"></script>
 <script>
 /* ⭐ PDV E PAINEL DA EQUIPE VIRARAM UM ITEM SÓ (ela, 08/11): *"pdv e painel da
@@ -214,23 +302,19 @@ const SETORES = [
     {k:'agenda',   r:'Agenda',       u:'interno/gestor.html#agenda',
      i:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>'},
     {k:'clientes', r:'Clientes',     u:'pdv/index.html?aba=clientes',
-     i:'<path d="M16 20v-1.6a3.4 3.4 0 0 0-3.4-3.4H6.4A3.4 3.4 0 0 0 3 18.4V20"/><circle cx="9.5" cy="7.5" r="3.4"/><path d="M21 20v-1.6a3.4 3.4 0 0 0-2.6-3.3"/>'},
-    {k:'retoques', r:'Retoques',     u:'pdv/index.html?aba=retoques',
-     i:'<path d="M12 2l2.4 5.6L20 8.6l-4 4.1.9 5.8L12 15.8 7.1 18.5 8 12.7l-4-4.1 5.6-1z"/>'}
+     i:'<path d="M16 20v-1.6a3.4 3.4 0 0 0-3.4-3.4H6.4A3.4 3.4 0 0 0 3 18.4V20"/><circle cx="9.5" cy="7.5" r="3.4"/><path d="M21 20v-1.6a3.4 3.4 0 0 0-2.6-3.3"/>'}
   ]},
+  /* ⚠️ Ela, 12/11: *«remove do sistema as abas Metas, Fechamento,
+     Auditoria e Retoques»*. As quatro saíram daqui — e, com elas, o
+     Financeiro ficou com o que já está de pé: o Caixa do dia, os
+     Serviços que nasceram dentro dele, e a Conciliação. */
   {r:'Financeiro', itens:[
     {k:'caixa',    r:'Caixa do dia', u:'interno/caixa.html',
      i:'<path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'},
     {k:'servicos', r:'Serviços',     u:'interno/servicos.html',
      i:'<path d="M6.5 3.5l11 11"/><path d="M17.5 3.5l-11 11"/><circle cx="5" cy="18" r="2.4"/><circle cx="19" cy="18" r="2.4"/>'},
     {k:'concilia', r:'Conciliação',  u:'interno/conciliacao.html',
-     i:'<path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'},
-    {k:'metas',    r:'Metas',        u:'interno/metas.html',
-     i:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.6"/><circle cx="12" cy="12" r="1"/>'},
-    {k:'fecha',    r:'Fechamento',   u:'pdv/index.html?aba=fechamento',
-     i:'<path d="M5 8h14l-1.4 12.2a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8z"/><path d="M9 8V5a3 3 0 0 1 6 0v3"/>'},
-    {k:'auditoria',r:'Auditoria',    u:'interno/gestor.html#auditoria',
-     i:'<circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>'}
+     i:'<path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'}
   ]},
   {r:'Gestão', itens:[
     {k:'equipe',   r:'Equipe',       u:'interno/gestor.html#equipe',
@@ -253,9 +337,22 @@ const SETORES = [
     {k:'indica',   r:'Indicação',    novo:true, i:'<circle cx="8" cy="8" r="3.4"/><circle cx="17" cy="16" r="3.4"/><path d="M10.6 10.3l3.8 3.4"/>'}
   ]}
 ];
+/* ⚠️⚠️ ESTE ARRAY FOI RECONSTRUÍDO À MÃO depois de um estrago meu: usei
+   um regex com `.*?` em DOTALL para tirar quatro itens, e ele atravessou
+   as linhas, colapsou os TRÊS setores num só e levou junto o «Caixa do
+   dia» e a «Equipe». O teste pegou («só Caixa do dia e Serviços abrem →
+   servicos»), mas o certo era não ter usado regex em estrutura aninhada:
+   lista de itens se edita item a item, não por padrão de texto. */
+
+const LIBERADAS = ['caixa', 'servicos'];
 const TODOS = SETORES.flatMap(s => s.itens);
 const svg = d => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none"
   stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+/* o cadeado usa o mesmo traço dos ícones do menu: 1,7px, ponta redonda */
+const CADEADO = `<svg class="cad" viewBox="0 0 24 24" width="14" height="14" fill="none"
+  stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="4.5" y="10.5" width="15" height="10" rx="2.4"/>
+  <path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/></svg>`;
 
 const menu = document.getElementById('menu');
 const palco = document.getElementById('palco');
@@ -273,11 +370,15 @@ function pintar(termo){
     const itens = s.itens.filter(it => !t || sa(it.r).includes(t));
     if(!itens.length) return '';
     achou += itens.length;
-    return `<div class="cab">${s.r}</div>` + itens.map(it => `
-      <button class="item${it.k===ativo?' on':''}" data-k="${it.k}"
-        ${it.novo?'disabled':`onclick="ir('${it.k}')"`}>
+    return `<div class="cab">${s.r}</div>` + itens.map(it => {
+      const travada = !it.novo && !LIBERADAS.includes(it.k);
+      return `<button class="item${it.k===ativo?' on':''}${travada?' travada':''}"
+        data-k="${it.k}" ${(it.novo||travada)?'disabled':`onclick="ir('${it.k}')"`}
+        ${travada?'title="em rebranding — abre quando a tela estiver pronta"':''}>
         ${svg(it.i)}<span>${it.r}</span>
-        ${it.novo?'<em class="breve">em breve</em>':''}</button>`).join('');
+        ${it.novo?'<em class="breve">em breve</em>':''}
+        ${travada?CADEADO:''}</button>`;
+    }).join('');
   }).join('');
   if(!achou) menu.innerHTML = `<div class="vazio">Nenhuma tela com “${termo}”.</div>`;
 }
@@ -300,15 +401,30 @@ function ir(k){
   document.body.classList.remove('menu');
   if(location.hash.slice(1) !== k) history.replaceState(null, '', '#' + k);
   document.title = it.r + ' · Laila Salon';
-  const nome = document.getElementById('lsTela'); if(nome) nome.textContent = it.r;
+  /* ⚠️ Ela, 12/11: *«remove · Caixa do dia da escrita no topo»*. O nome
+     da ABA saiu — a lateral já diz onde ela está e o painel tem o
+     próprio cabeçalho. O `#lsTela` continua existindo para as SUB-telas
+     (o «Cadastro de procedimento», que não é aba nenhuma e precisa se
+     anunciar); por isso ele é esvaziado aqui, não removido. */
+  const nome = document.getElementById('lsTela'); if(nome) nome.textContent = '';
   /* o setor sai da própria lista de SETORES: nunca escrevo o nome à mão */
   const setor = SETORES.find(s => s.itens.some(x => x.k === k));
   const alvo = document.getElementById('lsSetor');
   if (alvo) alvo.textContent = setor ? setor.r : '';
+  /* as duas ações são do caixa: em outra aba elas não fazem sentido */
+  const ac = document.getElementById('lsAcoes');
+  if (ac) ac.hidden = (k !== 'caixa');
 }
 
 /* ⭐ O botão da barra abre Serviços e, de lá, o cadastro — assim existe
    UM caminho só para a calculadora, e não dois que podem divergir. */
+/* chama a função que mora dentro da tela do caixa — mesma origem, então
+   o acesso é direto; o `try` cobre a tela ainda carregando */
+function noCaixa(fn){
+  try { const w = quadros['caixa']?.contentWindow;
+    if (w && typeof w[fn] === 'function') w[fn](); } catch(e){}
+}
+
 function cadastrarProcedimento(){
   const jaEm = ativo === 'servicos';
   ir('servicos');

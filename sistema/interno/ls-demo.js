@@ -48,6 +48,17 @@ const D = {
     ['13:00','Fernanda Ferreira Andrade','progressiva',false],
     ['14:30','Roberta Adriana Macedo Teodoro','manutenção',false],
   ],
+  /* ⚠️ A comanda precisa de PREÇO, e preço inventado numa tela de dinheiro
+     é o erro mais caro que existe aqui. Estes são os mesmos da esteira de
+     serviços (`m3`), que saíram da divisão medida do salão:
+     279,90 − 220,00 = 59,90 de lucro · 249,90 − 220,00 = 29,90. */
+  precos: [
+    ['progressiva',   279.90],
+    ['manutenção',    249.90],
+    ['hidratação',     89.90],
+    ['corte',          69.90],
+    ['escova',         49.90],
+  ],
 };
 D.hoje.marg = D.hoje.lucro / D.hoje.fat * 100;
 window.LS_DEMO = D;
@@ -243,14 +254,14 @@ function encher(){
   /* 8 · a agenda do dia: os cartões do Editor do Cartão */
   const lista = doc.querySelector('.lsAgLista');
   if (lista && !lista.querySelector('.lsAgSlot')){
-    lista.innerHTML = D.clientes.map(([h,n,p,ch]) => `
-      <div class="lsAgSlot"><div class="lsAgCard ${ch?'ok':'espera'}">
-        <div class="lsAgFaixa"></div>
-        <div class="lsAgCorpo">
-          ${ch?'<div class="lsAgCarimbo">chegou</div>':''}
-          <div class="lsAgTit">${n}, ${p}</div>
-          <div class="lsAgHora">agendada para às ${h}</div>
-        </div></div></div>`).join('');
+    /* ⚠️ o desenho do cartão mora no tema; aqui só entram os DADOS */
+    const desenha = window.LS_CARTAO_CLIENTE;
+    lista.innerHTML = D.clientes.map(([h,n,p,ch]) =>
+      desenha ? desenha({ nome:n, proc:p, hora:h, chegou:ch })
+              : `<div class="lsAgSlot"><div class="lsAgCard ${ch?'ok':'espera'}">
+                   <div class="lsAgCorpo"><div class="lsAgTit">${n}, ${p}</div>
+                   <div class="lsAgHora">agendada para às ${h}</div></div></div></div>`
+    ).join('');
     const cab = doc.querySelector('.lsAgCab em');
     if (cab) cab.innerHTML = `<b>${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</b>`
                            + ` · ${D.clientes.length} de 9 vagas`;
@@ -259,7 +270,7 @@ function encher(){
     const pc = doc.querySelector('.lsAgAnel em');
     if (pc) pc.textContent = p1(D.clientes.length/9*100);
     doc.querySelectorAll('.lsAgSlot').forEach(s => {
-      const c = s.querySelector('.lsAgCard');
+      const c = s.querySelector('.lsAgLinha') || s.querySelector('.lsAgCard');
       if (c) s.style.height = Math.ceil(c.offsetHeight * 324/425) + 'px';
     });
   }

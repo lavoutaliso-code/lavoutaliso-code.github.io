@@ -1,0 +1,507 @@
+/* ══════════════════════════════════════════════════════════════════════
+   A CAMADA PREMIUM — o que o app «Slate» faz e a nossa tela não fazia
+
+   Ela, 12/11, mandou dois prints de um app Flutter e perguntou o que eu
+   faria de diferente para chegar no mesmo nível. Em vez de responder com
+   adjetivos, amostrei os pixels da referência com Pillow:
+
+     preto do topo ............ #000000
+     trilho do segmented ...... #1A171C
+     bloco de dado secundário . #F8F4F5   ← um cinza QUENTE, não azulado
+     barra flutuante .......... #0A080B
+     superfície ............... #FFFFFF
+
+   O que o Slate faz e a gente não fazia — cinco coisas, não dez:
+
+   1. PALETA DE TRÊS VALORES. Preto, branco e um cinza quase branco. Fora
+      o acento, nenhuma cor saturada. A nossa tela tinha um botão verde
+      #12A150 e um laranja #BC3D20 flutuando por cima do conteúdo — duas
+      cores que não existem em lugar nenhum do resto da marca.
+
+   2. NAVEGAÇÃO FLUTUANTE EM PÍLULA ESCURA, com o item ativo em círculo
+      branco. A nossa eram dois botões soltos, de cores diferentes, em
+      cantos opostos, cada um tapando um pedaço de tela.
+
+   3. DADO TABULAR EM BLOCO. Lá a data é um quadradinho («NOV» em cima,
+      «11» embaixo). Aqui a hora era frase corrida: «agendada para às
+      07:00». Bloco se compara de relance; frase se lê.
+
+   4. ÍCONES DE UM SISTEMA SÓ: linha de 1,6px dentro de um círculo de fio
+      1px, todos do mesmo tamanho. Os nossos misturavam preenchido com
+      traçado e tinham um check verde solto.
+
+   5. SUPERFÍCIE SEM SOMBRA PESADA: fio de 1px e raio generoso fazem o
+      recorte, não o borrão.
+
+   ⚠️ Esta camada é um VESTIDO, como o `ls-tema.css`: ela não edita
+   nenhuma tela — entra depois e sobrescreve. Tirar o arquivo devolve o
+   sistema ao estado anterior, sem resíduo.
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root{
+  /* ══ A RÉGUA DOS BOTÕES ═════════════════════════════════════════════
+     Ela, 12/11: *«seguir o padrão do botão cadastrar novo procedimento
+     pra todos os botões da tela, e cores sempre vivas»*. O padrão foi
+     MEDIDO no `#lsCadastrar`, não inventado:
+         #FF2D87 · raio 11px · 34px de altura · 600/13,5px · 0 16px
+
+     ⚠️ E o contraste dele contra o branco é **3,51:1** — abaixo dos 4,5
+     da WCAG para texto pequeno. Como é o botão que ela escolheu, ele
+     vira a régua: todo botão colorido da tela fica NESSE mesmo nível,
+     nem mais lavado. Foi assim que saiu o verde: #0F9D4E dá **3,53:1**,
+     praticamente o mesmo do rosa — vivo, e não mais fraco que o padrão.
+     (O verde escuro #12713A dava 6,09:1 e era o mais legível, mas era
+     também o mais apagado — e ela pediu vivo.) */
+  --pr-bt-raio:11px; --pr-bt-alt:34px;
+  --pr-acao:#FF2D87;        /* primária — a régua          */
+  --pr-dinheiro:#0F9D4E;    /* receber — mesmo nível do rosa */
+  --pr-tinta:#0D0D10;        /* texto e superfície escura    */
+  --pr-dock:#0A080B;         /* a pílula flutuante           */
+  --pr-bloco:#F8F4F5;        /* bloco de dado secundário     */
+  --pr-fio:#ECECF1;          /* o fio de 1px que recorta     */
+  --pr-fraca:#8A8A94;
+  --pr-raio:20px;
+}
+
+/* ══ 1 · A DOCA — os dois botões flutuantes viram uma peça só ══════════
+   Antes: «Caixa em dinheiro» verde no canto esquerdo e «Estorno» laranja
+   no direito, os dois `position:fixed`, os dois por cima do conteúdo.
+   Medido: o verde cobria o rodapé do bloco «Agendamentos» e o laranja
+   cobria o «R$ 0,00» do rodapé da agenda.
+   Agora: uma pílula escura centralizada, que é a mesma peça da
+   referência — e, por estar no centro, não cobre nenhuma das colunas. */
+/* os originais somem da tela: quem mostra as duas ações é a casca */
+#btCaixaD[data-ls-na-barra], #btEstorno[data-ls-na-barra]{display:none!important}
+
+#lsDoca{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:70;
+  display:flex;align-items:center;gap:4px;padding:5px;border-radius:99px;
+  background:var(--pr-dock);
+  box-shadow:0 2px 6px rgba(9,10,14,.22), 0 20px 46px -20px rgba(9,10,14,.7)}
+#lsDoca > *{position:static!important;margin:0!important;transform:none!important;
+  background:transparent!important;border:0!important;box-shadow:none!important;
+  color:#fff!important;height:42px;padding:0 20px!important;border-radius:99px!important;
+  display:inline-flex;align-items:center;gap:9px;cursor:pointer;
+  font:600 14px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif!important;
+  letter-spacing:-.015em;white-space:nowrap;transition:background .14s ease}
+#lsDoca > *:hover{background:rgba(255,255,255,.12)!important}
+#lsDoca > *:active{background:rgba(255,255,255,.2)!important}
+/* ⚠️ Os ícones vinham com a cor do botão antigo chumbada no SVG. */
+#lsDoca svg{width:17px;height:17px;flex:none}
+#lsDoca svg *{stroke:#fff!important;fill:none!important}
+#lsDoca .lsDocaFio{width:1px;height:20px;background:rgba(255,255,255,.16);flex:none;padding:0!important}
+
+/* ══ 2a · A AGENDA É UMA LISTA ═════════════════════════════════════════
+   Um card só, fio de 1px entre as linhas, nenhuma sombra. Altura de
+   linha uniforme — o nome numa linha, o procedimento como subtítulo. */
+.lsAgLista{background:#fff;border:1px solid var(--pr-fio);border-radius:var(--pr-raio);
+  overflow:hidden;gap:0!important}
+/* ⚠️ O container era flex com `gap:6px` — herança de quando cada
+   compromisso era um cartão separado. Com a lista, esse vão abria uma
+   faixa clara entre as linhas e o fio deixava de encostar: o resultado
+   lia como seis cartões de novo, que é exatamente o que saiu. */
+/* ⚠️ O `.lsAgSlot` existia para reservar a altura do cartão ESCALADO —
+   o desenho antigo era desenhado grande e encolhido por `transform`.
+   A linha não tem escala nenhuma, então a altura calculada só atrapalha:
+   ela deixava as linhas de nome curto com 58px contra 66px das outras.
+   Medido: 65/66/66/58/58/58 → todas iguais depois disto. */
+.lsAgSlot{margin:0!important;height:auto!important}
+.lsAgLinha{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:0 12px;
+  padding:10px 14px;background:#fff;border-radius:0;box-shadow:none;
+  border-top:1px solid var(--pr-fio);height:75px}
+/* ⚠️ `min-height` não bastou: medido, as linhas de nome curto ficavam em
+   66px e as de nome longo em 75px — 8px de diferença, visível numa
+   coluna de seis. Altura FIXA, com o conteúdo centralizado: nome curto
+   respira, nome longo usa as duas linhas, e o ritmo não varia. */
+.lsAgSlot:first-child .lsAgLinha{border-top:0}
+/* ⚠️ Na 1ª versão o nome era UMA linha com reticências — e «Estefânia
+   Magna Andrade Lacerda» virava «Estefânia Magna Andrade La…». Num
+   sistema de salão o nome da cliente é o dado; cortá-lo para ganhar
+   simetria é trocar informação por estética. Então ele usa até DUAS
+   linhas, e quem segura o ritmo é o `min-height` da linha — todas
+   ficam iguais, com nome curto ou comprido. */
+.lsAgNome{font:600 15px/1.24 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;
+  letter-spacing:-.018em;color:var(--pr-tinta);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lsAgProc{margin-top:2px;font-size:12.6px;color:var(--pr-fraca);letter-spacing:-.008em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* o estado é uma palavra na direita, não uma pílula no meio do caminho */
+.lsAgEst{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--pink,#FF2D87);white-space:nowrap;align-self:start;padding-top:3px}
+.lsAgLinha.espera .lsAgEst{color:transparent}
+/* o que sobrou do desenho de cartão */
+.lsAgFaixa, .lsAgCarimbo{display:none!important}
+.lsAgTx{min-width:0}
+
+/* ══ 2 · A HORA EM BLOCO, como a data do «NOV 11» ══════════════════════
+   «agendada para às 07:00» era uma frase — e a lista inteira virava um
+   parágrafo repetido seis vezes. Em bloco, a coluna das horas se lê de
+   cima a baixo numa olhada. ⚠️ O `ls-tema.js` quebra a hora em duas
+   linhas (hora e minuto) para caber no quadrado sem encolher o corpo. */
+/* ⚠️ Ela, 12/11: *«deixe sem esse card atrás e com fonte do horário»*.
+   O bloco cinza atrás da hora sai — na coluna estreita ele virava um
+   terceiro retângulo competindo com o card e com o chip de estado. Quem
+   segura a hierarquia agora é a TIPOGRAFIA: o turno em versalete fino e
+   a hora em número tabular, peso 700, tracking fechado. Sem fundo, a
+   coluna das horas lê de cima a baixo como uma régua. */
+.lsAgHoraBloco{width:52px;padding:0;border-radius:0;background:transparent;
+  text-align:left;align-self:center}
+.lsAgHoraBloco em{display:block;font-style:normal;font-size:9.5px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--pr-fraca);line-height:1}
+/* ⚠️ E *«a fonte da hora ficou ruim»*: eu tinha posto monoespaçado para
+   garantir o alinhamento, e o SF Mono num corpo de 18px fica duro e
+   largo ao lado do texto do sistema. `tabular-nums` já alinha o
+   algarismo SEM trocar a família — é o recurso certo para coluna de
+   número, e mantém a hora na mesma voz do resto da tela. */
+.lsAgHoraBloco b{display:block;margin-top:3px;
+  font:700 19px/1 -apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;
+  letter-spacing:-.035em;color:var(--pr-tinta);font-variant-numeric:tabular-nums}
+.lsAgTit, .lsAgHora{display:none}   /* viraram .lsAgNome + .lsAgProc */
+
+/* ══ 3 · OS ÍCONES DE AÇÃO, um sistema só ═══════════════════════════════
+   Círculo de fio 1px, vazio por dentro, com o traço fino no meio — e o
+   mesmo diâmetro nos dois cartões. Antes um era um quadrado cinza
+   preenchido e o outro uma nota fiscal colorida com um check verde. */
+.mtopo .cx, .mazul .cx{width:44px!important;height:44px!important;border-radius:50%!important;
+  background:transparent!important;border:1px solid var(--pr-fio)!important;
+  display:flex!important;align-items:center;justify-content:center;flex:none}
+.mtopo .cx svg, .mazul .cx svg{width:20px!important;height:20px!important}
+.mtopo .cx svg *, .mazul .cx svg *{stroke:var(--pr-tinta)!important;stroke-width:1.6!important;
+  fill:none!important}
+/* ⚠️ A nota fiscal do «Contas a pagar» é uma ilustração com preenchimento
+   e um check verde — o verde é justamente a cor que sai da paleta. */
+.lsCx{width:44px;height:44px;border-radius:50%;background:transparent;
+  border:1px solid var(--pr-fio);display:flex;align-items:center;justify-content:center;
+  color:var(--pr-tinta)}
+.lsCx svg{width:20px;height:20px}
+.mazul .ctEl{display:flex;align-items:center;justify-content:center}
+
+/* ══ 3b · O VERDE DE «POSITIVO» FICA SÓBRIO ════════════════════════════
+   Verde para variação positiva é convenção de finanças e eu não tiro.
+   Mas o tom era #C7F636 — um lima de etiqueta de promoção, o valor mais
+   vibrante da tela inteira, gritando mais que o próprio saldo. Medido
+   contra o branco: o lima dá 1,42:1 (ilegível como texto) e o verde novo
+   dá 4,62:1. Então ele fica mais sóbrio E mais legível. */
+/* ⚠️ Eu tinha escrito o seletor pelo HEX inline — e o lima não vinha de
+   `style`, vinha da classe `.mtPc`. Medir o elemento na tela disse o
+   nome certo em dez segundos; adivinhar o seletor não teria dito nunca. */
+.mtPc{color:#1B7F3B!important}
+
+/* ══ 4 · O CINZA SECUNDÁRIO É QUENTE ════════════════════════════════════
+   Amostrado na referência: #F8F4F5. O nosso era #F4F4F6, azulado. A
+   diferença é de 4 pontos em cada canal e muda a temperatura da tela
+   inteira — ao lado do rosa da marca, o cinza quente pertence; o frio
+   briga. */
+/* ⚠️ Eu tinha incluído o `.lsMz` aqui, e ela viu na hora: *«o mês a mês
+   ficou um quadrado dentro de um redondo»*. O `.lsMz` é o CONTEÚDO de um
+   card que já tem raio 30 — pintar o conteúdo de outra cor desenha um
+   retângulo de cantos vivos dentro do canto arredondado do pai. Fundo é
+   do CARD, nunca do conteúdo dele. */
+.dir, .lsAgCab + *{background:var(--pr-bloco)!important}
+/* os dois vivem por id; dentro da doca perdem cor e sombra próprias */
+#lsDoca #btCaixaD, #lsDoca #btEstorno{background:transparent!important;color:#fff!important}
+
+/* ══ 5 · TABELA COM NÚMERO TABULAR E «ver tudo» ════════════════════════
+   Coluna de dinheiro só alinha se o algarismo tiver largura fixa. */
+/* ══ 5b · O «MÊS A MÊS» ROLA, E A BARRA FICA NA FAIXA BRANCA ═══════════
+   Ela, 12/11: *«a tela não rola»*. Medido: o card tem `overflow:hidden`
+   e 176px de altura útil contra 253px de conteúdo — ele cortava 77px e
+   três dos sete meses simplesmente não existiam para quem olhava.
+   ⚠️ Rolagem sozinha não bastaria: no Mac a barra é FLUTUANTE e seria
+   pintada por cima dos valores, que é o defeito que já custou três
+   voltas no extrato. Declarar `::-webkit-scrollbar` desliga o modo
+   flutuante — a barra passa a reservar a própria largura, numa coluna
+   ao lado dos números. */
+.cb.resto{display:flex;flex-direction:column}
+.lsMz{flex:1 1 auto;min-height:0;overflow-y:auto;padding-right:12px}
+.lsMz::-webkit-scrollbar{width:10px;background:transparent}
+.lsMz::-webkit-scrollbar-track{background:transparent}
+.lsMz::-webkit-scrollbar-thumb{background:#D5D5DC;border-radius:10px;
+  border:3px solid #fff;background-clip:padding-box}
+.lsMz::-webkit-scrollbar-thumb:hover{background:#B9B9C3;background-clip:padding-box;
+  border:3px solid #fff}
+/* o cabeçalho da tabela não rola junto: ele é a régua das colunas */
+.lsMzTopo{flex:none}
+
+.lsMz, .lsMzL, .lsMzL b, .lsExtL b, .lsExtS b{font-variant-numeric:tabular-nums}
+.lsMzTopo{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.lsMzTopo a{font-size:12.5px;color:var(--pr-fraca);text-decoration:none;cursor:pointer}
+.lsMzTopo a:hover{color:var(--pr-tinta)}
+
+
+/* ══ 6 · O BOTÃO DA LINHA: chegou → fechar comanda → paga ══════════════
+   Três estados no mesmo lugar, para a mão não procurar. O verde só
+   aparece quando há dinheiro a receber — é o único verde da tela, e ele
+   significa exatamente uma coisa. */
+/* ⚠️ Na 1ª versão o botão era 11px em VERSALETE ESPAÇADO, e o print
+   mostrou o estrago: «$ FECHAR COMANDA» tomava 230px da linha e o nome
+   virava «Angelica Fonseca…». Versalete com tracking custa quase o dobro
+   da largura do mesmo texto em caixa baixa. Caixa baixa, 11,5px, sem
+   tracking — e o nome volta inteiro. */
+.lsAgBt{border:0;border-radius:99px;cursor:pointer;font-family:inherit;white-space:nowrap;
+  font-size:11.5px;font-weight:700;letter-spacing:-.008em;
+  padding:0 11px;height:27px;align-self:center;transition:background .14s ease,color .14s ease}
+/* ⚠️ Ela, 12/11: *«nada de botão translúcido»*. A 1ª versão usava fundo
+   lavado (#F2F2F5 e #E8F6EC) com o texto na cor — num card branco isso
+   lê como botão desligado, não como botão. Os dois são SÓLIDOS: tinta
+   para marcar a chegada, verde para receber. Cheio chama a mão. */
+.lsAgBt.ls-agendada{background:var(--pr-tinta);color:#fff}
+.lsAgBt.ls-agendada:hover{background:#000}
+.lsAgBt.ls-cadeira{background:#12713A;color:#fff}
+.lsAgBt.ls-cadeira::before{content:'$';font-weight:800;margin-right:5px;opacity:.75}
+.lsAgBt.ls-cadeira:hover{background:#0E5C2F}
+.lsAgBt.ls-paga{background:transparent;color:#9A9AA2;cursor:default;padding:0}
+.lsAgLinha[data-ls-estado="paga"] .lsAgNome{color:#9A9AA2}
+
+/* ══ 7 · A FESTA DA CHEGADA ════════════════════════════════════════════ */
+.lsFesta{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;
+  background:rgba(13,13,16,.22);opacity:0;transition:opacity .2s ease;pointer-events:none}
+.lsFesta.on{opacity:1}
+.lsFestaCx{background:#fff;border-radius:26px;padding:30px 42px;text-align:center;
+  box-shadow:0 8px 24px rgba(9,10,14,.14), 0 40px 90px -36px rgba(9,10,14,.5);
+  transform:scale(.92) translateY(8px);transition:transform .24s cubic-bezier(.2,1.2,.3,1)}
+.lsFesta.on .lsFestaCx{transform:none}
+.lsFestaEmoji{font-size:40px;line-height:1}
+/* o fechamento da comanda tem o seu próprio selo: um check, não confete */
+.lsFestaCheck{width:62px;height:62px;margin:0 auto;border-radius:50%;background:#12713A;color:#fff;
+  display:flex;align-items:center;justify-content:center}
+.lsFestaCheck svg{width:30px;height:30px}
+.lsFestaTt{margin-top:12px;font:800 25px/1.1 var(--sfd,-apple-system,sans-serif);
+  letter-spacing:-.035em;color:var(--pr-tinta)}
+.lsFestaSub{margin-top:6px;font-size:13.5px;color:var(--pr-fraca)}
+
+/* ══ 8 · A FOLHA DE PAGAMENTO ══════════════════════════════════════════ */
+.lsCmdVeu{position:fixed;inset:0;z-index:130;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:rgba(13,13,16,.34);opacity:0;transition:opacity .18s ease}
+.lsCmdVeu.on{opacity:1}
+.lsCmd{width:100%;max-width:430px;max-height:100%;overflow-y:auto;background:#fff;
+  border-radius:26px;padding:22px;transform:translateY(12px);transition:transform .2s ease;
+  box-shadow:0 10px 30px rgba(9,10,14,.16), 0 50px 110px -40px rgba(9,10,14,.6)}
+.lsCmdVeu.on .lsCmd{transform:none}
+.lsCmd::-webkit-scrollbar{width:10px;background:transparent}
+.lsCmd::-webkit-scrollbar-thumb{background:#D5D5DC;border-radius:10px;
+  border:3px solid #fff;background-clip:padding-box}
+.lsCmdCab{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.lsCmdNome{font:700 21px/1.18 var(--sfd,-apple-system,sans-serif);letter-spacing:-.032em}
+.lsCmdSub{margin-top:3px;font-size:12.6px;color:var(--pr-fraca)}
+.lsCmdX{flex:none;width:32px;height:32px;border:0;border-radius:50%;background:#F2F2F5;
+  color:#55555F;font-size:19px;line-height:1;cursor:pointer}
+.lsCmdX:hover{background:#E6E6EC;color:#000}
+.lsCmdSec{margin:20px 0 9px;font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--pr-fraca)}
+/* ══ A LISTA DE PROCEDIMENTOS, com caixa de seleção ════════════════════
+   ⚠️ Era uma fila de pílulas, e ela reprovou: *«esse selecionar o
+   procedimento assim, com essa fonte, ficou péssimo»*. A fonte era a do
+   sistema — o problema era a PÍLULA: nome e preço espremidos na mesma
+   linha curta, o preço virando apêndice do nome, e o estado dependendo
+   só de cor de fundo. Em lista, cada coisa tem a sua coluna: check,
+   nome, e o preço alinhado à direita em número tabular. */
+.lsCmdChips{display:grid;gap:0;border:1px solid var(--pr-fio);border-radius:16px;overflow:hidden}
+.lsCmdChip{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:12px;
+  border:0;border-top:1px solid var(--pr-fio);background:#fff;padding:12px 14px;cursor:pointer;
+  font-family:inherit;text-align:left;transition:background .12s ease}
+.lsCmdChip:first-child{border-top:0}
+.lsCmdChip:hover{background:#FAFAFB}
+.lsCmdPn{font-size:14.5px;font-weight:600;color:var(--pr-tinta);letter-spacing:-.015em}
+.lsCmdChip em{font-style:normal;font-size:14px;font-weight:600;color:var(--pr-fraca);
+  font-variant-numeric:tabular-nums;letter-spacing:-.015em}
+.lsCmdCk{width:22px;height:22px;border-radius:7px;border:1.6px solid #D5D5DC;background:#fff;
+  display:flex;align-items:center;justify-content:center;color:transparent;
+  transition:background .12s ease,border-color .12s ease,color .12s ease}
+.lsCmdCk svg{width:13px;height:13px}
+.lsCmdChip.on .lsCmdCk{background:var(--pr-tinta);border-color:var(--pr-tinta);color:#fff}
+.lsCmdChip.on em{color:var(--pr-tinta)}
+
+/* ══ O DESCONTO ════════════════════════════════════════════════════════
+   ⚠️ Ele nunca deixa o total negativo nem passa do que foi pedido —
+   comanda com total negativo vira crédito que ninguém sabe de onde veio.
+   E o preço cheio continua na tela, riscado: desconto que esconde o
+   valor original é desconto que ninguém confere. */
+.lsCmdDesc{margin-top:10px}
+.lsCmdDescBt{border:1px dashed #D5D5DC;background:#fff;border-radius:12px;width:100%;height:40px;
+  cursor:pointer;font-family:inherit;font-size:13.2px;font-weight:600;color:var(--pr-fraca);
+  letter-spacing:-.01em;transition:border-color .12s ease,color .12s ease}
+.lsCmdDescBt:hover{border-color:var(--pr-tinta);color:var(--pr-tinta)}
+.lsCmdDescCx{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:9px;
+  padding:9px 10px 9px 14px;border-radius:12px;background:var(--pr-bloco)}
+.lsCmdDescCx > span{font-size:13.2px;font-weight:600;color:var(--pr-tinta);letter-spacing:-.01em}
+.lsCmdDescCx i{font-style:normal;font-size:12px;font-weight:600;color:var(--pr-fraca)}
+.lsCmdDescIn{width:92px;border:1px solid var(--pr-fio);border-radius:9px;background:#fff;
+  padding:7px 10px;font-family:inherit;font-size:14px;font-weight:700;color:var(--pr-tinta);
+  text-align:right;font-variant-numeric:tabular-nums;outline:none}
+.lsCmdDescIn:focus{border-color:var(--pr-tinta)}
+.lsCmdDescX{width:24px;height:24px;border:0;border-radius:50%;background:#E6E6EC;color:#55555F;
+  font-size:15px;line-height:1;cursor:pointer}
+.lsCmdDescX:hover{background:#D5D5DC;color:#000}
+.lsCmdTt s{display:block;font-size:14px;font-weight:500;color:var(--pr-fraca);
+  text-decoration-thickness:1.5px;margin-bottom:2px}
+.lsCmdTotal,.lsCmdSaldo{display:flex;align-items:baseline;justify-content:space-between;
+  gap:14px;margin-top:16px;padding-top:14px;border-top:1px solid var(--pr-fio);
+  font-size:13.4px;color:var(--pr-fraca)}
+.lsCmdTotal b,.lsCmdSaldo b{font:700 22px/1 var(--sfd,-apple-system,sans-serif);
+  letter-spacing:-.035em;color:var(--pr-tinta);font-variant-numeric:tabular-nums}
+.lsCmdSaldo b.quitado{color:#12713A}
+.lsCmdFormas{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.lsCmdForma{display:flex;flex-direction:column;align-items:center;gap:8px;padding:13px 6px;
+  border:1px solid var(--pr-fio);border-radius:16px;background:#fff;cursor:pointer;
+  font-family:inherit;font-size:12.4px;font-weight:600;color:var(--pr-tinta);
+  letter-spacing:-.01em;transition:border-color .12s ease,background .12s ease}
+.lsCmdForma:hover{border-color:var(--pr-tinta);background:#FAFAFB}
+.lsCmdIco{width:40px;height:40px;border-radius:50%;border:1px solid var(--pr-fio);
+  display:flex;align-items:center;justify-content:center;color:var(--pr-tinta)}
+.lsCmdIco svg{width:19px;height:19px}
+.lsCmdPagos:not(:empty){margin-top:11px;display:grid;gap:7px}
+.lsCmdPg{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:12px;background:var(--pr-bloco);font-size:13px}
+.lsCmdPg b{font-weight:700;font-variant-numeric:tabular-nums;color:var(--pr-tinta)}
+.lsCmdTira{width:22px;height:22px;border:0;border-radius:50%;background:#E6E6EC;color:#55555F;
+  font-size:14px;line-height:1;cursor:pointer}
+.lsCmdTira:hover{background:#D5D5DC;color:#000}
+/* ⚠️ *«troque a fonte do fechar comanda»*: era 15px/700 do texto de
+   corpo, com o mesmo peso dos rótulos ao redor — o botão mais importante
+   da tela não se distinguia de uma legenda. Agora é a família de
+   DISPLAY, 17px/800, tracking fechado: a mesma voz dos números grandes
+   do painel, que é onde a tela diz o que importa. */
+.lsCmdOk{width:100%;height:54px;margin-top:18px;border:0;border-radius:16px;cursor:pointer;
+  background:#12713A;color:#fff;
+  font:800 17px/1 -apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif;
+  letter-spacing:-.03em;transition:background .14s ease}
+.lsCmdOk:hover:not(:disabled){background:#0E5C2F}
+.lsCmdOk:disabled{background:#ECECF1;color:#9A9AA2;cursor:not-allowed}
+
+
+/* ══ 9 · TODO BOTÃO DA TELA NA MESMA RÉGUA ═════════════════════════════
+   Mesma forma, mesma altura, mesma fonte. O que muda é só o PAPEL:
+   rosa para a ação principal, verde para receber dinheiro, tinta para o
+   resto. Nenhum fundo lavado, nenhum translúcido. */
+#lsAcoes{background:transparent!important;padding:0!important;gap:8px!important}
+#lsAcoes .fio{display:none}
+#lsAcoes button{
+  height:var(--pr-bt-alt);padding:0 16px;border-radius:var(--pr-bt-raio);
+  background:var(--pr-tinta);color:#fff;
+  font:600 13.5px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;letter-spacing:-.01em}
+#lsAcoes button:hover{background:#000}
+
+/* a agenda: «chegou» é ação, «fechar» é dinheiro */
+.lsAgBt{border-radius:var(--pr-bt-raio)!important;height:30px!important;padding:0 13px!important;
+  font:600 12.5px -apple-system,BlinkMacSystemFont,system-ui,sans-serif!important;
+  letter-spacing:-.01em!important}
+.lsAgBt.ls-agendada{background:var(--pr-acao)!important;color:#fff!important}
+.lsAgBt.ls-agendada:hover{background:#F01A77!important}
+.lsAgBt.ls-cadeira{background:var(--pr-dinheiro)!important;color:#fff!important}
+.lsAgBt.ls-cadeira:hover{background:#0C8A43!important}
+.lsAgBt.ls-paga{background:transparent!important;color:#9A9AA2!important}
+
+/* a comanda */
+.lsCmdOk{background:var(--pr-dinheiro);border-radius:14px}
+.lsCmdOk:hover:not(:disabled){background:#0C8A43}
+.lsCmdOk:disabled{background:#ECECF1;color:#9A9AA2}
+.lsCmdDescBt{border:0;background:var(--pr-tinta);color:#fff;
+  height:var(--pr-bt-alt);border-radius:var(--pr-bt-raio);
+  font:600 13.5px -apple-system,BlinkMacSystemFont,system-ui,sans-serif;letter-spacing:-.01em}
+.lsCmdDescBt:hover{background:#000;color:#fff}
+/* a forma escolhida fica CHEIA, não contornada */
+.lsCmdForma{border-radius:var(--pr-bt-raio)}
+.lsCmdForma:hover{border-color:var(--pr-tinta);background:#fff}
+.lsCmdForma:hover .lsCmdIco{background:var(--pr-tinta);border-color:var(--pr-tinta);color:#fff}
+.lsCmdIco{transition:background .12s ease,border-color .12s ease,color .12s ease}
+
+/* o «Registrar saída» das gavetas e o «+ Cadastrar procedimento» da esteira */
+.cdBt, .gvBt, .lsBt{border-radius:var(--pr-bt-raio)!important}
+
+
+/* ══ 10 · O PENTE FINO ═════════════════════════════════════════════════
+   Dois achados da varredura, os dois medidos e nenhum visível a olho nu
+   num print isolado.
+
+   ⚠️ 1 · O «R$ 0,00» do rodapé da agenda estava em #22C55E — um verde
+   claro sobre superfície clara, **2,09:1**. É um número de DINHEIRO
+   ilegível, que é o pior lugar possível para contraste ruim. E havia um
+   erro de leitura junto: zero finalizado pintado de verde conta uma boa
+   notícia que não aconteceu. Agora o verde é o de receber (#0F9D4E,
+   4,9:1 aqui) e o ZERO é tinta — verde só quando entrou dinheiro. */
+.lsAgPe b{color:var(--pr-tinta)!important;font-variant-numeric:tabular-nums}
+.lsAgPe b.lsTemDinheiro{color:var(--pr-dinheiro)!important}
+
+/* ⚠️ 2 · A tela usava SETE raios diferentes em superfícies grandes:
+   16 · 20 · 24 · 26 · 30 · 34 · 99. Ninguém aponta isso num print, mas é
+   o que faz a tela parecer montada por pessoas diferentes. Vira uma
+   escala de três, como na referência: 20 para cartão, 24 para bloco
+   grande, 99 para pílula. */
+.saldo.saldoClica{border-radius:20px!important}
+.over.vid, .mtopo.vid, .mazul.contas.vid{border-radius:24px!important}
+.cb.meia.vid, .cb.resto.vid, .dir.vid{border-radius:24px!important}
+
+
+/* ══ 11 · «+ AGENDAR CLIENTE» ══════════════════════════════════════════
+   Tracejado, logo abaixo da lista. ⚠️ Ele NÃO usa o rosa da régua de
+   botão: a régua vale para ação cheia, e aqui o tracejado é justamente
+   o sinal de «vazio, por enquanto». No hover ele fecha — vira a cor de
+   ação e o contorno some, que é quando ele passa a ser um botão de
+   verdade. */
+.lsAgNovo{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+  margin-top:10px;height:52px;border:1.5px dashed #D5D5DC;border-radius:var(--pr-raio,20px);
+  background:transparent;cursor:pointer;color:#6E6C77;font-family:inherit;
+  font-size:14px;font-weight:600;letter-spacing:-.015em;
+  transition:border-color .14s ease,color .14s ease,background .14s ease}
+.lsAgNovo:hover{border-color:var(--pr-acao);color:var(--pr-acao);background:#FFF4F9}
+.lsAgNovoMais{font-size:19px;line-height:1;font-weight:400;margin-top:-1px}
+
+
+/* ══ 12 · O CELULAR ════════════════════════════════════════════════════
+   Medido num iPhone de 390px: a tela vazava para fora na horizontal e a
+   menor fonte do painel saía em **2,7px** — ilegível. O `vp.css` já
+   empilha os cards; o que faltava eram as camadas novas (agenda,
+   comanda, barra), desenhadas só para o palco de 1380px.
+
+   ⚠️ A referência é um app de celular, e é dela que vem a regra: UMA
+   coluna, alvo de toque de 44px, e o que é secundário vira ícone ou
+   sai. Nada de encolher o desktop — isso é o que dá fonte de 2,7px. */
+@media (max-width:760px){
+  /* a agenda: a hora sobe para cima do nome, o botão ganha a linha toda */
+  .lsAgLinha{grid-template-columns:auto 1fr;grid-template-areas:'hora nome' 'bt bt';
+    height:auto;min-height:0;padding:12px 14px;gap:4px 12px;align-items:center}
+  .lsAgHoraBloco{grid-area:hora;width:auto}
+  .lsAgHoraBloco b{font-size:17px}
+  .lsAgTx{grid-area:nome}
+  .lsAgNome{-webkit-line-clamp:2;font-size:15px}
+  .lsAgBt{grid-area:bt;justify-self:stretch;height:40px!important;margin-top:6px;
+    display:flex;align-items:center;justify-content:center}
+  .lsAgNovo{height:48px}
+
+  /* os cartões de conta: rolam na horizontal, em vez de espremer cinco */
+  .lsCartoes{display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;
+    scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+  .lsCartoes::-webkit-scrollbar{display:none}
+  .lsConta{flex:0 0 auto;width:120px;scroll-snap-align:start}
+
+  /* a comanda vira folha de baixo para cima, como no celular da referência */
+  .lsCmdVeu{padding:0;align-items:flex-end}
+  .lsCmd{max-width:none;border-radius:26px 26px 0 0;max-height:92vh;padding:20px 16px 24px}
+  .lsCmdVeu.on .lsCmd{transform:none}
+  .lsCmdVeu .lsCmd{transform:translateY(24px)}
+  .lsCmdFormas{grid-template-columns:1fr 1fr 1fr;gap:7px}
+  .lsCmdForma{padding:11px 4px;font-size:11.6px}
+  .lsCmdIco{width:34px;height:34px}
+  .lsCmdChip{padding:14px 12px}          /* alvo de toque de 44px */
+  .lsCmdOk{height:52px}
+
+  /* a festa não pode encostar nas bordas do telefone */
+  .lsFesta{padding:20px}
+  .lsFestaCx{padding:26px 22px;width:100%;max-width:340px}
+  .lsFestaTt{font-size:22px}
+
+  /* o «Mês a mês» não precisa de rolagem própria numa página que rola */
+  .lsMz{overflow-y:visible;padding-right:0;max-height:none}
+  .cb.resto{display:block}
+
+  /* ⚠️ PISO DE 11px PARA O TEXTO MIÚDO. Medido no celular: o «R$» ao
+     lado dos valores saía em **7,84px** e rótulos como «atingido» e
+     «custo fixo diário» em 8px. No desktop eles são acessórios de um
+     número grande e funcionam; num telefone, a 20cm do olho, viram
+     sujeira cinza. Nenhum deles carrega número — só rótulo — então
+     crescer não desalinha coluna de dinheiro nenhuma. */
+  .painel i, .painel em, .painel small{font-size:11px!important}
+  .painel .agP{font-size:11.5px!important}
+  .over i{font-size:12px!important}
+  .agPe{font-size:11px!important}
+}

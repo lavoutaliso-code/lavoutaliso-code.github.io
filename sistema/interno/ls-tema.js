@@ -37,6 +37,11 @@ function repintar(raiz){
   raiz.querySelectorAll('*').forEach(e => {
     if (rosa && rosa.contains(e)) return;             // dentro do bloco, branco é certo
     if (e.closest('.lsAg')) return;                   // a agenda tem tema próprio
+    /* ⚠️ As peças de fundo ESCURO são exceção, e o print mostrou por quê:
+       no chip selecionado da comanda o nome do procedimento sumiu — o
+       texto era branco sobre preto e o repintar trocou o branco por
+       tinta, preto sobre preto. Toda superfície escura entra aqui. */
+    if (e.closest('.lsCmdChip.on, .lsCmdOk, .lsFestaCx, #lsDoca, .lsCmd')) return;
     const cs = getComputedStyle(e);
     const a = forcaDoBranco(cs.color);
     if (a !== null) e.style.color = a >= .9 ? TINTA : (a >= .55 ? FRACA : FRACA2);
@@ -165,23 +170,58 @@ window.cardSalao = function(){
       ${ag.length ? ag.map(c => cartaoCliente(c)).join('')
                   : '<div class="lsAgVazio">ninguém agendado para hoje</div>'}
     </div>
+    <!-- ⚠️ FORA da lista, não como última linha dela: a lista é um card
+         com fio entre as linhas, e um item tracejado por dentro leria
+         como um compromisso meio apagado. Fora, com o tracejado, ele é
+         claramente «o que ainda não existe» — a mesma peça do «+ Novo»
+         da referência e do cartão vazio da esteira de serviços. -->
+    <button class="lsAgNovo" type="button" onclick="(window.agendarCliente||function(){})()">
+      <span class="lsAgNovoMais">+</span> Agendar cliente
+    </button>
     <div class="lsAgPe"><span>Finalizado hoje</span>
       <b>R$ ${typeof brl === 'function' ? brl((typeof HJ==='object'&&HJ?HJ.fin:0)||0) : '0,00'}</b></div>
   </div>`;
 };
+/* ══ A AGENDA VIRA UMA LISTA, NÃO UMA PILHA DE CARTÕES ════════════════
+   Ela, 12/11: *«a única coisa que não tô achando premium é a agenda do
+   dia»*. Comparando com a referência, a diferença não é de cor:
+
+     · lá, os compromissos são LINHAS de um card só, separadas por um fio
+       de 1px. Aqui, cada um era um cartão flutuando com sombra própria —
+       seis sombras empilhadas numa coluna estreita;
+     · lá, toda linha tem a MESMA altura, porque o título ocupa uma linha
+       e o resto desce para um subtítulo cinza. Aqui o nome e o
+       procedimento vinham grudados numa frase só («Angelica Fonseca de
+       Paula, progressiva»), que quebrava em duas ou três linhas e fazia
+       cada cartão ter uma altura diferente. Ritmo irregular é o que mais
+       rápido tira o ar de acabado;
+     · lá o estado é uma palavra discreta na direita, não uma pílula.
+
+   ⚠️ O nome e o procedimento JÁ chegavam separados aqui — eu é que os
+   colava com uma vírgula. Separá-los não custou dado nenhum. */
 function cartaoCliente(c){
   const nome = c.nome || c.n || c.cliente || '';
   const proc = c.proc || c.procedimento || c.servico || '';
   const h    = c.h || c.hora || c.horario || '';
   const chegou = !!(c.chegou || c.chegada);
-  return `<div class="lsAgSlot"><div class="lsAgCard ${chegou?'ok':'espera'}">
-    <div class="lsAgFaixa"></div>
-    <div class="lsAgCorpo">
-      ${chegou ? '<div class="lsAgCarimbo">chegou</div>' : ''}
-      <div class="lsAgTit">${nome}${proc ? ', '+proc : ''}</div>
-      <div class="lsAgHora">agendada para às ${h}</div>
-    </div></div></div>`;
+  const hh = String(h).match(/(\d{1,2})[:h](\d{2})/);
+  const turno = hh ? (+hh[1] < 12 ? 'manhã' : 'tarde') : '';
+  return `<div class="lsAgSlot"><div class="lsAgLinha ${chegou?'ok':'espera'}">
+    ${hh ? `<div class="lsAgHoraBloco"><em>${turno}</em><b>${hh[1]}:${hh[2]}</b></div>` : ''}
+    <div class="lsAgTx">
+      <div class="lsAgNome">${nome}</div>
+      ${proc ? `<div class="lsAgProc">${proc}</div>` : ''}
+    </div>
+    <div class="lsAgEst">${chegou ? 'chegou' : ''}</div>
+  </div></div>`;
 }
+/* ⚠️ A DEMO DESENHAVA O SEU PRÓPRIO CARTÃO, com o markup copiado daqui.
+   Resultado: eu mudei o desenho no tema, a agenda continuou com o
+   formato velho, e o CSS novo escondeu o título antigo — a coluna ficou
+   só com as horas. Duas cópias do mesmo desenho sempre divergem na
+   primeira mudança. Agora existe UM desenhista, e a demo chama ele. */
+window.LS_CARTAO_CLIENTE = cartaoCliente;
+
 function anelLS(p){
   p = Math.max(0, Math.min(100, p||0));
   const tam=62, esp=6, r=(tam-esp)/2, c=2*Math.PI*r, off=c*(1-p/100), h=tam/2;
@@ -193,7 +233,7 @@ function anelLS(p){
 }
 function encaixarAgenda(){
   document.querySelectorAll('.lsAgSlot').forEach(s=>{
-    const c = s.querySelector('.lsAgCard');
+    const c = s.querySelector('.lsAgLinha') || s.querySelector('.lsAgCard');
     if (c) s.style.height = Math.ceil(c.offsetHeight*ESC)+'px';
   });
 }
@@ -260,6 +300,12 @@ const TERMOS = [
   [/\bcustou\b/gi,              'custos'],
   [/\bfaturou\b/gi,             'receita'],
   [/\bcusto diário · herdado\b/gi, 'custo fixo diário'],
+  /* ⚠️ Ela, 12/11: *«remover o número segunda unidade, deixar só
+     investimento»*. O rótulo aparece em seis lugares diferentes do
+     sistema («Investimento 2ª unidade», «Investimento · 2ª unidade»,
+     «Sinal · 2ª unidade»...). Trocar nos seis arquivos seria mexer em
+     tela que funciona; a camada tira o sufixo onde ele aparecer. */
+  [/\s*·?\s*2ª\s*unidade\b/gi, ''],
 ];
 function limparTexto(raiz){
   /* o rótulo da verba sai inteiro: a divisão já está desenhada embaixo
@@ -267,11 +313,26 @@ function limparTexto(raiz){
   raiz.querySelectorAll('.aroTit, .cdOlho').forEach(e => {
     if (/o que o sal[aã]o faturou/i.test(e.textContent)) e.remove();
   });
-  raiz.querySelectorAll('*').forEach(e => {
-    if (e.children.length || !e.textContent.trim()) return;
-    let t = e.textContent, novo = t;
+  /* ⚠️⚠️ ANTES ISTO SÓ OLHAVA ELEMENTOS SEM FILHOS — e foi assim que o
+     «2ª UNIDADE» sobreviveu a uma troca que eu dei por feita. O rótulo
+     mora num `<div>INVESTIMENTO<br>2ª unidade</div>`: o `<br>` faz o
+     div TER filho, e a varredura pulava o nó inteiro. O mesmo buraco
+     engoliria qualquer termo escrito ao lado de um `<b>` ou `<em>`.
+     Agora quem anda é o TreeWalker, nó de texto por nó de texto — não
+     importa como o HTML foi montado. */
+  const andarilho = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT, {
+    acceptNode: n => {
+      const p = n.parentNode;
+      if (!p || /SCRIPT|STYLE|TEXTAREA/.test(p.nodeName)) return NodeFilter.FILTER_REJECT;
+      return n.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    }
+  });
+  const nos = [];
+  for (let n = andarilho.nextNode(); n; n = andarilho.nextNode()) nos.push(n);
+  nos.forEach(n => {
+    let t = n.nodeValue, novo = t;
     TERMOS.forEach(([re, por]) => { novo = novo.replace(re, por); });
-    if (novo !== t) e.textContent = novo;
+    if (novo !== t) n.nodeValue = novo;
   });
 }
 /* ⚠️ RECALCULAR O `--k` DEPOIS DO `ajusta()`. Ele reserva 61px de barra
@@ -314,8 +375,21 @@ let alturaUtil = ALTURA_BASE, larguraUtil = LARGURA_BASE;
    ⚠️ Tudo é `position:absolute` com coordenada fixa, então mover um bloco
    não empurra o de baixo: cada um é deslocado pela medida do vão que
    ficou acima dele. */
+/* ⚠️ NO CELULAR NÃO EXISTE «encaixar na janela»: a página volta a ser
+   uma página que ROLA, e o `vp.css` já empilha os cards. Minha medição
+   de altura e o `--k` só fazem sentido no palco fixo do desktop — no
+   telefone eles empurravam o painel para cima com um `translateY` e
+   chumbavam uma altura que o conteúdo empilhado não tem. */
+const NO_CELULAR = () => matchMedia('(max-width:760px)').matches;
+
 function medirAltura(){
   const painel = document.querySelector('.painel'); if (!painel) return;
+  if (NO_CELULAR()){
+    painel.style.transform = ''; painel.style.height = ''; painel.style.width = '';
+    const pr = document.querySelector('.prancheta');
+    if (pr){ pr.style.height = ''; pr.style.width = ''; }
+    return;
+  }
   const vivos = () => [...painel.children].filter(e =>
     e.offsetHeight > 0 && getComputedStyle(e).display !== 'none');
   let filhos = vivos(); if (!filhos.length) return;
@@ -373,6 +447,7 @@ function medirAltura(){
 }
 
 function esticar(){
+  if (NO_CELULAR()){ document.documentElement.style.removeProperty('--k'); return; }
   const barra = document.getElementById('lt-tabbar');
   const visivel = barra && getComputedStyle(barra).display !== 'none';
   const reserva = visivel ? Math.round(barra.getBoundingClientRect().height + 16) : 0;
@@ -464,6 +539,89 @@ function extratoContaDemo(){
   g.dataset.lsConta = nome;
 }
 
+/* ══ PREMIUM 1 · A DOCA ══════════════════════════════════════════════
+   Os dois botões continuam sendo os MESMOS elementos, com os mesmos
+   `onclick` — só mudam de lugar. Mover em vez de recriar é o que
+   garante que «Caixa em dinheiro» e «Estorno» continuem funcionando
+   sem eu reescrever uma linha da lógica deles. */
+function doca(){
+  /* ⚠️⚠️ DUAS CORREÇÕES DE ROTA AQUI, as duas achadas medindo.
+     1ª: são `id`, não classe — eu li o meu próprio diagnóstico errado
+     (o teste imprimia `classList || id` e eu tomei o id por classe), e
+     por isso a doca não nascia.
+     2ª: juntei os dois numa pílula flutuante no rodapé, igual à da
+     referência — e o teste mostrou que ela cobria a tabela «Mês a mês»
+     (64.777,80 · 13.880,76 · 21,4%). No celular do Slate aquilo não é
+     problema porque a tela ROLA e o conteúdo passa por baixo. A nossa
+     não rola: o que fica atrás da pílula fica inalcançável.
+     Então as duas ações sobem para a barra do topo, que é o rodapé do
+     desktop — mesmo agrupamento, mesma pílula escura, zero sobreposição
+     e zero custo de altura. Aqui elas só somem da tela. */
+  ['btCaixaD','btEstorno'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.dataset.lsNaBarra = '1';
+  });
+  const d = document.getElementById('lsDoca');
+  if (d) d.remove();
+}
+
+/* ══ PREMIUM 2 · A HORA VIRA BLOCO ═══════════════════════════════════
+   «agendada para às 07:00» → um quadrado com «07» e «:00». ⚠️ Leio a
+   hora do texto que já está na tela, não de um dado novo: se a frase
+   mudar de formato, o bloco simplesmente não aparece — em vez de
+   mostrar hora errada, que num sistema de agenda é pior que não mostrar. */
+function horaEmBloco(raiz){
+  raiz.querySelectorAll('.lsAgCorpo').forEach(c => {
+    if (c.querySelector('.lsAgHoraBloco')) return;
+    const linha = c.querySelector('.lsAgHora');
+    const m = linha && linha.textContent.match(/(\d{1,2})[:h](\d{2})/);
+    if (!m) return;
+    const bloco = document.createElement('div');
+    bloco.className = 'lsAgHoraBloco';
+    bloco.innerHTML = `<em>${+m[1] < 12 ? 'manhã' : 'tarde'}</em><b>${m[1]}:${m[2]}</b>`;
+    c.insertBefore(bloco, c.firstChild);
+  });
+}
+
+/* ══ PREMIUM 3 · O ÍCONE DE «CONTAS A PAGAR» ═════════════════════════
+   O de «Fechar caixa» é um traço fino; o de «Contas a pagar» era uma
+   ilustração com gradiente e um check verde — dois sistemas de ícone a
+   dois centímetros um do outro. ⚠️ Neutralizar a ilustração por CSS não
+   resolveria: ela tem `<linearGradient>` e preenchimento, e sem eles
+   vira uma mancha. O desenho é trocado por um recibo de linha, no mesmo
+   diâmetro e na mesma espessura do vizinho. */
+const RECIBO = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M5 3.5v17l2.3-1.5 2.4 1.5 2.3-1.5 2.4 1.5 2.3-1.5 2.3 1.5v-17L16.7 5l-2.3-1.5L12 5 9.7 3.5 7.3 5z"/>
+  <path d="M9 9.5h6M9 13.5h4"/></svg>`;
+function iconeContas(raiz){
+  const el = raiz.querySelector('.mazul .ctEl');
+  if (!el || el.dataset.lsIcone) return;
+  el.dataset.lsIcone = '1';
+  el.innerHTML = `<span class="cx lsCx">${RECIBO}</span>`;
+}
+
+/* ══ PREMIUM 3b · ZERO NÃO É BOA NOTÍCIA ═════════════════════════════
+   O «Finalizado hoje» pintava o valor de verde sempre — inclusive no
+   R$ 0,00. Verde é a cor de «entrou dinheiro»; usá-la no zero conta uma
+   notícia que não aconteceu. A classe só entra quando há valor. */
+function rodapeAgenda(raiz){
+  const b = raiz.querySelector('.lsAgPe b'); if (!b) return;
+  const m = b.textContent.match(/(\d{1,3}(?:\.\d{3})*),(\d{2})/);
+  const v = m ? +(m[1].replace(/\./g,'') + '.' + m[2]) : 0;
+  b.classList.toggle('lsTemDinheiro', v > 0);
+}
+
+/* ══ PREMIUM 4 · O «ver tudo» do Mês a mês ═══════════════════════════ */
+function mesVerTudo(raiz){
+  const t = raiz.querySelector('.lsMzTopo');
+  if (!t || t.querySelector('a')) return;
+  const a = document.createElement('a');
+  a.textContent = 'ver tudo';
+  a.onclick = () => { try { abrirMeses(); } catch(e) {} };
+  t.appendChild(a);
+}
+
 function aplicar(){
   const raiz = document.querySelector('.painel') || document.body;
   /* ⚠️ `limparTexto` rodava só no PAINEL — e a gaveta do extrato mora
@@ -475,6 +633,7 @@ function aplicar(){
   limparTexto(document.body);
   repintar(document.body);     /* o body, não o painel: a barra de abas e os
                                   dois botões flutuantes moram fora dele */
+  horaEmBloco(raiz); iconeContas(raiz); rodapeAgenda(raiz); mesVerTudo(raiz); doca();
   encaixarAgenda(); esticar(); extratoDemo(); extratoContaDemo();
 }
 /* ⚠️⚠️ EMBRULHAR O `pinta` NÃO FUNCIONA, e o print mostrou: o lockup

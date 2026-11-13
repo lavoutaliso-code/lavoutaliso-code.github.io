@@ -124,7 +124,7 @@ body{background:#EFEFEF;padding:0 0 56px;color:var(--tinta);
   display:none;align-items:center;justify-content:center;padding:0}
 #lsFechaX:hover{background:#E2E2E8;color:#000}
 </style>
-</head>
+<script src="../ls-conta.js"></script></head>
 <body>
 
 <div class="lsCab">
@@ -140,6 +140,11 @@ const brl = v => v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFracti
    Progressiva 279,90 → 59,90 · Manutenção 249,90 → 29,90. Fecha.
    ⭐ O marca-texto (`oculta`) vai nas duas que a dona de salão esquece —
    investimento e marketing. É a mesma função que ele tem na aula. */
+/* os nomes que o sistema usa por dentro viram o que ela lê na nota */
+const ROTULO = { equipe:'− Comissão + bônus', estoque:'− Produto', oper:'− Operacional',
+  imposto:'− Imposto', invest:'− Investimento', mkt:'− Marketing' };
+/* as duas que a dona de salão costuma esquecer ganham o marca-texto */
+const ESCONDIDO = ['invest','mkt','imposto'];
 const S = [
  {nm:'PROGRESSIVA', preco:279.90, itens:[
    ['− Comissão + bônus',120.96,0],['− Produto',43.00,0],
@@ -148,6 +153,25 @@ const S = [
    ['− Comissão + bônus',120.96,0],['− Produto',43.00,0],
    ['− Investimento',39.04,1],['− Marketing',17.00,1]]},
 ];
+/* ══ A ESTEIRA MOSTRA O QUE FOI CADASTRADO ════════════════════════════
+   Os dois primeiros são do salão de demonstração; o resto vem do que
+   ela cadastrou na calculadora, com a divisão que ELA respondeu.
+   ⚠️ O cadastrado vem DEPOIS e vence o de demonstração se tiver o mesmo
+   nome — senão a tela mostraria dois «Progressiva» com preços
+   diferentes, e aí nenhum dos dois é confiável. */
+try {
+  const esp = (window.parent.LS_CONTA || window.LS_CONTA)?.espaco();
+  const salvos = esp ? (esp.ler('procedimentos') || []) : [];
+  salvos.forEach(r => {
+    const itens = Object.entries(r.divisao || {})
+      .filter(([,v]) => v > 0)
+      .map(([k,v]) => [ROTULO[k] || ('− ' + k), v, ESCONDIDO.includes(k) ? 1 : 0]);
+    const i = S.findIndex(x => x.nm.toLowerCase() === r.nome.toLowerCase());
+    const novo = { nm: r.nome.toUpperCase(), preco: r.preco, itens };
+    if (i >= 0) S[i] = novo; else S.push(novo);
+  });
+} catch(e){}
+
 document.getElementById('esteira').innerHTML = S.map(s => {
   const lucro = +(s.preco - s.itens.reduce((a,i)=>a+i[1],0)).toFixed(2);
   const normais = s.itens.filter(i=>!i[2]), ocultas = s.itens.filter(i=>i[2]);

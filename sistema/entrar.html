@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>laila salon · entrar</title>
+<meta name="theme-color" content="#FFFFFF">
+<link rel="icon" href="marca-clara.png">
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   A PORTA DE ENTRADA
+
+   Mesma régua do sistema, medida no «+ Cadastrar procedimento»:
+     #FF2D87 · raio 11px · 34px (48 aqui, que é alvo de dedo) · 600/13,5
+
+   ⚠️ A tela é de DUAS colunas no desktop e UMA no celular, como a
+   referência — e no celular ela nasce pelo formulário, não pela marca:
+   quem abre o link já sabe de quem é o sistema, o que ela precisa é do
+   campo. A coluna da marca vira rodapé.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  --acao:#FF2D87; --tinta:#0D0D10; --t2:#55555F; --t3:#9A9AA2;
+  --fio:#ECECF1; --bloco:#F8F4F5; --dinheiro:#0F9D4E;
+  --sfd:-apple-system,'SF Pro Display',BlinkMacSystemFont,system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:#fff;color:var(--tinta);
+  font:400 15px/1.55 -apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;display:grid;grid-template-columns:1fr 1fr}
+
+/* ── a coluna da marca ─────────────────────────────────────────────── */
+.marca{background:var(--bloco);display:flex;flex-direction:column;justify-content:center;
+  padding:clamp(32px,6vw,76px);gap:0}
+.marca img{width:min(260px,70%);height:auto;display:block}
+.marca .fio{width:44px;height:3px;border-radius:3px;background:var(--acao);margin:30px 0 24px}
+.marca h1{font-family:var(--sfd);font-size:clamp(26px,3.2vw,40px);font-weight:300;
+  letter-spacing:-.035em;line-height:1.15}
+.marca h1 b{font-weight:750}
+.marca p{margin-top:18px;color:var(--t2);font-size:14.5px;max-width:40ch}
+.selos{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+.selo{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:99px;
+  background:#fff;border:1px solid var(--fio);font-size:12.6px;font-weight:600;color:var(--t2)}
+.selo b{color:var(--tinta);font-weight:700}
+
+/* ── a coluna do formulário ────────────────────────────────────────── */
+.porta{display:flex;align-items:center;justify-content:center;padding:clamp(24px,5vw,56px)}
+.cx{width:100%;max-width:400px}
+.abas{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;
+  background:#F2F2F5;margin-bottom:26px}
+.abas button{height:38px;border:0;border-radius:11px;background:transparent;cursor:pointer;
+  font-family:inherit;font-size:13.5px;font-weight:600;color:var(--t2);letter-spacing:-.01em;
+  transition:background .14s ease,color .14s ease}
+.abas button.on{background:#fff;color:var(--tinta);
+  box-shadow:0 1px 2px rgba(16,24,40,.08), 0 4px 10px -6px rgba(16,24,40,.3)}
+h2{font-family:var(--sfd);font-size:25px;font-weight:750;letter-spacing:-.035em}
+.sub{color:var(--t2);font-size:14px;margin-top:6px}
+form{margin-top:24px;display:grid;gap:13px}
+label{display:block}
+label span{display:block;font-size:12.5px;font-weight:600;color:var(--t2);
+  margin-bottom:6px;letter-spacing:-.005em}
+input{width:100%;height:48px;padding:0 15px;border:1px solid var(--fio);border-radius:11px;
+  background:#fff;font-family:inherit;font-size:15.5px;color:var(--tinta);outline:none;
+  transition:border-color .14s ease}
+input:focus{border-color:var(--tinta)}
+input::placeholder{color:#B9B9C3}
+.bt{height:52px;border:0;border-radius:11px;background:var(--acao);color:#fff;cursor:pointer;
+  font-family:inherit;font-size:15.5px;font-weight:700;letter-spacing:-.02em;margin-top:6px;
+  transition:background .14s ease}
+.bt:hover{background:#F01A77}
+.bt:disabled{background:#ECECF1;color:#9A9AA2;cursor:not-allowed}
+/* ⚠️ o erro fica ACIMA do botão, no caminho do olho — embaixo ele some
+   atrás do teclado no celular */
+.erro{display:none;align-items:flex-start;gap:9px;padding:11px 13px;border-radius:11px;
+  background:#FFF1F3;color:#9E0030;font-size:13.4px;font-weight:600;line-height:1.4}
+.erro.on{display:flex}
+.pe{margin-top:22px;font-size:12.6px;color:var(--t3);line-height:1.55}
+.pe b{color:var(--t2)}
+
+/* ⚠️ O AVISO DO QUE ISTO É. Não é letra miúda escondida: quem for testar
+   precisa saber, ANTES de digitar, que o dado fica no aparelho. */
+.aviso{margin-top:18px;padding:13px 15px;border-radius:12px;background:var(--bloco);
+  font-size:12.5px;line-height:1.5;color:var(--t2)}
+.aviso b{color:var(--tinta)}
+
+.prazo{display:flex;align-items:center;gap:9px;padding:11px 14px;border-radius:12px;
+  background:#F0FAF3;color:#0B5C2E;font-size:13px;font-weight:600;margin-bottom:22px}
+.prazo.acabou{background:#FFF1F3;color:#9E0030}
+.prazo em{font-style:normal;font-weight:400;opacity:.85}
+
+@media (max-width:860px){
+  body{grid-template-columns:1fr;display:flex;flex-direction:column}
+  .porta{order:1;padding:28px 20px 10px;flex:1 1 auto;align-items:flex-start}
+  .marca{order:2;padding:26px 20px calc(26px + env(safe-area-inset-bottom));
+    text-align:left;gap:0}
+  .marca img{width:150px}
+  .marca .fio{display:none}
+  .marca h1{font-size:19px;margin-top:14px}
+  .marca p{font-size:13px;margin-top:9px}
+  .selos{margin-top:16px}
+  .cx{max-width:none}
+}
+</style>
+</head>
+<body>
+
+<div class="porta">
+  <div class="cx">
+    <div class="prazo" id="prazo"></div>
+
+    <div class="abas" role="tablist">
+      <button id="abEntrar" class="on" role="tab">Entrar</button>
+      <button id="abCriar" role="tab">Criar conta</button>
+    </div>
+
+    <h2 id="tt">Bem-vinda de volta</h2>
+    <p class="sub" id="sub">Entre para abrir o caixa do seu salão.</p>
+
+    <form id="form" novalidate>
+      <label class="soCriar" hidden><span>Nome do salão</span>
+        <input id="salao" autocomplete="organization" placeholder="Salão da Angelica"></label>
+      <label><span>E-mail</span>
+        <input id="email" type="email" autocomplete="email" inputmode="email"
+          placeholder="voce@seusalao.com.br"></label>
+      <label><span>Senha</span>
+        <input id="senha" type="password" autocomplete="current-password"
+          placeholder="pelo menos 6 caracteres"></label>
+      <div class="erro" id="erro"></div>
+      <button class="bt" id="bt" type="submit">Entrar</button>
+    </form>
+
+    <div class="aviso">
+      <b>Este é um acesso de teste.</b> Os dados ficam guardados <b>neste aparelho</b> —
+      não viajam para servidor nenhum, e cada conta tem o seu espaço separado.
+      Para usar no salão de verdade, com backup e acesso de qualquer celular,
+      é preciso a versão com servidor.
+    </div>
+
+    <p class="pe" id="pe"></p>
+  </div>
+</div>
+
+<div class="marca">
+  <img src="marca-clara.png" alt="laila salon">
+  <div class="fio"></div>
+  <h1>Muito mais que um sistema:<br><b>sua gestão financeira<br>feita sozinha.</b></h1>
+  <p>Cada procedimento que você cadastra passa a se dividir automaticamente — comissão,
+  produto, imposto, marketing e investimento — a cada cliente que pagar.</p>
+  <div class="selos">
+    <span class="selo"><b>1</b> cadastro, divisão automática</span>
+    <span class="selo">comanda fechada, <b>dinheiro organizado</b></span>
+  </div>
+</div>
+
+<script src="ls-conta.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+let modo = 'entrar';
+
+/* ── o prazo, sempre à vista ───────────────────────────────────────── */
+const pz = LS_CONTA.prazo();
+const elPrazo = $('#prazo');
+if (pz.expirou){
+  elPrazo.className = 'prazo acabou';
+  elPrazo.innerHTML = `🔒 O teste grátis terminou em ${pz.ate}. <em>Renove para continuar.</em>`;
+} else {
+  elPrazo.innerHTML = `✨ Teste grátis até <b style="margin:0 .25em">${pz.ate}</b>` +
+    `<em>· ${pz.dias} ${pz.dias === 1 ? 'dia' : 'dias'}</em>`;
+}
+
+/* ── alternar entre entrar e criar ─────────────────────────────────── */
+function trocar(novo){
+  modo = novo;
+  $('#abEntrar').classList.toggle('on', modo === 'entrar');
+  $('#abCriar').classList.toggle('on', modo === 'criar');
+  document.querySelectorAll('.soCriar').forEach(e => e.hidden = (modo !== 'criar'));
+  $('#tt').textContent  = modo === 'criar' ? 'Criar a sua conta' : 'Bem-vinda de volta';
+  $('#sub').textContent = modo === 'criar'
+    ? 'Leva menos de um minuto, e já abre no caixa.'
+    : 'Entre para abrir o caixa do seu salão.';
+  $('#bt').textContent  = modo === 'criar' ? 'Criar conta e entrar' : 'Entrar';
+  $('#senha').autocomplete = modo === 'criar' ? 'new-password' : 'current-password';
+  $('#erro').classList.remove('on');
+}
+$('#abEntrar').onclick = () => trocar('entrar');
+$('#abCriar').onclick  = () => trocar('criar');
+if (new URLSearchParams(location.search).get('criar') === '1') trocar('criar');
+
+/* ⚠️ Mensagem de prazo esgotado não bloqueia o cadastro: ela continua
+   podendo criar conta e ver o sistema — o que muda é o convite. */
+if (new URLSearchParams(location.search).get('expirou') === '1'){
+  $('#erro').textContent = 'O período de teste terminou. Fale com a gente para renovar.';
+  $('#erro').classList.add('on');
+}
+
+/* ── enviar ────────────────────────────────────────────────────────── */
+$('#form').onsubmit = async e => {
+  e.preventDefault();
+  const erro = $('#erro'), bt = $('#bt');
+  erro.classList.remove('on');
+  bt.disabled = true;
+  try {
+    const dados = { email: $('#email').value, senha: $('#senha').value, salao: $('#salao').value };
+    if (modo === 'criar') await LS_CONTA.cadastrar(dados);
+    else                  await LS_CONTA.entrar(dados);
+    /* ⭐ Ela, 12/11: *«usuário cair já na tela de finanças»*. */
+    location.replace('index.html#caixa');
+  } catch (err) {
+    erro.textContent = err.message || 'Não consegui agora. Tente de novo.';
+    erro.classList.add('on');
+    bt.disabled = false;
+  }
+};
+
+/* se já está logada e o prazo vale, não faz sentido mostrar a porta */
+if (LS_CONTA.atual() && !pz.expirou && !location.search) location.replace('index.html#caixa');
+
+const c = LS_CONTA.atual();
+$('#pe').innerHTML = c
+  ? `Você está conectada como <b>${c.email}</b> — <a href="#" id="sair" style="color:inherit">sair</a>`
+  : 'Ao criar a conta você começa com o salão de demonstração preenchido, para olhar o sistema antes de lançar os seus números.';
+if ($('#sair')) $('#sair').onclick = e => { e.preventDefault(); LS_CONTA.sair(); location.reload(); };
+</script>
+</body>
+</html>

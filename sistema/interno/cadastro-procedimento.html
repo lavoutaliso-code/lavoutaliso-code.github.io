@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#EFEFEF">
 <title>Cadastro de procedimento</title>
-<link rel="stylesheet" href="base.css">
-<link rel="stylesheet" href="premium.css">
 <style>
 /* ══════════════════════════════════════════════════════════════════════════
    A CALCULADORA DA PRECIFICAÇÃO — a oficial.
@@ -261,7 +259,7 @@ body{font-family:Poppins,var(--ui);background:#EFEFEF;color:var(--tinta);font-we
 /* no celular nada muda: a coluna da marca sai e a calculadora volta a rolar */
 @media (max-width:979px){ .lsPitch{display:none} }
 </style>
-</head>
+<script src="../ls-conta.js"></script></head>
 <body>
 
 <div class="lsPalco">
@@ -560,6 +558,55 @@ function calcula(){
   põe('d1', RS(v.lucro));  põe('d30', RS0(r2(v.lucro*MES)));
   ajustaChave();
 }
+/* ══ CADASTRAR: A DIVISÃO FICA GUARDADA COM O PROCEDIMENTO ════════════
+   Ela, 12/11: *«gestão financeira feita automática, de acordo com o que
+   foi respondido na calculadora — todo procedimento ela faz a divisão»*.
+
+   É aqui que o ciclo fecha: o que ela respondeu nesta tela não vira só
+   um número na fita, vira a REGRA daquele procedimento. Quando a
+   cliente pagar, a comanda não pergunta nada — ela aplica esta divisão.
+
+   ⚠️ Guardo a divisão inteira, não só o preço. Guardar só o preço
+   obrigaria a recalcular depois com os parâmetros de HOJE — e aí um
+   procedimento cadastrado em janeiro mudaria de divisão em março
+   porque o custo da cadeira mudou. O que foi acordado fica acordado;
+   se ela quiser mudar, cadastra de novo.
+   ⚠️ E a conta FECHA antes de salvar: a soma das partes tem que dar o
+   preço, no centavo. Se não der, não salvo — divisão que não fecha vira
+   dinheiro sem dono no caixa. */
+function salvarProcedimento(){
+  const v = valores();
+  const nome = (PROC.nome || '').trim();
+  if (!nome) return { ok:false, erro:'Dê um nome ao procedimento.' };
+  if (!(PROC.preco > 0)) return { ok:false, erro:'Falta o preço.' };
+  const partes = Object.entries(v).filter(([k]) => k !== 'lucro');
+  const soma = r2(partes.reduce((a,[,x]) => a + x, 0) + v.lucro);
+  if (Math.abs(soma - r2(PROC.preco)) > 0.005)
+    return { ok:false, erro:`A divisão soma ${RS(soma)} e o preço é ${RS(PROC.preco)}.` };
+  const reg = { nome, preco:r2(PROC.preco), divisao:Object.fromEntries(partes),
+                lucro:v.lucro, em:new Date().toISOString() };
+  try {
+    const esp = window.parent.LS_CONTA ? window.parent.LS_CONTA.espaco()
+              : (window.LS_CONTA && window.LS_CONTA.espaco());
+    if (!esp) return { ok:false, erro:'Não consegui guardar agora.' };
+    const lista = esp.ler('procedimentos') || [];
+    const i = lista.findIndex(x => x.nome.toLowerCase() === nome.toLowerCase());
+    if (i >= 0) lista[i] = reg; else lista.push(reg);
+    esp.salvar('procedimentos', lista);
+    return { ok:true, reg, atualizou:i >= 0 };
+  } catch(e){ return { ok:false, erro:'Não consegui guardar agora.' }; }
+}
+
+document.getElementById('btCadastrar').onclick = () => {
+  const bt = document.getElementById('btCadastrar');
+  const r = salvarProcedimento();
+  const antes = bt.textContent;
+  bt.textContent = r.ok ? (r.atualizou ? '✓ Atualizado' : '✓ Cadastrado') : r.erro;
+  bt.style.background = r.ok ? '#0F9D4E' : '#C2003A';
+  if (r.ok) try { window.parent.postMessage({ ls:'procedimento', nome:r.reg.nome }, '*'); } catch(e){}
+  setTimeout(() => { bt.textContent = antes; bt.style.background = ''; }, 2200);
+};
+
 addEventListener('input', e=>{
   const id = e.target.id;
   if(id==='c_nome'){ PROC.nome = e.target.value.trim(); calcula(); return; }
