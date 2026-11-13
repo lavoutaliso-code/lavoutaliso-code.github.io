@@ -204,6 +204,14 @@ body.lsRecolhe #lsTopo{display:flex}
      logo abaixo dela — dois hambúrgueres na mesma tela, um deles
      meio escondido. Quem abre o menu agora é o da barra. */
   #abrir{display:none!important}
+  /* ⚠️⚠️ BUG REAL, achado medindo: no celular a lateral vinha da regra
+     antiga da casca com `transform:translateX(-100%)`, e só a classe
+     `body.menu` a trazia de volta. A minha classe é `lsAberta` — então
+     ela ganhava `visibility:visible` e ficava em **x = −300**, fora da
+     tela. Quem clicasse nos três pontos no telefone via NADA acontecer.
+     O véu também precisa aparecer, senão não há como fechar. */
+  body.lsRecolhe.lsAberta #lado{transform:none!important;z-index:60}
+  body.lsRecolhe.lsAberta #lsVeu{display:block;z-index:55}
   #lsTopo{height:52px;padding:0 12px;gap:10px}
   #lsAcoes{display:none}
   #lsSetor{font-size:12.5px}
