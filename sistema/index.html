@@ -317,7 +317,13 @@ const SETORES = [
      Financeiro ficou com o que já está de pé: o Caixa do dia, os
      Serviços que nasceram dentro dele, e a Conciliação. */
   {r:'Financeiro', itens:[
-    {k:'caixa',    r:'Caixa do dia', u:'interno/caixa.html',
+    /* ⚠️ Ela, 13/11: *«criar uma versão responsiva é pegar o kit de
+       marca da versão desktop, as funções, e REALOCAR tudo»*. O celular
+       abre uma TELA PRÓPRIA — não o desktop espremido. As duas leem a
+       mesma fonte de dados (`ls-demo-dados.js`), que é o que impede
+       elas de mostrarem saldos diferentes. */
+    {k:'caixa',    r:'Caixa do dia',
+     u: matchMedia('(max-width:760px)').matches ? 'interno/caixa-mobile.html' : 'interno/caixa.html',
      i:'<path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'},
     {k:'servicos', r:'Serviços',     u:'interno/servicos.html',
      i:'<path d="M6.5 3.5l11 11"/><path d="M17.5 3.5l-11 11"/><circle cx="5" cy="18" r="2.4"/><circle cx="19" cy="18" r="2.4"/>'},
@@ -428,6 +434,14 @@ function ir(k){
    UM caminho só para a calculadora, e não dois que podem divergir. */
 /* chama a função que mora dentro da tela do caixa — mesma origem, então
    o acesso é direto; o `try` cobre a tela ainda carregando */
+/* as telas filhas pedem navegação por mensagem — quem navega é a casca */
+addEventListener('message', e => {
+  const d = e.data || {};
+  if (d.ls !== 'ir' || !d.k) return;
+  ir(d.k);
+  if (d.abrir) setTimeout(() => cadastrarProcedimento(), 300);
+});
+
 function noCaixa(fn){
   try { const w = quadros['caixa']?.contentWindow;
     if (w && typeof w[fn] === 'function') w[fn](); } catch(e){}

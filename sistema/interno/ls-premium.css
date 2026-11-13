@@ -505,3 +505,12 @@
   .over i{font-size:12px!important}
   .agPe{font-size:11px!important}
 }
+
+
+/* ⚠️ O MESMO BUG, DUAS VEZES. No `entrar.html` o «Nome do salão»
+   aparecia no modo Entrar; aqui, o campo de desconto aparecia ao lado
+   do botão «Dar desconto» — os dois ao mesmo tempo. A causa é a mesma:
+   `display:grid` (ou `block`) é regra de AUTOR e vence o `display:none`
+   que o navegador dá ao atributo `hidden`, que é regra do agente.
+   Quem esconde precisa ser autor também. */
+[hidden]{display:none!important}

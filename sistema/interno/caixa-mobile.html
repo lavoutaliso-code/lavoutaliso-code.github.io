@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<title>Caixa do dia · laila salon</title>
+<!-- ⚠️ A FOLHA PREMIUM VEM ANTES DO <style> DESTA TELA, de propósito:
+     ela traz o visual da comanda (que esta tela reusa), mas o LAYOUT
+     aqui é próprio. Carregada depois, ela vencia por ordem — e o
+     «manhã» voltava para 9,5px, abaixo do piso de 11px que eu mesmo
+     defini. Quem chega por último manda; então a tela chega por último. -->
+<link rel="stylesheet" href="ls-premium.css">
+<meta name="theme-color" content="#FF2D87">
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   O CAIXA DO DIA — VERSÃO DE CELULAR, DESENHADA PARA O CELULAR
+
+   Ela, 13/11: *«você não criou uma versão responsiva pra mobile, você
+   empacotou tudo e colocou no mobile. Criar uma versão responsiva é
+   pegar o kit de marca da versão desktop, as funções, e REALOCAR tudo,
+   REORGANIZAR tudo, em uma versão mobile.»*
+
+   Estava certa. O que eu tinha feito eram media queries por cima de um
+   palco de 1380×794 — o desktop espremido. Esta tela não herda layout
+   nenhum: herda o KIT (cores, tipografia, régua de botão) e os DADOS.
+
+   A arquitetura veio da referência, medida com Pillow no print dela:
+     · o bloco de cor ocupa 36% da altura e carrega o número principal;
+     · uma FOLHA branca sobe por cima dele com raio grande — é ela que
+       faz o conteúdo parecer uma superfície, não uma lista solta;
+     · as ações viram círculos de fio, lado a lado, com rótulo embaixo;
+     · a navegação é uma pílula escura FLUTUANDO a 9% do fim.
+
+   ⚠️ Tudo que é dinheiro vem do mesmo `LS_DEMO` do desktop, e os
+   procedimentos vêm do `LS_CONTA.espaco()` — a mesma fonte. Duas telas
+   lendo dados diferentes é como nasce divergência de saldo.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  --acao:#FF2D87; --tinta:#0D0D10; --t2:#55555F; --t3:#9A9AA2;
+  --fio:#ECECF1; --bloco:#F8F4F5; --dinheiro:#0F9D4E; --dock:#0A080B;
+  --sfd:-apple-system,'SF Pro Display',BlinkMacSystemFont,system-ui,sans-serif;
+  --raio:24px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:var(--acao)}
+body{background:var(--acao);color:var(--tinta);min-height:100%;
+  font:400 15px/1.5 -apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;padding-bottom:0}
+
+/* ══ 1 · O BLOCO DE COR ════════════════════════════════════════════════ */
+.topo{background:var(--acao);color:#fff;padding:18px 20px 30px}
+.topo .rot{font-size:11.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(255,255,255,.72)}
+.saldo{display:flex;align-items:baseline;gap:7px;margin-top:9px}
+.saldo .cif{font-size:19px;font-weight:600;opacity:.74}
+.saldo b{font-family:var(--sfd);font-size:40px;font-weight:300;letter-spacing:-.045em;
+  font-variant-numeric:tabular-nums;line-height:1}
+.topo .sub{margin-top:7px;font-size:13px;color:rgba(255,255,255,.8)}
+
+/* os cartões deslizam, como os avatares da referência */
+/* ⚠️ MEDIDO: o trilho nascia com `scrollLeft: 20` e o primeiro cartão
+   aparecia cortado na borda. O `scroll-snap-align:start` alinha o item
+   ao início da ÁREA DE SCROLL, que ignora o padding — então o navegador
+   rolava exatamente os 20px do padding para encostar o cartão na borda.
+   Quem ensina o snap a respeitar a margem é o `scroll-padding`. */
+.contas{display:flex;gap:11px;margin:20px -20px 0;padding:0 20px 2px;overflow-x:auto;
+  scroll-snap-type:x mandatory;scroll-padding-left:20px;-webkit-overflow-scrolling:touch}
+.contas::-webkit-scrollbar{display:none}
+.conta{flex:0 0 auto;width:118px;scroll-snap-align:start;background:none;border:0;padding:0;
+  cursor:pointer;text-align:left;font-family:inherit;color:#fff}
+.conta .kt{height:70px;border-radius:12px;position:relative;overflow:hidden;
+  display:flex;align-items:flex-end;padding:9px 10px;
+  box-shadow:0 1px 2px rgba(0,0,0,.18), 0 10px 22px -12px rgba(0,0,0,.5)}
+.conta .kt em{font-style:normal;font-size:15px;font-weight:600;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums}
+.conta .kt i{position:absolute;left:10px;top:9px;font-style:normal;font-size:11px;
+  font-weight:700;letter-spacing:.04em;opacity:.92}
+.conta .nm{display:block;margin-top:7px;font-size:11.5px;color:rgba(255,255,255,.82)}
+
+/* ══ 2 · A FOLHA que sobe por cima do bloco ════════════════════════════ */
+.folha{background:#fff;border-radius:28px 28px 0 0;margin-top:-14px;position:relative;
+  padding:22px 20px calc(104px + env(safe-area-inset-bottom));min-height:60vh}
+
+/* ══ 3 · AS AÇÕES EM CÍRCULO ═══════════════════════════════════════════ */
+.acoes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.acao{background:none;border:0;padding:0;cursor:pointer;font-family:inherit;
+  display:flex;flex-direction:column;align-items:center;gap:9px}
+.acao .ci{width:54px;height:54px;border-radius:50%;border:1px solid var(--fio);
+  display:flex;align-items:center;justify-content:center;color:var(--tinta);
+  transition:background .14s ease,border-color .14s ease,color .14s ease}
+.acao:active .ci{background:var(--tinta);border-color:var(--tinta);color:#fff}
+.acao .ci svg{width:22px;height:22px}
+.acao span{font-size:12.4px;font-weight:600;color:var(--tinta);letter-spacing:-.012em;
+  text-align:center;line-height:1.25}
+.acao em{display:block;font-style:normal;font-size:11px;color:var(--t3);font-weight:500}
+
+/* ══ 4 · OS TÍTULOS DE SEÇÃO ═══════════════════════════════════════════ */
+.sec{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  margin:30px 0 13px}
+.sec h2{font-family:var(--sfd);font-size:20px;font-weight:750;letter-spacing:-.03em}
+.sec a{font-size:12.8px;color:var(--t3);text-decoration:none;font-weight:500}
+
+/* ══ 5 · O DIA EM TRÊS NÚMEROS ═════════════════════════════════════════ */
+.hoje{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--fio);
+  border:1px solid var(--fio);border-radius:var(--raio);overflow:hidden}
+/* ⚠️ Três números não precisam de 132px. E o `flex-direction:column`
+   que eu tinha posto aqui quebrou o «R$» para uma LINHA PRÓPRIA — num
+   flex container todo filho vira item, inclusive o `<small>` que devia
+   ficar colado no número. Bloco simples resolve e não cria itens. */
+.hoje div{background:#fff;padding:13px 11px}
+.hoje .k{font-size:11px;font-weight:600;color:var(--t3);letter-spacing:-.005em}
+.hoje .v{margin-top:3px;font-family:var(--sfd);font-size:16.5px;font-weight:750;
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hoje .v small{font-size:11px;font-weight:600;color:var(--t3);margin-right:2px}
+
+/* ══ 6 · A AGENDA, em lista ════════════════════════════════════════════ */
+.lista{border:1px solid var(--fio);border-radius:var(--raio);overflow:hidden}
+.lsAgSlot{margin:0}
+.linha{display:grid;grid-template-columns:auto 1fr;grid-template-areas:'h n' 'b b';
+  gap:3px 13px;align-items:center;padding:13px 15px;border-top:1px solid var(--fio)}
+.lsAgSlot:first-child .linha{border-top:0}
+.hora{grid-area:h;text-align:left}
+/* ⚠️ 9,5px reprovou no meu próprio piso de 11px. O turno é rótulo de
+   interface, não arte — e a régua vale para ele também. */
+.hora em{display:block;font-style:normal;font-size:11px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--t3);line-height:1}
+.hora b{display:block;margin-top:3px;font-family:var(--sfd);font-size:19px;font-weight:700;
+  letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.quem{grid-area:n;min-width:0}
+.quem .lsAgNome{display:block;font-size:15px;font-weight:600;letter-spacing:-.018em;line-height:1.24;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.quem .lsAgProc{display:block;margin-top:2px;font-size:12.6px;color:var(--t3)}
+/* o botão que o `ls-comanda.js` cria ganha a forma desta tela */
+.linha .lsAgBt{grid-area:b;margin-top:9px;height:46px;width:100%;border:0;border-radius:11px;
+  cursor:pointer;font-family:inherit;font-size:14px;font-weight:700;letter-spacing:-.01em;
+  color:#fff;background:var(--acao);display:flex;align-items:center;justify-content:center}
+.linha .lsAgBt.ls-cadeira{background:var(--dinheiro)}
+.linha .lsAgBt.ls-cadeira::before{content:'$';font-weight:800;margin-right:7px;opacity:.75}
+.linha .lsAgBt.ls-paga{background:transparent;color:var(--t3);font-weight:600;cursor:default}
+.lsAgEst{grid-area:b}
+.novo{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;margin-top:11px;
+  height:50px;border:1.5px dashed #D5D5DC;border-radius:var(--raio);background:transparent;
+  cursor:pointer;color:#6E6C77;font-family:inherit;font-size:14px;font-weight:600}
+.novo span{font-size:19px;line-height:1;font-weight:400}
+
+/* ══ 7 · PARA ONDE FOI ═════════════════════════════════════════════════ */
+.potes{border:1px solid var(--fio);border-radius:var(--raio);overflow:hidden}
+.pote{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:13px;
+  padding:13px 15px;border-top:1px solid var(--fio);background:none;border-left:0;
+  border-right:0;border-bottom:0;width:100%;text-align:left;font-family:inherit;cursor:pointer}
+.pote:first-child{border-top:0}
+.pote .anel{width:42px;height:42px;flex:none;position:relative}
+/* ⚠️ 10px reprovou no piso de 11 que eu mesmo defini. O anel cresce de
+   38 para 42 para o número caber sem encostar no traço. */
+.pote .anel em{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-style:normal;font-size:11px;font-weight:700;letter-spacing:-.03em}
+.pote .nm{font-size:14.5px;font-weight:600;letter-spacing:-.015em;color:var(--tinta)}
+.pote .vl{font-family:var(--sfd);font-size:15.5px;font-weight:700;letter-spacing:-.025em;
+  font-variant-numeric:tabular-nums}
+
+/* ══ 8 · A NAVEGAÇÃO FLUTUANTE ═════════════════════════════════════════
+   A pílula da referência: escura, item ativo em círculo branco. ⚠️ Ela
+   mora sobre o `safe-area-inset-bottom` — no iPhone a barra de gestos
+   comeria o item do meio. */
+.doca{position:fixed;left:50%;transform:translateX(-50%);z-index:60;
+  bottom:calc(14px + env(safe-area-inset-bottom));
+  display:flex;align-items:center;gap:4px;padding:5px;border-radius:99px;background:var(--dock);
+  box-shadow:0 2px 6px rgba(9,10,14,.24), 0 18px 40px -18px rgba(9,10,14,.8)}
+.doca button{width:50px;height:46px;border:0;border-radius:99px;background:transparent;
+  color:rgba(255,255,255,.62);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;transition:background .14s ease,color .14s ease}
+.doca button svg{width:21px;height:21px}
+.doca button.on{background:#fff;color:var(--tinta)}
+</style>
+</head>
+<body>
+
+<div class="topo">
+  <div class="rot">Saldo disponível</div>
+  <div class="saldo"><span class="cif">R$</span><b id="vSaldo">0,00</b></div>
+  <div class="sub" id="vSub">somando as contas</div>
+  <div class="contas" id="contas"></div>
+</div>
+
+<div class="folha">
+  <div class="acoes" id="acoes"></div>
+
+  <div class="sec"><h2>Hoje</h2></div>
+  <div class="hoje" id="hoje"></div>
+
+  <div class="sec"><h2>Agenda do dia</h2><a id="vVagas"></a></div>
+  <div class="lista" id="agenda"></div>
+  <button class="novo"><span>+</span> Agendar cliente</button>
+
+  <div class="sec"><h2>Para onde foi</h2><a href="#" id="verTudo">ver tudo</a></div>
+  <div class="potes" id="potes"></div>
+</div>
+
+<div class="doca" id="doca"></div>
+
+<script src="../ls-conta.js"></script>
+<script src="ls-demo-dados.js"></script>
+<script defer src="ls-comanda.js"></script>
+<script>
+/* ⚠️ A FONTE É A MESMA DO DESKTOP. Se o `ls-demo-dados.js` não carregar,
+   a tela não inventa número nenhum — ela aparece vazia e eu descubro.
+   Tela de dinheiro com valor de mentira é pior que tela em branco. */
+const D = window.LS_DEMO;
+const brl = v => (+v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const p1  = v => (+v||0).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+const $   = s => document.querySelector(s);
+
+const COR = { 'Nubank':'#820AD1', 'Asaas':'#0B49E8', 'Sicredi':'#1A6B3C',
+              'Dinheiro':'#D9A312', 'Processando':'rgba(255,255,255,.22)' };
+const ICO = {
+  fechar:'<path d="M5 8h14l-1.4 12.2a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8z"/><path d="M9 8V5a3 3 0 0 1 6 0v3"/>',
+  contas:'<path d="M5 3.5v17l2.3-1.5 2.4 1.5 2.3-1.5 2.4 1.5 2.3-1.5 2.3 1.5v-17L16.7 5l-2.3-1.5L12 5 9.7 3.5 7.3 5z"/><path d="M9 9.5h6M9 13.5h4"/>',
+  mais:'<path d="M12 5v14M5 12h14"/>',
+  casa:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/>',
+  tesoura:'<path d="M6.5 3.5l11 11"/><path d="M17.5 3.5l-11 11"/><circle cx="5" cy="18" r="2.4"/><circle cx="19" cy="18" r="2.4"/>',
+  agenda:'<rect x="3" y="4.5" width="18" height="16" rx="2.4"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/>',
+  conta:'<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
+};
+const svg = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+
+if (D) {
+  /* ── o saldo e as contas ── */
+  $('#vSaldo').textContent = brl(D.saldo);
+  $('#vSub').textContent = `somando as ${D.contas.length} contas`;
+  $('#contas').innerHTML = D.contas.map(([n,v]) => `
+    <button class="conta" data-conta="${n}">
+      <span class="kt" style="background:${COR[n]||'#555'}">
+        <i>${n === 'Dinheiro' ? 'R$' : n.toUpperCase()}</i><em>${brl(v)}</em></span>
+      <span class="nm">${n}</span></button>`).join('');
+
+  /* ── as ações ── */
+  $('#acoes').innerHTML = [
+    ['fechar','Fechar caixa','de hoje'],
+    ['contas','Contas a pagar','R$ ' + brl(D.contasPagar)],
+    ['mais','Cadastrar','procedimento'],
+  ].map(([k,t,s]) => `<button class="acao" data-acao="${k}">
+      <span class="ci">${svg(ICO[k])}</span>
+      <span>${t}<em>${s}</em></span></button>`).join('');
+
+  /* ── o dia em três números ── */
+  $('#hoje').innerHTML = `
+    <div><div class="k">Faturou</div><div class="v"><small>R$</small>${brl(D.hoje.fat)}</div></div>
+    <div><div class="k">Lucro</div><div class="v"><small>R$</small>${brl(D.hoje.lucro)}</div></div>
+    <div><div class="k">Margem</div><div class="v">${p1(D.hoje.marg)}</div></div>`;
+
+  /* ── a agenda ── */
+  $('#vVagas').textContent = `${D.clientes.length} de 9 vagas`;
+  /* ⚠️ AS CLASSES SÃO AS QUE A COMANDA JÁ CONHECE (`lsAgLinha`,
+     `lsAgNome`, `lsAgProc`, `lsAgHoraBloco`, `lsAgEst`). Assim o
+     `ls-comanda.js` — a festa, a folha de pagamento, o desconto, o
+     saldo que precisa fechar — funciona aqui sem uma linha duplicada.
+     O visual é desta tela; o comportamento é o mesmo do desktop.
+     Duas implementações da mesma comanda divergiriam na primeira
+     mudança, e uma delas estaria errada sobre dinheiro. */
+  $('#agenda').innerHTML = D.clientes.map(([h,n,p,ch]) => {
+    const m = h.match(/(\d{1,2})[:h](\d{2})/) || [];
+    return `<div class="lsAgSlot"><div class="lsAgLinha linha ${ch?'ok':'espera'}">
+      <div class="lsAgHoraBloco hora"><em>${+m[1] < 12 ? 'manhã' : 'tarde'}</em><b>${m[1]}:${m[2]}</b></div>
+      <div class="lsAgTx quem"><div class="lsAgNome">${n}</div><div class="lsAgProc">${p}</div></div>
+      <div class="lsAgEst"></div>
+    </div></div>`;
+  }).join('');
+
+  /* ── para onde foi ── */
+  const anel = pc => { const t=42,e=4,r=(t-e)/2,c=2*Math.PI*r,o=c*(1-Math.min(100,pc)/100),h=t/2;
+    return `<svg width="${t}" height="${t}" viewBox="0 0 ${t} ${t}">
+      <circle cx="${h}" cy="${h}" r="${r}" fill="none" stroke="#ECECF1" stroke-width="${e}"/>
+      <circle cx="${h}" cy="${h}" r="${r}" fill="none" stroke="#FF2D87" stroke-width="${e}"
+        stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${o.toFixed(1)}"
+        transform="rotate(-90 ${h} ${h})"/></svg>`; };
+  $('#potes').innerHTML = D.potes.map(([n,v,pc]) => `
+    <button class="pote" data-pote="${n}">
+      <span class="anel">${anel(pc)}<em>${Math.round(pc)}</em></span>
+      <span class="nm">${n}</span>
+      <span class="vl">R$ ${brl(v)}</span></button>`).join('');
+}
+
+/* ── a navegação ── */
+$('#doca').innerHTML = [['casa','caixa'],['tesoura','servicos'],['agenda','agenda'],['conta','conta']]
+  .map(([i,k],n) => `<button data-ir="${k}" class="${n===0?'on':''}">${svg(ICO[i])}</button>`).join('');
+$('#doca').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const k = b.dataset.ir;
+  /* ⚠️ quem troca de tela é a CASCA — esta tela não sabe navegar sozinha,
+     e não deve: duas rotas para a mesma aba divergem na primeira mudança */
+  try { if (k !== 'caixa') parent.postMessage({ ls:'ir', k }, '*'); } catch(e){}
+  if (k === 'caixa') { [...$('#doca').children].forEach(x => x.classList.toggle('on', x === b)); }
+};
+$('#acoes').onclick = e => {
+  const b = e.target.closest('.acao'); if (!b) return;
+  if (b.dataset.acao === 'mais') { try { parent.postMessage({ ls:'ir', k:'servicos', abrir:1 }, '*'); } catch(e){} }
+};
+</script>
+</body>
+</html>
