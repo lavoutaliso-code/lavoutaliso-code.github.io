@@ -58,6 +58,11 @@ h2{font-family:var(--sfd);font-size:25px;font-weight:750;letter-spacing:-.035em}
 .sub{color:var(--t2);font-size:14px;margin-top:6px}
 form{margin-top:24px;display:grid;gap:13px}
 label{display:block}
+/* ⚠️ `label{display:block}` VENCE o atributo `hidden`, que o navegador
+   aplica como `display:none` na folha dele — e por isso o «Nome do
+   salão» aparecia no modo Entrar. Regra de autor ganha da do agente:
+   quem esconde precisa ser autor também. */
+[hidden]{display:none!important}
 label span{display:block;font-size:12.5px;font-weight:600;color:var(--t2);
   margin-bottom:6px;letter-spacing:-.005em}
 input{width:100%;height:48px;padding:0 15px;border:1px solid var(--fio);border-radius:11px;
@@ -131,10 +136,7 @@ input::placeholder{color:#B9B9C3}
     </form>
 
     <div class="aviso">
-      <b>Este é um acesso de teste.</b> Os dados ficam guardados <b>neste aparelho</b> —
-      não viajam para servidor nenhum, e cada conta tem o seu espaço separado.
-      Para usar no salão de verdade, com backup e acesso de qualquer celular,
-      é preciso a versão com servidor.
+      <b>Acesso de teste:</b> os dados ficam <b>neste aparelho</b>, não vão para servidor.
     </div>
 
     <p class="pe" id="pe"></p>
@@ -145,12 +147,10 @@ input::placeholder{color:#B9B9C3}
   <img src="marca-clara.png" alt="laila salon">
   <div class="fio"></div>
   <h1>Muito mais que um sistema:<br><b>sua gestão financeira<br>feita sozinha.</b></h1>
-  <p>Cada procedimento que você cadastra passa a se dividir automaticamente — comissão,
-  produto, imposto, marketing e investimento — a cada cliente que pagar.</p>
-  <div class="selos">
-    <span class="selo"><b>1</b> cadastro, divisão automática</span>
-    <span class="selo">comanda fechada, <b>dinheiro organizado</b></span>
-  </div>
+  <!-- ⚠️ Ela, 13/11: *«tirar esses textos chatos»*. Saiu o parágrafo que
+       explicava a divisão item por item e saíram os dois selos. A frase
+       já diz tudo; explicar a frase é desconfiar dela. O que o sistema
+       faz, ela descobre usando — não lendo a porta de entrada. -->
 </div>
 
 <script src="ls-conta.js"></script>
@@ -219,7 +219,7 @@ if (LS_CONTA.atual() && !pz.expirou && !location.search) location.replace('index
 const c = LS_CONTA.atual();
 $('#pe').innerHTML = c
   ? `Você está conectada como <b>${c.email}</b> — <a href="#" id="sair" style="color:inherit">sair</a>`
-  : 'Ao criar a conta você começa com o salão de demonstração preenchido, para olhar o sistema antes de lançar os seus números.';
+  : '';
 if ($('#sair')) $('#sair').onclick = e => { e.preventDefault(); LS_CONTA.sair(); location.reload(); };
 </script>
 </body>
